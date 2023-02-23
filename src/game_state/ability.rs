@@ -4,8 +4,7 @@ pub mod character_ability;
 use std::fmt::Display;
 
 use crate::{
-    custom_string::CustomString, game_state_interactable::GameStateInteractable,
-    gendered::Gendered, trigger_trait::TriggerTrait,
+    custom_string::CustomString, gendered::Gendered, host::Host, trigger_trait::TriggerTrait,
 };
 
 use super::condition::Condition;
@@ -18,7 +17,7 @@ pub struct Ability<Trigger: TriggerTrait, CardID> {
 
     pub description: CustomString,
 
-    pub callback: fn(&mut GameStateInteractable, CardID, Trigger::Went),
+    pub callback: fn(&mut Host, CardID, Trigger::Went),
 }
 
 impl<'condition, Condition: TriggerTrait + 'condition, CardID> Display
@@ -53,6 +52,6 @@ where
             "\n\n".fmt(f)?;
             Gendered { ru_gender: self.ru_gender, value: ability }.fmt(f)?;
         }
-        Ok(())
+        writeln!(f)
     }
 }

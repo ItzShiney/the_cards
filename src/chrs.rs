@@ -1,12 +1,8 @@
-use crate::custom_string::CustomString;
-use crate::def;
-use crate::dmg;
-use crate::game_state::ability::character_ability::CharacterAbility;
-use crate::game_state::group::Group;
-use crate::gendered::RuGender;
-use crate::int;
-use crate::phy;
-use crate::stats::Stats;
+use crate::{
+    custom_string::CustomString, def, dmg,
+    game_state::ability::character_ability::CharacterAbility, game_state::group::Group,
+    gendered::RuGender, int, phy, stats::Stats,
+};
 
 use std::collections::BTreeSet;
 
@@ -91,7 +87,7 @@ chrs! {
             phy!(5),
             def!(2),
             dmg!(3),
-            int!(0),
+            int!(4),
         );
 
         const ABILITIES = [];
@@ -106,7 +102,7 @@ chrs! {
             phy!(5),
             def!(2),
             dmg!(3),
-            int!(0),
+            int!(4),
         );
 
         const ABILITIES = [];

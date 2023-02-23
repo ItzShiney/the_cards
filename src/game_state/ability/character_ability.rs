@@ -19,12 +19,16 @@ impl TriggerTrait for CharacterTrigger {
 impl Display for Gendered<&CharacterTrigger> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.value {
-            CharacterTrigger::Placed => match self.ru_gender {
-                RuGender::Masculine => "выставлен".fmt(f),
-                RuGender::Feminine => "выставлена".fmt(f),
-                RuGender::Neuter => "выставлено".fmt(f),
-                RuGender::Plural => "выставлены".fmt(f),
-            },
+            CharacterTrigger::Placed => {
+                let выставлен = match self.ru_gender {
+                    RuGender::Masculine => "выставлен",
+                    RuGender::Feminine => "выставлена",
+                    RuGender::Neuter => "выставлено",
+                    RuGender::Plural => "выставлены",
+                };
+
+                writeln!(f, "{выставлен}")
+            }
         }
     }
 }

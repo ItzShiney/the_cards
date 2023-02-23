@@ -5,14 +5,18 @@ use crate::game_state::player_id::PlayerID;
 use crate::game_state::GameState;
 use crate::stats::{Stat0, Stats};
 
-pub struct GameStateInteractable {
+pub struct Host {
     pub callbacks: GameCallbacks,
-    pub state: GameState,
+    state: GameState,
 }
 
-impl GameStateInteractable {
+impl Host {
     pub fn new(state: GameState) -> Self {
         Self { callbacks: Default::default(), state }
+    }
+
+    pub fn state(&self) -> &GameState {
+        &self.state
     }
 }
 
@@ -39,7 +43,7 @@ macro_rules! callbacks {
         )*
 
         $(
-            pub type [<$name:camel Callback>] = Box<dyn Fn(&mut GameStateInteractable, &[<$name:camel CallbackArgs>]) -> Chain>;
+            pub type [<$name:camel Callback>] = Box<dyn Fn(&mut Host, &[<$name:camel CallbackArgs>]) -> Chain>;
         )*
 
         #[derive(Default)]
@@ -57,7 +61,7 @@ macro_rules! callbacks {
             )*
         }
 
-        impl GameStateInteractable {
+        impl Host {
             $(
                 pub fn [<$name:camel:snake _args>] (&mut $self, args: [<$name:camel CallbackArgs>] ) {
                     while let Some(callback) = $self.callbacks.[<$name:camel:snake _callbacks>].pop() {
@@ -181,5 +185,11 @@ callbacks! {
         player_id: PlayerID,
     ) -> ActiveID {
         todo!()
+    }
+
+    fn end_subturn(
+        self,
+    ) {
+        self.state.end_subturn()
     }
 }

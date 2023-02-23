@@ -93,7 +93,7 @@ acts! {
                 trigger: ActiveTrigger::UsedOnCharacter,
                 conditions: vec![],
 
-                description: "наносит 3 {DMG}".into(),
+                description: "наносит 3 {dmg}".into(),
 
                 callback: |game, _self_id, went_trigger| {
                     let WentActiveTrigger::UsedOnCharacter(chr_id) = went_trigger else { unreachable!() };
@@ -120,7 +120,7 @@ acts! {
                     .into(),
 
                 callback: |game, self_id, _went_trigger| {
-                    let owner_id = game.state.acts.find_owner(self_id).unwrap();
+                    let owner_id = game.state().acts.find_owner(self_id).unwrap();
                     let imitated_act_id = game.choose_hand_act(owner_id);
 
                     todo!("mimic {:?}", imitated_act_id)
