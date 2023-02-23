@@ -185,7 +185,6 @@ pub struct GameState {
     pub chrs: GameOfCardType<CharacterID, CharacterInfo>,
     pub acts: GameOfCardType<ActiveID, ActiveInfo>,
 
-    player_id_manager: IDManager<PlayerID>,
     players_map: HashMap<PlayerID, Player>,
 
     attacker: PlayerInTurn,
@@ -195,20 +194,18 @@ pub struct GameState {
 
 impl GameState {
     pub fn new(players: Vec<Player>) -> Self {
-        let mut chrs = Default::default();
-        let mut acts = Default::default();
+        let mut chrs = GameOfCardType::default();
+        let mut acts = GameOfCardType::default();
 
         let mut player_id_manager = IDManager::default();
-        let mut players_map = Default::default();
+        let mut players_map = HashMap::default();
 
         for player in players {
-            Self::add_player_manually(
-                &mut player_id_manager,
-                &mut players_map,
-                &mut chrs,
-                &mut acts,
-                player,
-            );
+            let id = player_id_manager.next_id();
+
+            players_map.insert(id, player);
+            chrs.hands.insert(id, Default::default());
+            acts.hands.insert(id, Default::default());
         }
 
         let Some((attacker_id, defender_id)) =
@@ -220,7 +217,6 @@ impl GameState {
             chrs,
             acts,
 
-            player_id_manager,
             players_map,
 
             attacker: attacker_id.into(),
@@ -280,12 +276,10 @@ impl GameState {
         self.acts.get(id)
     }
 
-    #[allow(unused)]
     pub fn chr_mut(&mut self, id: CharacterID) -> &mut CharacterInfo {
         self.chrs.get_mut(id)
     }
 
-    #[allow(unused)]
     pub fn act_mut(&mut self, id: ActiveID) -> &mut ActiveInfo {
         self.acts.get_mut(id)
     }
@@ -296,32 +290,6 @@ impl GameState {
 
     pub fn add_act(&mut self, act: ActiveInfo) -> ActiveID {
         self.acts.add(act)
-    }
-
-    fn add_player_manually(
-        player_id_manager: &mut IDManager<PlayerID>,
-        players_map: &mut HashMap<PlayerID, Player>,
-        chrs: &mut GameOfCardType<CharacterID, CharacterInfo>,
-        acts: &mut GameOfCardType<ActiveID, ActiveInfo>,
-        player: Player,
-    ) -> PlayerID {
-        let id = player_id_manager.next_id();
-
-        players_map.insert(id, player);
-        chrs.hands.insert(id, Default::default());
-        acts.hands.insert(id, Default::default());
-
-        id
-    }
-
-    pub fn add_player(&mut self, player: Player) -> PlayerID {
-        Self::add_player_manually(
-            &mut self.player_id_manager,
-            &mut self.players_map,
-            &mut self.chrs,
-            &mut self.acts,
-            player,
-        )
     }
 
     pub fn attacker(&self) -> &PlayerInTurn {
@@ -344,6 +312,10 @@ impl GameState {
         self.subturner.switch()
     }
 
+    pub fn end_turn(&mut self) {
+        todo!()
+    }
+
     pub fn subturner(&self) -> &PlayerInTurn {
         match self.subturner {
             Subturner::Attacker => self.attacker(),
@@ -351,7 +323,6 @@ impl GameState {
         }
     }
 
-    #[allow(unused)]
     pub fn subturner_mut(&mut self) -> &mut PlayerInTurn {
         match self.subturner {
             Subturner::Attacker => self.attacker_mut(),

@@ -192,4 +192,10 @@ callbacks! {
     ) {
         self.state.end_subturn()
     }
+
+    fn end_turn(
+        self,
+    ) {
+        self.state.end_turn()
+    }
 }

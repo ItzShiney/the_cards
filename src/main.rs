@@ -41,6 +41,6 @@ fn main() {
     };
 
     {
-        game.end_subturn();
+        game.end_turn();
     }
 }
