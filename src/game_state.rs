@@ -9,8 +9,9 @@ pub mod id_manager;
 pub mod player_id;
 pub mod player_id_manager;
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fmt::Debug;
+use std::mem::take;
 
 use crate::acts::ActiveType;
 use crate::chrs::CharacterType;
@@ -129,10 +130,11 @@ impl<ID: IDTrait + Debug, CardInfo> GameOfCardType<ID, CardInfo> {
         None
     }
 
-    pub fn remove_from_some_player(&mut self, id: ID) {
+    pub fn remove_from_some_player(&mut self, id: ID) -> PlayerID {
         let player_id =
             self.find_owner(id).expect(format!("expected some player to own {:?}", id).as_str());
         self.remove_from_player(id, player_id);
+        player_id
     }
 
     pub fn add_to_gain_pile(&mut self, id: ID) {
@@ -152,14 +154,14 @@ impl<ID: IDTrait + Debug, CardInfo> GameOfCardType<ID, CardInfo> {
     }
 }
 
-pub struct PlayerInTurn {
+pub struct SubturnerOnField {
     pub player_id: PlayerID,
     pub chr_id: Option<CharacterID>,
     pub used_act_ids: Vec<ActiveID>,
 }
 
-impl From<PlayerID> for PlayerInTurn {
-    fn from(player_id: PlayerID) -> Self {
+impl SubturnerOnField {
+    fn new(player_id: PlayerID) -> Self {
         Self { player_id, chr_id: None, used_act_ids: Vec::default() }
     }
 }
@@ -187,11 +189,11 @@ pub struct GameState {
     pub chrs: GameOfCardType<CharacterID, CharacterInfo>,
     pub acts: GameOfCardType<ActiveID, ActiveInfo>,
 
-    players_map: HashMap<PlayerID, Player>,
+    players_map: BTreeMap<PlayerID, Player>,
 
-    attacker: PlayerInTurn,
-    defender: PlayerInTurn,
-    subturner: Subturner,
+    attacker: SubturnerOnField,
+    defender: SubturnerOnField,
+    current_subturner: Subturner,
 }
 
 impl GameState {
@@ -200,7 +202,7 @@ impl GameState {
         let mut acts = GameOfCardType::default();
 
         let mut player_id_manager = IDManager::default();
-        let mut players_map = HashMap::default();
+        let mut players_map = BTreeMap::default();
 
         for player in players {
             let id = player_id_manager.next_id();
@@ -221,9 +223,9 @@ impl GameState {
 
             players_map,
 
-            attacker: attacker_id.into(),
-            defender: defender_id.into(),
-            subturner: Subturner::Attacker,
+            attacker: SubturnerOnField::new(attacker_id),
+            defender: SubturnerOnField::new(defender_id),
+            current_subturner: Subturner::Attacker,
         };
         game.init_cards();
         game
@@ -302,57 +304,109 @@ impl GameState {
         self.acts.add(act)
     }
 
-    pub fn attacker(&self) -> &PlayerInTurn {
+    pub fn attacker(&self) -> &SubturnerOnField {
         &self.attacker
     }
 
-    pub fn attacker_mut(&mut self) -> &mut PlayerInTurn {
+    pub fn attacker_mut(&mut self) -> &mut SubturnerOnField {
         &mut self.attacker
     }
 
-    pub fn defender(&self) -> &PlayerInTurn {
+    pub fn defender(&self) -> &SubturnerOnField {
         &self.defender
     }
 
-    pub fn defender_mut(&mut self) -> &mut PlayerInTurn {
+    pub fn defender_mut(&mut self) -> &mut SubturnerOnField {
         &mut self.defender
     }
 
     pub fn end_subturn(&mut self) {
-        self.subturner.switch()
+        self.current_subturner.switch()
     }
 
     pub fn end_turn(&mut self) {
-        todo!()
+        self.remove_from_field(self.current_subturner);
+        self.remove_from_field(self.current_subturner.other());
+
+        self.change_turner();
     }
 
-    pub fn subturner(&self) -> &PlayerInTurn {
-        match self.subturner {
+    pub fn current_subturner(&self) -> Subturner {
+        self.current_subturner
+    }
+
+    pub fn subturner_on_field(&self, subturner: Subturner) -> &SubturnerOnField {
+        match subturner {
             Subturner::Attacker => self.attacker(),
             Subturner::Defender => self.defender(),
         }
     }
 
-    pub fn subturner_mut(&mut self) -> &mut PlayerInTurn {
-        match self.subturner {
+    pub fn subturner_on_field_mut(&mut self, subturner: Subturner) -> &mut SubturnerOnField {
+        match subturner {
             Subturner::Attacker => self.attacker_mut(),
             Subturner::Defender => self.defender_mut(),
         }
     }
 
-    pub fn other_subturner(&self) -> &PlayerInTurn {
-        match self.subturner {
-            Subturner::Attacker => self.defender(),
-            Subturner::Defender => self.attacker(),
+    pub fn current_subturner_on_field(&self) -> &SubturnerOnField {
+        self.subturner_on_field(self.current_subturner)
+    }
+
+    pub fn current_subturner_on_field_mut(&mut self) -> &mut SubturnerOnField {
+        self.subturner_on_field_mut(self.current_subturner)
+    }
+
+    pub fn other_subturner_on_field(&self) -> &SubturnerOnField {
+        self.subturner_on_field(self.current_subturner.other())
+    }
+
+    pub fn other_subturner_mut(&mut self) -> &mut SubturnerOnField {
+        self.subturner_on_field_mut(self.current_subturner.other())
+    }
+}
+
+// TODO: переместить в Host
+impl GameState {
+    fn remove_from_field(&mut self, subturner: Subturner) {
+        let subturner_on_field = self.subturner_on_field_mut(subturner);
+
+        let Some(chr_id) = subturner_on_field.chr_id.take() else { panic!("expected chr to be on field") };
+        let owner_id = subturner_on_field.player_id;
+        let used_act_ids = take(&mut subturner_on_field.used_act_ids);
+
+        if self.is_dead(chr_id) {
+            self.chrs.add_to_waste_pile(chr_id);
+        } else {
+            self.chrs.add_to_player(chr_id, owner_id);
+        }
+
+        for act_id in used_act_ids {
+            // TODO: Host::waste
+            self.acts.add_to_waste_pile(act_id);
         }
     }
 
-    #[allow(unused)]
-    pub fn other_subturner_mut(&mut self) -> &mut PlayerInTurn {
-        match self.subturner {
-            Subturner::Attacker => self.defender_mut(),
-            Subturner::Defender => self.attacker_mut(),
-        }
+    fn is_dead(&self, chr_id: CharacterID) -> bool {
+        self.chr(chr_id).stats.vit.0.into_value() == Some(0)
+    }
+
+    fn change_turner(&mut self) {
+        let new_attacker_id = self.defender.player_id;
+        let new_defender_id = self.pick_defender_id(new_attacker_id);
+
+        self.attacker = SubturnerOnField::new(new_attacker_id);
+        self.defender = SubturnerOnField::new(new_defender_id);
+    }
+
+    pub fn pick_defender_id(&self, attacker_id: PlayerID) -> PlayerID {
+        self.players_map
+            .keys()
+            .copied()
+            .cycle()
+            .skip_while(|&key| key != attacker_id)
+            .nth(1)
+            .unwrap()
     }
 }
 

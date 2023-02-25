@@ -9,6 +9,9 @@ use crate::{custom_string::CustomStringSlice, default_formatted::DefaultFormatte
 
 pub type Stat0 = i32;
 
+// TODO:
+// Убрать Unknown, реализовать как `may_init_change: bool` в Stats (?)
+// Статы обязаны быть инициализированными, а may_init_change будет сигнализировать о том, что стат скорее всего будет изменён. Отображается как VIT 5?
 #[derive(Debug, Clone, Copy, PartialEq, Eq, EnumAs)]
 pub enum StatValue {
     Unknown,

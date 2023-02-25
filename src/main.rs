@@ -17,8 +17,14 @@ fn main() {
         Player { nickname: "maxvog".into() },
     ]));
 
+    println!(
+        "attacker={:?} defender={:?}",
+        game.state().attacker().player_id,
+        game.state().defender().player_id
+    );
+
     {
-        let player_id = game.state().subturner().player_id;
+        let player_id = game.state().current_subturner_on_field().player_id;
 
         let chr_id = game.state().chrs.hand(player_id)[0];
         game.place(chr_id);
@@ -27,22 +33,13 @@ fn main() {
     };
 
     {
-        let player_id = game.state().subturner().player_id;
+        let player_id = game.state().current_subturner_on_field().player_id;
 
         let chr_id = game.state().chrs.hand(player_id)[0];
         game.place(chr_id);
 
-        let other_chr_id = game.state().other_subturner().chr_id.unwrap();
+        let other_chr_id = game.state().other_subturner_on_field().chr_id.unwrap();
         println!("{}", game.state().chr(other_chr_id));
-        /*
-        println!("{}\n+", game.state().chr(other_chr_id));
-        {
-            let act_id = game.state().acts.hand(player_id)[0];
-            println!("{}\n=", game.state().act(act_id));
-            game.use_on_character(act_id, other_chr_id);
-        }
-        println!("{}", game.state().chr(other_chr_id));
-        */
 
         game.end_subturn();
     };
@@ -50,4 +47,10 @@ fn main() {
     {
         game.end_turn();
     }
+
+    println!(
+        "attacker={:?} defender={:?}",
+        game.state().attacker().player_id,
+        game.state().defender().player_id
+    );
 }

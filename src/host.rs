@@ -99,7 +99,6 @@ callbacks! {
         self,
         act_id: ActiveID,
     ) {
-        self.state.acts.remove_from_some_player(act_id);
         self.state.acts.add_to_waste_pile(act_id);
     }
 
@@ -114,7 +113,7 @@ callbacks! {
         let went_trigger = WentActiveTrigger::UsedOnCharacter(chr_id);
         (ability.callback)(self, act_id, went_trigger);
 
-        self.waste_act(act_id);
+        self.state.acts.remove_from_some_player(act_id);
     }
 
     fn vit_sub(
