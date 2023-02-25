@@ -32,10 +32,17 @@ fn main() {
         let chr_id = game.state().chrs.hand(player_id)[0];
         game.place(chr_id);
 
+        let other_chr_id = game.state().other_subturner().chr_id.unwrap();
+        println!("{}", game.state().chr(other_chr_id));
+        /*
+        println!("{}\n+", game.state().chr(other_chr_id));
         {
             let act_id = game.state().acts.hand(player_id)[0];
-            game.use_on_character(act_id, game.state().other_subturner().chr_id.unwrap());
+            println!("{}\n=", game.state().act(act_id));
+            game.use_on_character(act_id, other_chr_id);
         }
+        println!("{}", game.state().chr(other_chr_id));
+        */
 
         game.end_subturn();
     };

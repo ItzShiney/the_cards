@@ -157,7 +157,18 @@ impl Stats {
     pub const UNINIT: Stats =
         Stats { vit: vit!(?), phy: phy!(?), def: def!(?), dmg: dmg!(?), int: int!(?) };
 
-    pub fn new(phy: Physique, def: Defence, dmg: Damage, int: Intellect) -> Self {
+    pub fn new(phy: Physique, dmg: Damage, int: Intellect) -> Self {
+        let vit = match phy.0 {
+            StatValue::Unknown => Vitality(StatValue::Unknown),
+            StatValue::Var(x) | StatValue::Const(x) => Vitality(StatValue::Var(x)),
+        };
+
+        let def = def!(0);
+
+        Self { vit, phy, def, dmg, int }
+    }
+
+    pub fn new_def(phy: Physique, def: Defence, dmg: Damage, int: Intellect) -> Self {
         let vit = match phy.0 {
             StatValue::Unknown => Vitality(StatValue::Unknown),
             StatValue::Var(x) | StatValue::Const(x) => Vitality(StatValue::Var(x)),

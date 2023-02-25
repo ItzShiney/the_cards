@@ -16,6 +16,8 @@ use crate::acts::ActiveType;
 use crate::chrs::CharacterType;
 use crate::trigger_trait::TriggerTrait;
 use itertools::Itertools;
+use rand::seq::IteratorRandom;
+use rand::thread_rng;
 
 use self::ability::Ability;
 use self::active_id::ActiveID;
@@ -256,12 +258,20 @@ impl GameState {
                 + Self::ACTIVES_GAINED_AFTER_TURN * Self::TOTAL_GAINS_PER_PLAYER);
 
         for _ in 1..=total_chrs_count {
-            let chr_id = self.add_chr(CharacterType::TestCharacter.into());
+            let chr_types = CharacterType::all();
+            let chr_type = chr_types.into_iter().choose(&mut thread_rng()).unwrap();
+            let chr = chr_type.into();
+
+            let chr_id = self.add_chr(chr);
             self.chrs.add_to_gain_pile(chr_id);
         }
 
         for _ in 1..=total_acts_count {
-            let act_id = self.add_act(ActiveType::TestActive.into());
+            let act_types = ActiveType::all();
+            let act_type = act_types.into_iter().choose(&mut thread_rng()).unwrap();
+            let act = act_type.into();
+
+            let act_id = self.add_act(act);
             self.acts.add_to_gain_pile(act_id);
         }
     }

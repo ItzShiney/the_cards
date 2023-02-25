@@ -15,14 +15,27 @@ impl From<ActiveType> for ActiveInfo {
 
 impl Display for ActiveInfo {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        let name = self.type_.name();
+        let groups = self.type_.groups();
+        let epitaph = self.type_.epitaph();
         let ru_gender = self.type_.ru_gender();
+        let abilities = self.type_.abilities();
 
-        write!(
-            f,
-            "──────────────────────────────────────\n\x1b[1m{}\x1b[0m\n{}\n{}──────────────────────────────────────",
-            self.type_.name(),
-            DefaultFormatted(self.type_.groups()),
-            Gendered { ru_gender, value: self.type_.abilities() },
-        )
+        writeln!(f, "──────────────────────────────────────")?;
+
+        writeln!(f, "\x1b[1m{}\x1b[0m", name)?;
+        if !groups.is_empty() {
+            writeln!(f, "{}", DefaultFormatted(groups))?;
+        }
+
+        if let Some(epitaph) = epitaph {
+            writeln!(f, "\n\x1b[3m{}\x1b[0m", epitaph)?;
+        }
+
+        if !abilities.is_empty() {
+            writeln!(f, "\n{}", Gendered { ru_gender, value: abilities })?;
+        }
+
+        write!(f, "──────────────────────────────────────")
     }
 }

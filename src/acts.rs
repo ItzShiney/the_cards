@@ -1,7 +1,10 @@
-use crate::custom_string::CustomString;
-use crate::game_state::ability::active_ability::{ActiveAbility, ActiveTrigger, WentActiveTrigger};
-use crate::game_state::group::Group;
-use crate::gendered::RuGender;
+use crate::{
+    custom_string::CustomString,
+    game_state::ability::active_ability::ActiveAbility,
+    game_state::ability::active_trigger::{ActiveTrigger, WentActiveTrigger},
+    game_state::group::Group,
+    gendered::RuGender,
+};
 
 use std::collections::BTreeSet;
 
@@ -9,11 +12,13 @@ macro_rules! acts {
     (
         $(
             $CardName:ident {
-                const NAME = $name:literal;
-                const RU_GENDER = $ru_gender:expr;
-                const GROUPS = $groups:tt;
+                name: $name:literal,
+                ru_gender: $ru_gender:expr,
+                groups: $groups:tt,
 
-                const ABILITIES = $abilities:tt;
+                $(epitaph: $epitaph:literal,)?
+
+                abilities: $abilities:tt,
             }
         )*
     ) => {paste::paste!{
@@ -23,7 +28,7 @@ macro_rules! acts {
         }
 
         impl ActiveType {
-            pub fn all() -> Vec<ActiveType> {
+            pub fn all() -> Vec<Self> {
                 vec![
                     $(Self::$CardName,)*
                 ]
@@ -65,6 +70,18 @@ macro_rules! acts {
                 }
             }
 
+            pub fn epitaph(self) -> &'static Option<CustomString> {
+                lazy_static::lazy_static! {
+                    $(
+                        static ref [<$CardName:snake:upper>]: Option<CustomString> = if concat!("", $($epitaph)?) != "" { Some(concat!("", $($epitaph)?).into()) } else { None };
+                    )*
+                }
+
+                match self {
+                    $(Self::$CardName => &[<$CardName:snake:upper>],)*
+                }
+            }
+
             pub fn abilities(self) -> &'static Vec<ActiveAbility> {
                 lazy_static::lazy_static! {
                     $(
@@ -81,12 +98,12 @@ macro_rules! acts {
 }
 
 acts! {
-    TestActive {
-        const NAME = "ТЕСТОВАЯ АКТИВКА";
-        const RU_GENDER = RuGender::Feminine;
-        const GROUPS = [];
+    ТестоваяАктивка {
+        name: "ТЕСТОВАЯ АКТИВКА",
+        ru_gender: RuGender::Feminine,
+        groups: [Group::Shiney],
 
-        const ABILITIES = [
+        abilities: [
             ActiveAbility {
                 name: None,
 
@@ -97,19 +114,18 @@ acts! {
 
                 callback: |game, _self_id, went_trigger| {
                     let WentActiveTrigger::UsedOnCharacter(chr_id) = went_trigger else { unreachable!() };
-
                     game.hurt(chr_id, 3);
                 }
             }
-        ];
+        ],
     }
 
-    EmptyCard {
-        const NAME = "ПУСТАЯ КАРТА";
-        const RU_GENDER = RuGender::Feminine;
-        const GROUPS = [Group::TBoI];
+/*     ПустаяКарта {
+        name: "ПУСТАЯ КАРТА",
+        ru_gender: RuGender::Feminine,
+        groups: [Group::Shiney, Group::TBoI],
 
-        const ABILITIES = [
+        abilities: [
             ActiveAbility {
                 name: None,
 
@@ -126,6 +142,6 @@ acts! {
                     todo!("mimic {:?}", imitated_act_id)
                 }
             }
-        ];
-    }
+        ],
+    } */
 }

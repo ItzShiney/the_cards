@@ -1,5 +1,7 @@
 pub mod active_ability;
+pub mod active_trigger;
 pub mod character_ability;
+pub mod character_trigger;
 
 use std::fmt::Display;
 
@@ -52,6 +54,6 @@ where
             "\n\n".fmt(f)?;
             Gendered { ru_gender: self.ru_gender, value: ability }.fmt(f)?;
         }
-        writeln!(f)
+        Ok(())
     }
 }

@@ -1,4 +1,4 @@
-use crate::game_state::ability::active_ability::{ActiveTrigger, WentActiveTrigger};
+use crate::game_state::ability::active_trigger::{ActiveTrigger, WentActiveTrigger};
 use crate::game_state::active_id::ActiveID;
 use crate::game_state::character_id::CharacterID;
 use crate::game_state::player_id::PlayerID;
@@ -18,11 +18,16 @@ impl Host {
     pub fn state(&self) -> &GameState {
         &self.state
     }
+
+    // TODO: remove
+    pub fn state_mut(&mut self) -> &mut GameState {
+        &mut self.state
+    }
 }
 
-pub enum Chain {
+pub enum Chain<T = ()> {
     Continue,
-    Break,
+    Break(T),
 }
 
 macro_rules! callbacks {
@@ -43,7 +48,7 @@ macro_rules! callbacks {
         )*
 
         $(
-            pub type [<$name:camel Callback>] = Box<dyn Fn(&mut Host, &[<$name:camel CallbackArgs>]) -> Chain>;
+            pub type [<$name:camel Callback>] = Box<dyn Fn(&mut Host, &[<$name:camel CallbackArgs>]) -> Chain<$($Return)?>>;
         )*
 
         #[derive(Default)]
@@ -63,11 +68,11 @@ macro_rules! callbacks {
 
         impl Host {
             $(
-                pub fn [<$name:camel:snake _args>] (&mut $self, args: [<$name:camel CallbackArgs>] ) {
+                pub fn [<$name:camel:snake _args>] (&mut $self, args: [<$name:camel CallbackArgs>] ) $(-> $Return)? {
                     while let Some(callback) = $self.callbacks.[<$name:camel:snake _callbacks>].pop() {
                         match callback($self, &args) {
                             Chain::Continue => {}
-                            Chain::Break => return,
+                            Chain::Break(x) => return x,
                         }
                     }
 
@@ -77,7 +82,7 @@ macro_rules! callbacks {
                     $callback_action
                 }
 
-                pub fn $name (&mut $self, $($arg_name: $ArgType,)* ) {
+                pub fn $name (&mut $self, $($arg_name: $ArgType,)* ) $(-> $Return)? {
                     $self.[<$name:camel:snake _args>] (
                         [<$name:camel CallbackArgs>] {
                             $($arg_name,)*
@@ -104,7 +109,7 @@ callbacks! {
         chr_id: CharacterID,
     ) {
         let abilities = self.state.act(act_id).type_.abilities();
-        let Some(ability) = self.state.find_matching_ability(ActiveTrigger::UsedOnCharacter, abilities) else { return };
+        let Some(ability) = self.state.find_matching_ability(ActiveTrigger::UsedOnCharacter, abilities) else { panic!("{act_id:?} can't be used on {chr_id:?}") };
 
         let went_trigger = WentActiveTrigger::UsedOnCharacter(chr_id);
         (ability.callback)(self, act_id, went_trigger);
@@ -133,9 +138,9 @@ callbacks! {
         chr_id: CharacterID,
         dmg: Stat0,
     ) {
-        let old_def = self.state.chr(chr_id).stats.def.0.into_value().unwrap();
+        let old_def = self.state().chr(chr_id).stats.def.0.into_value().unwrap();
         self.def_sub(chr_id, dmg);
-        let new_def = self.state.chr(chr_id).stats.def.0.into_value().unwrap();
+        let new_def = self.state().chr(chr_id).stats.def.0.into_value().unwrap();
 
         let def_dmg_taken = old_def - new_def;
         let vit_dmg_to_take = dmg - def_dmg_taken;
@@ -184,6 +189,13 @@ callbacks! {
         self,
         player_id: PlayerID,
     ) -> ActiveID {
+        todo!()
+    }
+
+    fn choose_hand_chr(
+        self,
+        player_id: PlayerID,
+    ) -> CharacterID {
         todo!()
     }
 

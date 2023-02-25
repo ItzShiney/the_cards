@@ -18,15 +18,30 @@ impl From<CharacterType> for CharacterInfo {
 
 impl Display for CharacterInfo {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        let name = self.type_.name();
+        let groups = self.type_.groups();
+        let stats = &self.stats;
+        let epitaph = self.type_.epitaph();
         let ru_gender = self.type_.ru_gender();
+        let abilities = self.type_.abilities();
 
-        write!(
-            f,
-            "──────────────────────────────────────\n\x1b[1m{}\x1b[0m\n{}\n{}\n{}──────────────────────────────────────",
-            self.type_.name(),
-            DefaultFormatted(self.type_.groups()),
-            self.stats,
-            Gendered { ru_gender, value: self.type_.abilities() },
-        )
+        writeln!(f, "──────────────────────────────────────")?;
+
+        writeln!(f, "\x1b[1m{}\x1b[0m", name)?;
+        if !groups.is_empty() {
+            writeln!(f, "{}", DefaultFormatted(groups))?;
+        }
+
+        writeln!(f, "\n{}", stats)?;
+
+        if let Some(epitaph) = epitaph {
+            writeln!(f, "\n\x1b[3m{}\x1b[0m", epitaph)?;
+        }
+
+        if !abilities.is_empty() {
+            writeln!(f, "\n{}", Gendered { ru_gender, value: abilities })?;
+        }
+
+        write!(f, "──────────────────────────────────────")
     }
 }
