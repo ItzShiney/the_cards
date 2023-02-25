@@ -17,12 +17,6 @@ fn main() {
         Player { nickname: "maxvog".into() },
     ]));
 
-    println!(
-        "attacker={:?} defender={:?}",
-        game.state().attacker().player_id,
-        game.state().defender().player_id
-    );
-
     {
         let player_id = game.state().current_subturner_on_field().player_id;
 
@@ -47,10 +41,4 @@ fn main() {
     {
         game.end_turn();
     }
-
-    println!(
-        "attacker={:?} defender={:?}",
-        game.state().attacker().player_id,
-        game.state().defender().player_id
-    );
 }

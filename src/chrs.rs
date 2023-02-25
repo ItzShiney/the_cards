@@ -1,3 +1,4 @@
+#[allow(unused)]
 use crate::{
     custom_string::CustomString, dmg, game_state::ability::character_ability::CharacterAbility,
     game_state::ability::character_trigger::CharacterTrigger, game_state::group::Group,
@@ -18,7 +19,7 @@ macro_rules! chrs {
 
                 stats: $stats:expr,
 
-                abilities: $abilities:tt,
+                $(abilities: $abilities:tt,)?
             }
         )*
     ) => {paste::paste!{
@@ -67,7 +68,7 @@ macro_rules! chrs {
             pub fn epitaph(self) -> &'static Option<CustomString> {
                 lazy_static::lazy_static! {
                     $(
-                        static ref [<$CardName:snake:upper>]: Option<CustomString> = if concat!("", $($epitaph)?) != "" { Some(concat!("", $($epitaph)?).into()) } else { None };
+                        static ref [<$CardName:snake:upper>]: Option<CustomString> = if stringify!($($epitaph)?) != "" { Some(stringify!($($epitaph)?).into()) } else { None };
                     )*
                 }
 
@@ -85,7 +86,15 @@ macro_rules! chrs {
             pub fn abilities(self) -> &'static Vec<CharacterAbility> {
                 lazy_static::lazy_static! {
                     $(
-                        static ref [<$CardName:snake:upper>]: Vec<CharacterAbility> = Vec::from($abilities);
+                        static ref [<$CardName:snake:upper>]: Vec<CharacterAbility> = Vec::from(
+                            (
+                                $($abilities,)?
+                                {
+                                    let x: [CharacterAbility; 0] = [];
+                                    x
+                                },
+                            ).0
+                        );
                     )*
                 }
 
@@ -98,6 +107,7 @@ macro_rules! chrs {
 }
 
 chrs! {
+    // /*
     БанкаСВареньем {
         name: "БАНКА С ВАРЕНЬЕМ",
         ru_gender: RuGender::Feminine,
@@ -112,8 +122,6 @@ chrs! {
         // TODO:
         // пока INT противника > 2 ⇒
         // • не атакует
-
-        abilities: [],
     }
 
     ДухТвоейКвартиры {
@@ -132,8 +140,6 @@ chrs! {
         // TODO:
         // пока персонажей у владельца <= 2 ⇒
         // • DMG больше на 2
-
-        abilities: [],
     }
 
     Планя {
@@ -156,8 +162,6 @@ chrs! {
         //
         // персонаж из биты вернулся к владельцу ⇒
         // • "ВЕРНИ САНКИ": PHY всех персонажей в руке += 2
-
-        abilities: [],
     }
 
     Delirium {
@@ -211,8 +215,6 @@ chrs! {
         // TODO:
         // умерла ⇒
         // • с шансом 1/4 вернётся в руку
-
-        abilities: [],
     }
 
     Ненети {
@@ -225,8 +227,6 @@ chrs! {
             dmg!(2),
             int!(2),
         ),
-
-        abilities: [],
     }
 
     Коса {
@@ -239,8 +239,6 @@ chrs! {
             dmg!(4),
             int!(8),
         ),
-
-        abilities: [],
     }
 
     Мирослав {
@@ -253,8 +251,6 @@ chrs! {
             dmg!(4),
             int!(1),
         ),
-
-        abilities: [],
     }
 
     МаксимовБаянЖивотворящий {
@@ -267,8 +263,6 @@ chrs! {
             dmg!(4),
             int!(0),
         ),
-
-        abilities: [],
     }
 
     Рей {
@@ -281,8 +275,6 @@ chrs! {
             dmg!(5),
             int!(6),
         ),
-
-        abilities: [],
     }
 
     Тимми {
@@ -297,8 +289,6 @@ chrs! {
             dmg!(0),
             int!(0),
         ),
-
-        abilities: [],
     }
 
     НостальгирующийКритик {
@@ -315,8 +305,6 @@ chrs! {
         // TODO:
         // пока INT противника <= 3 ⇒
         // • VIT этой карты на 1 меньше, DMG на 2 больше
-
-        abilities: [],
     }
 
     Марио {
@@ -333,7 +321,57 @@ chrs! {
         // TODO:
         // активируемая способность & битва ⇒
         // • ПРЫЖОК НА ЛИЦО: VIT противника /= 2
-
-        abilities: [],
     }
+
+    Рена {
+        name: "РЕНА",
+        ru_gender: RuGender::Feminine,
+        groups: [Group::Constantine, Group::Higurashi],
+
+        stats: Stats::new(
+            phy!(3),
+            dmg!(5),
+            int!(4),
+        ),
+    }
+
+    Борат {
+        name: "БОРАТ",
+        ru_gender: RuGender::Masculine,
+        groups: [Group::Constantine, Group::Memes],
+
+        stats: Stats::new(
+            phy!(4),
+            dmg!(3),
+            int!(1),
+        ),
+
+        abilities: [
+            CharacterAbility {
+                name: None,
+
+                trigger: CharacterTrigger::Placed,
+                conditions: vec![],
+
+                description: "возьми активку из стопки добора. если возможно, используй на этого персонажа, иначе положи обратно".into(),
+
+                callback: |_game, _self_id, _went_trigger| {
+                    todo!()
+                }
+            }
+        ],
+    }
+
+    ЧёрныйКубик {
+        name: "ЧЁРНЫЙ КУБИК",
+        ru_gender: RuGender::Masculine,
+        groups: [Group::Maxvog],
+
+        stats: Stats::new(
+            phy!(5),
+            dmg!(2),
+            int!(3),
+        ),
+    }
+    // */
 }
