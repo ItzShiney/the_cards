@@ -403,7 +403,7 @@ chrs! {
                 trigger: CharacterTrigger::Placed,
                 conditions: vec![],
 
-                description: cs![Damage() " = " Sum { times: cs!["9"], body: cs![Random(cs!["0"]..=cs!["1"])] }].into(),
+                description: cs![Damage, " = ", Sum { times: cs!["9"], body: cs![Random(cs!["0"]..=cs!["1"])] }].into(),
 
                 callback: |_game, _self_id, _went_trigger| {
                     todo!()
@@ -427,21 +427,33 @@ chrs! {
         // атакует ⟹
         // • "ТАРАНИТ... ИНОГДА": с шансом 50% наносит на 1 больше
     }
-    // */
 
     Магдалина {
         name: cs!["МАГДАЛИНА"],
-        ru_gender: RuGender::Masculine,
+        ru_gender: RuGender::Feminine,
         groups: [Group::ByShiney, Group::Female, Group::TBoI],
 
         stats: Stats::new(
             phy!(7),
             dmg!(2),
-            int!(4),
+            int!(6),
         ),
 
         // TODO:
         // активируемая способность ⟹
         // • НЯМ СЕРДЦЕ: VIT += 2
+    }
+    // */
+
+    Рика {
+        name: cs!["РИКА"],
+        ru_gender: RuGender::Feminine,
+        groups: [Group::ByConstantine, Group::Female, Group::Higurashi],
+
+        stats: Stats::new(
+            phy!(3),
+            dmg!(4),
+            int!(6),
+        ),
     }
 }

@@ -70,7 +70,7 @@ macro_rules! stat {
 
         impl Display for $Name {
             fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-                write!(f, "{} {}", $crate::cs![$Name()], self.0)
+                write!(f, "{} {}", $crate::cs![$Name], self.0)
             }
         }
     };

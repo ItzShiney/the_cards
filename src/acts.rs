@@ -136,7 +136,7 @@ acts! {
         ],
     }
 
-    /*
+    // /*
     Баян {
         name: cs!["БАЯН"],
         ru_gender: RuGender::Masculine,
@@ -264,8 +264,8 @@ acts! {
 
                 // FIXME
                 description: cs![
-                    Damage() " += 1\n"
-                    Bullet() " если ранее была использована " Active(ActiveType::РучкаНожа) ", получи " Character(CharacterType::Нож)
+                    Damage, " += 1\n",
+                    Bullet, " если ранее была использована ", РучкаНожа, ", получи ", Нож
                 ],
 
                 callback: |_game, _self_id, went_trigger| {
@@ -291,8 +291,8 @@ acts! {
 
                 // FIXME
                 description: cs![
-                    Physique() " += 1\n"
-                    Bullet() " если ранее было использовано " Active(ActiveType::ЛезвиеНожа) ", получи " Character(CharacterType::Нож)
+                    Physique, " += 1\n",
+                    Bullet, " если ранее было использовано ", ЛезвиеНожа, ", получи ", Нож
                 ],
 
                 callback: |_game, _self_id, went_trigger| {

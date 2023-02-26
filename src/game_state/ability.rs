@@ -36,9 +36,9 @@ where
 
         write!(f, "{}", Gendered { ru_gender: self.ru_gender, value: &self.value.trigger })?;
         if !self.value.conditions.is_empty() {
-            write!(f, " {} {}", cs![And()], DefaultFormatted(&self.value.conditions))?;
+            write!(f, " {} {}", cs![And], DefaultFormatted(&self.value.conditions))?;
         }
-        write!(f, " {}", cs![Implies() "\n" Bullet() " "])?;
+        write!(f, " {}", cs![Implies, "\n", Bullet, " "])?;
         write!(f, "{}", self.value.description)
     }
 }
