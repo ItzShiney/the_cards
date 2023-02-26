@@ -47,9 +47,17 @@ groups![
     Female > "\x1b[35m♀️\x1b[0m";
 
     Illusion > "иллюзия";
+    Dismoral > "дизморалит";
+
     Anime > "аниме";
+        ReZero > "re:zero": [Anime, Shows];
+        Monogatari > "monogatari": [Anime, Shows];
+        BocchiTheRock > "bocchi": [Anime, Shows];
+        NewGame > "new game": [Anime, Shows];
+        DeathNote > "death note": [Anime, Shows];
 
     Reality > "реальность";
+    SocialOrder > "общественный строй";
 
     Music > "музыка";
         Pyrokinesis > "pyrokinesis": [Music];
@@ -60,17 +68,13 @@ groups![
             ChubarovQuotes > "цитаты чубарова": [Quotes];
         Lifemaking > "животворящё": [Memes];
 
-    Shows > "шоу";
+    Shows > "сериалы";
         SouthPark > "south park": [Shows];
-
-        ReZero > "re:zero": [Anime, Shows];
-        Monogatari > "monogatari": [Anime, Shows];
-        BocchiTheRock > "bocchi": [Anime, Shows];
-        NewGame > "new game": [Anime, Shows];
 
     Games > "игры";
         TBoI > "tboi": [Games];
         Portal > "portal": [Games];
+        Undertale > "undertale": [Games];
         Minecraft > "minecraft": [Games];
             DreamSMP > "dream smp": [Minecraft];
 
@@ -85,6 +89,8 @@ groups![
         WePlanet > "weplanet": [VTubers];
         Hololive > "hololive": [VTubers];
         Nijisanji > "nijisanji": [VTubers];
+
+    Undrawable > "\x1b[31mнераздаваемая\x1b[0m";
 ];
 
 fn fmt_groups(

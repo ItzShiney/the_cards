@@ -6,7 +6,8 @@ pub mod character_trigger;
 use std::fmt::Display;
 
 use crate::{
-    custom_string::CustomString, gendered::Gendered, host::Host, trigger_trait::TriggerTrait,
+    cs, custom_string::CustomString, default_formatted::DefaultFormatted, gendered::Gendered,
+    host::Host, trigger_trait::TriggerTrait,
 };
 
 use super::condition::Condition;
@@ -29,9 +30,16 @@ where
     Self: 'condition,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        Gendered { ru_gender: self.ru_gender, value: &self.value.trigger }.fmt(f)?;
-        CustomString::from(" {=>}\n{*} ").fmt(f)?;
-        self.value.description.fmt(f)
+        if let Some(name) = &self.value.name {
+            writeln!(f, "\x1b[1m{}\x1b[0m", name)?;
+        }
+
+        write!(f, "{}", Gendered { ru_gender: self.ru_gender, value: &self.value.trigger })?;
+        if !self.value.conditions.is_empty() {
+            write!(f, " {} {}", cs![And], DefaultFormatted(&self.value.conditions))?;
+        }
+        write!(f, " {}", cs![Implies "\n" Bullet " "])?;
+        write!(f, "{}", self.value.description)
     }
 }
 

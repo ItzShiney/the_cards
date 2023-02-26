@@ -15,8 +15,10 @@ pub enum UseTarget {
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum ActiveTrigger {
+    UsedAsTurn,
     UsedOnField,
     UsedOnCharacter,
+    UsedOnEnemyCharacter,
     UsedOnOwnCharacter,
 }
 
@@ -30,8 +32,12 @@ impl Display for Gendered<&ActiveTrigger> {
         };
 
         match self.value {
+            ActiveTrigger::UsedAsTurn => write!(f, "{использовано} в качестве хода"),
             ActiveTrigger::UsedOnField => write!(f, "{использовано}"),
             ActiveTrigger::UsedOnCharacter => write!(f, "{использовано} на персонажа"),
+            ActiveTrigger::UsedOnEnemyCharacter => {
+                write!(f, "{использовано} на противника")
+            }
             ActiveTrigger::UsedOnOwnCharacter => write!(f, "{использовано} на своего персонажа"),
         }
     }

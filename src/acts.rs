@@ -1,4 +1,5 @@
 use crate::{
+    cs,
     custom_string::CustomString,
     game_state::ability::active_ability::ActiveAbility,
     game_state::ability::active_trigger::{ActiveTrigger, WentActiveTrigger},
@@ -12,11 +13,11 @@ macro_rules! acts {
     (
         $(
             $CardName:ident {
-                name: $name:literal,
+                name: $name:expr,
                 ru_gender: $ru_gender:expr,
                 groups: $groups:tt,
 
-                $(epitaph: $epitaph:literal,)?
+                $(epitaph: $epitaph:expr,)?
 
                 abilities: $abilities:tt,
             }
@@ -37,7 +38,7 @@ macro_rules! acts {
             pub fn name(self) -> &'static CustomString {
                 lazy_static::lazy_static! {
                     $(
-                        static ref [<$CardName:snake:upper>]: CustomString = $name.into();
+                        static ref [<$CardName:snake:upper>]: CustomString = $name;
                     )*
                 }
 
@@ -73,7 +74,17 @@ macro_rules! acts {
             pub fn epitaph(self) -> &'static Option<CustomString> {
                 lazy_static::lazy_static! {
                     $(
-                        static ref [<$CardName:snake:upper>]: Option<CustomString> = if concat!("", $($epitaph)?) != "" { Some(concat!("", $($epitaph)?).into()) } else { None };
+                        static ref [<$CardName:snake:upper>]: Option<CustomString> = {
+                            let x = (
+                                $($epitaph,)?
+                                cs![],
+                            ).0;
+                            if x.slices.is_empty() {
+                                None
+                            } else {
+                                Some(x)
+                            }
+                        };
                     )*
                 }
 
@@ -98,30 +109,9 @@ macro_rules! acts {
 }
 
 acts! {
-    ТестоваяАктивка {
-        name: "ТЕСТОВАЯ АКТИВКА",
-        ru_gender: RuGender::Feminine,
-        groups: [Group::Shiney],
-
-        abilities: [
-            ActiveAbility {
-                name: None,
-
-                trigger: ActiveTrigger::UsedOnCharacter,
-                conditions: vec![],
-
-                description: "наносит 3 {dmg}".into(),
-
-                callback: |game, _self_id, went_trigger| {
-                    let WentActiveTrigger::UsedOnCharacter(chr_id) = went_trigger else { unreachable!() };
-                    game.hurt(chr_id, 3);
-                }
-            }
-        ],
-    }
-
-/*     ПустаяКарта {
-        name: "ПУСТАЯ КАРТА",
+    // /*
+    ПустаяКарта {
+        name: cs!["ПУСТАЯ КАРТА"],
         ru_gender: RuGender::Feminine,
         groups: [Group::Shiney, Group::TBoI],
 
@@ -132,7 +122,7 @@ acts! {
                 trigger: ActiveTrigger::UsedOnField,
                 conditions: vec![],
 
-                description: "выбери активку в руке. эта карта повторит эффект выбранной"
+                description: cs!["выбери активку в руке. эта карта повторит эффект выбранной"]
                     .into(),
 
                 callback: |game, self_id, _went_trigger| {
@@ -143,5 +133,171 @@ acts! {
                 }
             }
         ],
-    } */
+    }
+
+    Баян {
+        name: cs!["БАЯН"],
+        ru_gender: RuGender::Masculine,
+        groups: [Group::Maxvog, Group::Dismoral],
+
+        abilities: [
+            ActiveAbility {
+                name: Some(cs!["\"ЭТОТ АНЕКДОТ ЕЩЁ МОЙ ДЕД МОЕМУ ОТЦУ РАССКАЗЫВАЛ\""].into()),
+
+                trigger: ActiveTrigger::UsedOnEnemyCharacter,
+                conditions: vec![],
+
+                description: cs!["{dmg} -= 3"].into(),
+
+                callback: |game, _self_id, went_trigger| {
+                    let WentActiveTrigger::UsedOnCharacter(chr_id) = went_trigger else { unreachable!() };
+                    game.sub_dmg(chr_id, 3);
+                }
+            }
+        ],
+    }
+
+    ЖёлтаяИскра {
+        name: cs!["ЖЁЛТАЯ ИСКРА"],
+        ru_gender: RuGender::Feminine,
+        groups: [Group::Shiney, Group::Undertale],
+
+        abilities: [
+            ActiveAbility {
+                name: None,
+
+                trigger: ActiveTrigger::UsedOnCharacter,
+                conditions: vec![],
+
+                description: cs!["{vit} = {phy}"].into(),
+
+                callback: |game, _self_id, went_trigger| {
+                    let WentActiveTrigger::UsedOnCharacter(chr_id) = went_trigger else { unreachable!() };
+
+                    let phy = game.state().chr(chr_id).stats.phy.0.into_value().unwrap();
+                    game.set_vit(chr_id, phy);
+                }
+            }
+        ],
+    }
+
+    ТетрадьСмерти {
+        name: cs!["ТЕТРАДЬ СМЕРТИ"],
+        ru_gender: RuGender::Feminine,
+        groups: [Group::Constantine, Group::DeathNote],
+
+        abilities: [
+            ActiveAbility {
+                name: None,
+
+                trigger: ActiveTrigger::UsedOnCharacter,
+                conditions: vec![],
+
+                description: cs!["мгновенно убивает его"].into(),
+
+                callback: |_game, _self_id, went_trigger| {
+                    let WentActiveTrigger::UsedOnCharacter(_chr_id) = went_trigger else { unreachable!() };
+
+                    todo!()
+                }
+            }
+        ],
+    }
+
+    Коммунизм {
+        name: cs!["КОММУНИЗМ"],
+        ru_gender: RuGender::Masculine,
+        groups: [Group::Constantine, Group::SocialOrder],
+
+        abilities: [
+            ActiveAbility {
+                name: None,
+
+                trigger: ActiveTrigger::UsedAsTurn,
+                conditions: vec![],
+
+                description: cs!["каждый игрок передаёт свою колоду следующему по направлению ходов. эта карта уничтожается"].into(),
+
+                callback: |_game, _self_id, _went_trigger| {
+                    todo!()
+                }
+            }
+        ],
+    }
+
+    ОБратка {
+        name: cs!["О,БРАТКА"],
+        ru_gender: RuGender::Feminine,
+        groups: [Group::ZoinX],
+
+        abilities: [
+            ActiveAbility {
+                name: None,
+
+                trigger: ActiveTrigger::UsedOnEnemyCharacter,
+                conditions: vec![],
+
+                description: cs!["персонаж выставляется как твой"].into(),
+
+                callback: |_game, _self_id, went_trigger| {
+                    let WentActiveTrigger::UsedOnCharacter(_chr_id) = went_trigger else { unreachable!() };
+
+                    todo!()
+                }
+            }
+        ],
+    }
+    // */
+
+    ЛезвиеНожа {
+        name: cs!["ЛЕЗВИЕ НОЖА"],
+        ru_gender: RuGender::Neuter,
+        groups: [Group::Shiney, Group::TBoI],
+
+        abilities: [
+            ActiveAbility {
+                name: None,
+
+                trigger: ActiveTrigger::UsedOnCharacter,
+                conditions: vec![],
+
+                description: cs![
+                    Damage " += 1\n"
+                    Bullet " если ранее была использована " Active(РучкаНожа) ", получи " Character(Нож)
+                ],
+
+                callback: |_game, _self_id, went_trigger| {
+                    let WentActiveTrigger::UsedOnCharacter(_chr_id) = went_trigger else { unreachable!() };
+
+                    todo!()
+                }
+            },
+        ],
+    }
+
+    РучкаНожа {
+        name: cs!["РУЧКА НОЖА"],
+        ru_gender: RuGender::Feminine,
+        groups: [Group::Shiney, Group::TBoI],
+
+        abilities: [
+            ActiveAbility {
+                name: None,
+
+                trigger: ActiveTrigger::UsedOnCharacter,
+                conditions: vec![],
+
+                description: cs![
+                    Physique " += 1\n"
+                    Bullet " если ранее было использовано " Active(ЛезвиеНожа) ", получи " Character(Нож)
+                ],
+
+                callback: |_game, _self_id, went_trigger| {
+                    let WentActiveTrigger::UsedOnCharacter(_chr_id) = went_trigger else { unreachable!() };
+
+                    todo!()
+                }
+            },
+        ],
+    }
 }

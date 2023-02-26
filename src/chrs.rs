@@ -1,3 +1,4 @@
+use crate::cs;
 #[allow(unused)]
 use crate::{
     custom_string::CustomString, dmg, game_state::ability::character_ability::CharacterAbility,
@@ -11,11 +12,11 @@ macro_rules! chrs {
     (
         $(
             $CardName:ident {
-                name: $name:literal,
+                name: $name:expr,
                 ru_gender: $ru_gender:expr,
                 groups: $groups:tt,
 
-                $(epitaph: $epitaph:literal,)?
+                $(epitaph: $epitaph:expr,)?
 
                 stats: $stats:expr,
 
@@ -68,7 +69,17 @@ macro_rules! chrs {
             pub fn epitaph(self) -> &'static Option<CustomString> {
                 lazy_static::lazy_static! {
                     $(
-                        static ref [<$CardName:snake:upper>]: Option<CustomString> = if stringify!($($epitaph)?) != "" { Some(stringify!($($epitaph)?).into()) } else { None };
+                        static ref [<$CardName:snake:upper>]: Option<CustomString> =  {
+                            let x = (
+                                $($epitaph,)?
+                                cs![],
+                            ).0;
+                            if x.slices.is_empty() {
+                                None
+                            } else {
+                                Some(x)
+                            }
+                        };
                     )*
                 }
 
@@ -109,7 +120,7 @@ macro_rules! chrs {
 chrs! {
     // /*
     БанкаСВареньем {
-        name: "БАНКА С ВАРЕНЬЕМ",
+        name: cs!["БАНКА С ВАРЕНЬЕМ"],
         ru_gender: RuGender::Feminine,
         groups: [Group::Shiney, Group::Reality],
 
@@ -125,11 +136,11 @@ chrs! {
     }
 
     ДухТвоейКвартиры {
-        name: "ДУХ ТВОЕЙ КВАРТИРЫ",
+        name: cs!["ДУХ ТВОЕЙ КВАРТИРЫ"],
         ru_gender: RuGender::Masculine,
         groups: [Group::Constantine, Group::Female],
 
-        epitaph: "\"твоё личное бревно\"",
+        epitaph: cs!["\"твоё личное бревно\""],
 
         stats: Stats::new(
             phy!(7),
@@ -143,7 +154,7 @@ chrs! {
     }
 
     Планя {
-        name: "ПЛАНЯ",
+        name: cs!["ПЛАНЯ"],
         ru_gender: RuGender::Feminine,
         groups: [Group::Constantine, Group::Female, Group::WePlanet],
 
@@ -161,11 +172,11 @@ chrs! {
         // • МАКСИМАЛЬНАЯ СПЛЮЩЕННОСТЬ: INT всех персонажей на поле меньше на 4
         //
         // персонаж из биты вернулся к владельцу ⇒
-        // • "ВЕРНИ САНКИ": PHY всех персонажей в руке += 2
+        // • cs!["ВЕРНИ САНКИ"]: PHY всех персонажей в руке += 2
     }
 
     Delirium {
-        name: "DELIRIUM",
+        name: cs!["DELIRIUM"],
         ru_gender: RuGender::Masculine,
         groups: [Group::Maxvog, Group::TBoI, Group::Illusion],
 
@@ -182,7 +193,7 @@ chrs! {
                 trigger: CharacterTrigger::Placed,
                 conditions: vec![],
 
-                description: "выбери персонажа в руке. {vit} = его {vit}, {dmg} = его {dmg}".into(),
+                description: cs!["выбери персонажа в руке. {vit} = его {vit}, {dmg} = его {dmg}"].into(),
 
                 // TODO: заменить код с state_mut на set_phy_vit
                 callback: |game, self_id, _went_trigger| {
@@ -202,7 +213,7 @@ chrs! {
     }
 
     Беатриче {
-        name: "БЕАТРИЧЕ",
+        name: cs!["БЕАТРИЧЕ"],
         ru_gender: RuGender::Feminine,
         groups: [Group::Maxvog, Group::Umineko, Group::Illusion],
 
@@ -218,7 +229,7 @@ chrs! {
     }
 
     Ненети {
-        name: "Н\u{0301}ЕНЕТИ",
+        name: cs!["Н\u{0301}ЕНЕТИ"],
         ru_gender: RuGender::Feminine,
         groups: [Group::Shiney, Group::NewGame],
 
@@ -230,7 +241,7 @@ chrs! {
     }
 
     Коса {
-        name: "КОСА",
+        name: cs!["КОСА"],
         ru_gender: RuGender::Feminine,
         groups: [Group::Constantine, Group::Reality],
 
@@ -242,7 +253,7 @@ chrs! {
     }
 
     Мирослав {
-        name: "МИРОСЛАВ",
+        name: cs!["МИРОСЛАВ"],
         ru_gender: RuGender::Masculine,
         groups: [Group::Shiney, Group::Reality],
 
@@ -254,7 +265,7 @@ chrs! {
     }
 
     МаксимовБаянЖивотворящий {
-        name: "МАКСИМОВ БАЯН ЖИВОТВОРЯЩИЙ",
+        name: cs!["МАКСИМОВ БАЯН ЖИВОТВОРЯЩИЙ"],
         ru_gender: RuGender::Masculine,
         groups: [Group::Shiney, Group::Lifemaking],
 
@@ -266,7 +277,7 @@ chrs! {
     }
 
     Рей {
-        name: "РЕЙ",
+        name: cs!["РЕЙ"],
         ru_gender: RuGender::Masculine,
         groups: [Group::Constantine],
 
@@ -278,11 +289,11 @@ chrs! {
     }
 
     Тимми {
-        name: "ТИММИ",
+        name: cs!["ТИММИ"],
         ru_gender: RuGender::Masculine,
         groups: [Group::Constantine, Group::SouthPark],
 
-        epitaph: "\"тимми тимми тимми\"",
+        epitaph: cs!["\"тимми тимми тимми\""],
 
         stats: Stats::new(
             phy!(2),
@@ -292,7 +303,7 @@ chrs! {
     }
 
     НостальгирующийКритик {
-        name: "НОСТАЛЬГИРУЮЩИЙ КРИТИК",
+        name: cs!["НОСТАЛЬГИРУЮЩИЙ КРИТИК"],
         ru_gender: RuGender::Masculine,
         groups: [Group::Constantine],
 
@@ -308,7 +319,7 @@ chrs! {
     }
 
     Марио {
-        name: "МАРИО",
+        name: cs!["МАРИО"],
         ru_gender: RuGender::Masculine,
         groups: [Group::Shiney],
 
@@ -324,7 +335,7 @@ chrs! {
     }
 
     Рена {
-        name: "РЕНА",
+        name: cs!["РЕНА"],
         ru_gender: RuGender::Feminine,
         groups: [Group::Constantine, Group::Higurashi],
 
@@ -336,7 +347,7 @@ chrs! {
     }
 
     Борат {
-        name: "БОРАТ",
+        name: cs!["БОРАТ"],
         ru_gender: RuGender::Masculine,
         groups: [Group::Constantine, Group::Memes],
 
@@ -353,7 +364,7 @@ chrs! {
                 trigger: CharacterTrigger::Placed,
                 conditions: vec![],
 
-                description: "возьми активку из стопки добора. если возможно, используй на этого персонажа, иначе положи обратно".into(),
+                description: cs!["возьми активку из стопки добора. если возможно, используй на этого персонажа, иначе положи обратно"].into(),
 
                 callback: |_game, _self_id, _went_trigger| {
                     todo!()
@@ -363,7 +374,7 @@ chrs! {
     }
 
     ЧёрныйКубик {
-        name: "ЧЁРНЫЙ КУБИК",
+        name: cs!["ЧЁРНЫЙ КУБИК"],
         ru_gender: RuGender::Masculine,
         groups: [Group::Maxvog],
 
@@ -374,4 +385,31 @@ chrs! {
         ),
     }
     // */
+
+    Нож {
+        name: cs!["НОЖ"],
+        ru_gender: RuGender::Masculine,
+        groups: [Group::Shiney, Group::TBoI, Group::Undrawable],
+
+        stats: Stats::new(
+            phy!(4),
+            dmg!(?),
+            int!(1),
+        ),
+
+        abilities: [
+            CharacterAbility {
+                name: None,
+
+                trigger: CharacterTrigger::Placed,
+                conditions: vec![],
+
+                description: cs![Damage " = " Sum(cs!["9"], cs![Random(cs!["0"], cs!["1"])])].into(),
+
+                callback: |_game, _self_id, _went_trigger| {
+                    todo!()
+                }
+            }
+        ],
+    }
 }

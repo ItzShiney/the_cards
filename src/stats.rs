@@ -1,6 +1,6 @@
 use std::{
     fmt::{self, Display, Formatter},
-    ops::SubAssign,
+    ops::{AddAssign, SubAssign},
 };
 
 use macros::EnumAs;
@@ -53,6 +53,16 @@ impl SubAssign<Stat0> for StatValue {
     }
 }
 
+impl AddAssign<Stat0> for StatValue {
+    fn add_assign(&mut self, rhs: Stat0) {
+        match self {
+            Self::Unknown => panic!("operations on ?"),
+            Self::Var(val) => *val = (*val - rhs).max(0),
+            Self::Const(_) => panic!("operations on const"),
+        }
+    }
+}
+
 macro_rules! stat {
     ($Name:ident) => {
         #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -75,75 +85,75 @@ stat!(Intellect);
 #[macro_export]
 macro_rules! vit {
     (?) => {
-        Vitality(StatValue::Unknown)
+        $crate::stats::Vitality(StatValue::Unknown)
     };
 
     (const $value:expr) => {
-        Vitality(StatValue::Const($value))
+        $crate::stats::Vitality(StatValue::Const($value))
     };
 
     ($value:expr) => {
-        Vitality(StatValue::Var($value))
+        $crate::stats::Vitality(StatValue::Var($value))
     };
 }
 
 #[macro_export]
 macro_rules! phy {
     (?) => {
-        crate::stats::Physique(crate::stats::StatValue::Unknown)
+        $crate::stats::Physique(crate::stats::StatValue::Unknown)
     };
 
     (const $value:expr) => {
-        crate::stats::Physique(crate::stats::StatValue::Const($value))
+        $crate::stats::Physique(crate::stats::StatValue::Const($value))
     };
 
     ($value:expr) => {
-        crate::stats::Physique(crate::stats::StatValue::Var($value))
+        $crate::stats::Physique(crate::stats::StatValue::Var($value))
     };
 }
 
 #[macro_export]
 macro_rules! def {
     (?) => {
-        crate::stats::Defence(crate::stats::StatValue::Unknown)
+        $crate::stats::Defence(crate::stats::StatValue::Unknown)
     };
 
     (const $value:expr) => {
-        crate::stats::Defence(crate::stats::StatValue::Const($value))
+        $crate::stats::Defence(crate::stats::StatValue::Const($value))
     };
 
     ($value:expr) => {
-        crate::stats::Defence(crate::stats::StatValue::Var($value))
+        $crate::stats::Defence(crate::stats::StatValue::Var($value))
     };
 }
 
 #[macro_export]
 macro_rules! dmg {
     (?) => {
-        crate::stats::Damage(crate::stats::StatValue::Unknown)
+        $crate::stats::Damage(crate::stats::StatValue::Unknown)
     };
 
     (const $value:expr) => {
-        crate::stats::Damage(crate::stats::StatValue::Const($value))
+        $crate::stats::Damage(crate::stats::StatValue::Const($value))
     };
 
     ($value:expr) => {
-        crate::stats::Damage(crate::stats::StatValue::Var($value))
+        $crate::stats::Damage(crate::stats::StatValue::Var($value))
     };
 }
 
 #[macro_export]
 macro_rules! int {
     (?) => {
-        crate::stats::Intellect(crate::stats::StatValue::Unknown)
+        $crate::stats::Intellect(crate::stats::StatValue::Unknown)
     };
 
     (const $value:expr) => {
-        crate::stats::Intellect(crate::stats::StatValue::Const($value))
+        $crate::stats::Intellect(crate::stats::StatValue::Const($value))
     };
 
     ($value:expr) => {
-        crate::stats::Intellect(crate::stats::StatValue::Var($value))
+        $crate::stats::Intellect(crate::stats::StatValue::Var($value))
     };
 }
 

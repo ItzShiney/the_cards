@@ -17,28 +17,35 @@ fn main() {
         Player { nickname: "maxvog".into() },
     ]));
 
-    {
-        let player_id = game.state().current_subturner_on_field().player_id;
+    let player_id = game.state().current_subturner_on_field().player_id;
 
-        let chr_id = game.state().chrs.hand(player_id)[0];
-        game.place(chr_id);
+    let chr_id = game.state().chrs.hand(player_id)[0];
+    println!("{}", game.state().chr(chr_id));
 
-        game.end_subturn();
-    };
+    let act_id = game.state().acts.hand(player_id)[0];
+    println!("{}", game.state().act(act_id));
 
-    {
-        let player_id = game.state().current_subturner_on_field().player_id;
+    if false {
+        {
+            let player_id = game.state().current_subturner_on_field().player_id;
 
-        let chr_id = game.state().chrs.hand(player_id)[0];
-        game.place(chr_id);
+            let chr_id = game.state().chrs.hand(player_id)[0];
+            game.place(chr_id);
 
-        let other_chr_id = game.state().other_subturner_on_field().chr_id.unwrap();
-        println!("{}", game.state().chr(other_chr_id));
+            game.end_subturn();
+        };
 
-        game.end_subturn();
-    };
+        {
+            let player_id = game.state().current_subturner_on_field().player_id;
 
-    {
-        game.end_turn();
+            let chr_id = game.state().chrs.hand(player_id)[0];
+            game.place(chr_id);
+
+            game.end_subturn();
+        };
+
+        {
+            game.end_turn();
+        }
     }
 }

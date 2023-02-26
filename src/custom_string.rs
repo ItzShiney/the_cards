@@ -1,64 +1,122 @@
-use regex::Regex;
 use std::fmt::Display;
+
+use crate::{acts::ActiveType, chrs::CharacterType};
 
 macro_rules! custom_string_slice {
     (
-        $($From:literal > $Name:ident > $Into:literal;)*
+        {$(
+            $CustomName:ident $args:tt
+                => |$formatter:ident, $new_args:tt| $custom_fmt:expr;
+        )*}
+
+        {$(
+            $Name:ident => $Into:literal;
+        )*}
     ) => {
         pub enum CustomStringSlice {
-            Raw(String),
+            $($CustomName $args,)*
             $($Name,)*
-        }
-
-        impl From<&str> for CustomStringSlice {
-            fn from(value: &str) -> Self {
-                match value {
-                    $(concat!("{", $From, "}") => Self::$Name,)*
-                    _ => Self::Raw(value.into()),
-                }
-            }
         }
 
         impl Display for CustomStringSlice {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 match self {
-                    Self::Raw(c) => c,
-                    $(Self::$Name => $Into,)*
+                    $(Self::$CustomName $new_args => {
+                        let $formatter = f;
+                        $custom_fmt
+                    },)*
+
+                    $(Self::$Name => $Into.fmt(f),)*
                 }
-                .fmt(f)
             }
         }
     };
 }
 
 custom_string_slice![
-    "=>" > Implies > "⟹";
-    "*" > Bullet > "•";
-    "x" > Mul > "⋅";
-    "&" > And > "∧";
+    {
+        Raw(String)
+            => |f, (__0)| write!(f, "{}", __0);
 
-    "vit" > Vitality > "\x1b[31mVIT\x1b[39m";
-    "phy" > Physique > "\x1b[35mPHY\x1b[39m";
-    "def" > Defence > "\x1b[34mDEF\x1b[39m";
-    "dmg" > Damage > "\x1b[33mDMG\x1b[39m";
-    "int" > Intellect > "\x1b[36mINT\x1b[39m";
+        Character(CharacterType)
+            => |f, (type_)| write!(f, "\x1b[1m{}\x1b[0m", type_.name());
+
+        Active(ActiveType)
+            => |f, (type_)| write!(f, "\x1b[1m{}\x1b[0m", type_.name());
+
+        Sum { times: CustomString, body: CustomString }
+            => |f, { times, body }| write!(f, "∑[{} раз] {}", times, body);
+
+        Random { min: CustomString, max: CustomString }
+            => |f, { min, max }| write!(f, "🎲[{}..{}]", min, max);
+    }
+
+    {
+        Implies => "⟹";
+        Bullet => "•";
+        Mul => "⋅";
+        And => "∧";
+
+        Vitality => "\x1b[31mVIT\x1b[39m";
+        Physique => "\x1b[35mPHY\x1b[39m";
+        Defence => "\x1b[34mDEF\x1b[39m";
+        Damage => "\x1b[33mDMG\x1b[39m";
+        Intellect => "\x1b[36mINT\x1b[39m";
+    }
 ];
 
 #[derive(Default)]
 pub struct CustomString {
-    slices: Vec<CustomStringSlice>,
+    pub slices: Vec<CustomStringSlice>,
 }
 
-impl From<&str> for CustomString {
-    fn from(s: &str) -> Self {
-        let regex = Regex::new("([^{]+|\\{[^}]*})").unwrap();
+#[macro_export]
+macro_rules! __cs_helper {
+    () => {{
+        let x: [$crate::custom_string::CustomStringSlice; 0] = [];
+        x.into_iter()
+    }};
 
-        let mut slices = Vec::default();
-        for m in regex.find_iter(s) {
-            let slice = m.as_str();
-            slices.push(slice.into());
-        }
+    ($str:literal $($xs:tt)*) => {
+        [$crate::custom_string::CustomStringSlice::Raw(String::from($str))]
+            .into_iter().chain($crate::__cs_helper![$($xs)*])
+    };
 
+    (Character($CharacterType:ident) $($xs:tt)*) => {
+        [$crate::custom_string::CustomStringSlice::Character($crate::chrs::CharacterType::$CharacterType)]
+            .into_iter().chain($crate::__cs_helper![$($xs)*])
+    };
+
+    (Active($ActiveType:ident) $($xs:tt)*) => {
+        [$crate::custom_string::CustomStringSlice::Active($crate::acts::ActiveType::$ActiveType)]
+            .into_iter().chain($crate::__cs_helper![$($xs)*])
+    };
+
+    (Sum($times:expr, $body:expr) $($xs:tt)*) => {
+        [$crate::custom_string::CustomStringSlice::Sum { times: $times, body: $body }]
+            .into_iter().chain($crate::__cs_helper![$($xs)*])
+    };
+
+    (Random($min:expr, $max:expr) $($xs:tt)*) => {
+        [$crate::custom_string::CustomStringSlice::Random { min: $min, max: $max }]
+            .into_iter().chain($crate::__cs_helper![$($xs)*])
+    };
+
+    ($EnumCase:ident $($xs:tt)*) => {
+        [$crate::custom_string::CustomStringSlice::$EnumCase]
+            .into_iter().chain($crate::__cs_helper![$($xs)*])
+    };
+}
+
+#[macro_export]
+macro_rules! cs {
+    ($($xs:tt)*) => {
+        $crate::custom_string::CustomString::from($crate::__cs_helper![$($xs)*].collect::<Vec<$crate::custom_string::CustomStringSlice>>())
+    };
+}
+
+impl From<Vec<CustomStringSlice>> for CustomString {
+    fn from(slices: Vec<CustomStringSlice>) -> Self {
         Self { slices }
     }
 }

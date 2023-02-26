@@ -116,7 +116,7 @@ callbacks! {
         self.state.acts.remove_from_some_player(act_id);
     }
 
-    fn vit_sub(
+    fn sub_vit(
         self,
         chr_id: CharacterID,
         val: Stat0,
@@ -124,12 +124,37 @@ callbacks! {
         self.state.chr_mut(chr_id).stats.vit.0 -= val;
     }
 
-    fn def_sub(
+    fn add_vit(
+        self,
+        chr_id: CharacterID,
+        val: Stat0,
+    ) {
+        self.state.chr_mut(chr_id).stats.vit.0 += val;
+        todo!("limit to phy")
+    }
+
+    fn set_vit(
+        self,
+        chr_id: CharacterID,
+        val: Stat0,
+    ) {
+        todo!("add_vit(phy - vit) or sub_vit(vit - phy)")
+    }
+
+    fn sub_def(
         self,
         chr_id: CharacterID,
         val: Stat0,
     ) {
         self.state.chr_mut(chr_id).stats.def.0 -= val;
+    }
+
+    fn sub_dmg(
+        self,
+        chr_id: CharacterID,
+        val: Stat0,
+    ) {
+        self.state.chr_mut(chr_id).stats.dmg.0 -= val;
     }
 
     fn hurt(
@@ -138,14 +163,14 @@ callbacks! {
         dmg: Stat0,
     ) {
         let old_def = self.state().chr(chr_id).stats.def.0.into_value().unwrap();
-        self.def_sub(chr_id, dmg);
+        self.sub_def(chr_id, dmg);
         let new_def = self.state().chr(chr_id).stats.def.0.into_value().unwrap();
 
         let def_dmg_taken = old_def - new_def;
         let vit_dmg_to_take = dmg - def_dmg_taken;
 
         if vit_dmg_to_take > 0 {
-            self.vit_sub(chr_id, vit_dmg_to_take);
+            self.sub_vit(chr_id, vit_dmg_to_take);
         }
     }
 
