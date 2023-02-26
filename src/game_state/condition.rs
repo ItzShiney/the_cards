@@ -18,7 +18,7 @@ impl Display for Condition {
 
 impl Display for DefaultFormatted<&Vec<Condition>> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let sep = format!(" {} ", cs![And]);
+        let sep = format!(" {} ", cs![And()]);
         self.0.iter().map(|condition| condition.to_string()).join(sep.as_str()).fmt(f)
     }
 }

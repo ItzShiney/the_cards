@@ -38,10 +38,10 @@ macro_rules! groups {
 }
 
 groups![
-    Shiney > "\x1b[34m@лёня\x1b[0m";
-    Maxvog > "\x1b[34m@максим\x1b[0m";
-    Constantine > "\x1b[34m@костя\x1b[0m";
-    ZoinX > "\x1b[34m@лёша\x1b[0m";
+    ByShiney > "\x1b[34m@лёня\x1b[0m";
+    ByMaxvog > "\x1b[34m@максим\x1b[0m";
+    ByConstantine > "\x1b[34m@костя\x1b[0m";
+    ByZoinX > "\x1b[34m@лёша\x1b[0m";
 
     Male > "\x1b[36m♂\x1b[0m";
     Female > "\x1b[35m♀️\x1b[0m";
@@ -75,6 +75,7 @@ groups![
         TBoI > "tboi": [Games];
         Portal > "portal": [Games];
         Undertale > "undertale": [Games];
+        Terraria > "minecraft": [Games];
         Minecraft > "minecraft": [Games];
             DreamSMP > "dream smp": [Minecraft];
 

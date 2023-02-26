@@ -5,7 +5,7 @@ use std::{
 
 use macros::EnumAs;
 
-use crate::{custom_string::CustomStringSlice, default_formatted::DefaultFormatted};
+use crate::default_formatted::DefaultFormatted;
 
 pub type Stat0 = i32;
 
@@ -70,7 +70,7 @@ macro_rules! stat {
 
         impl Display for $Name {
             fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-                write!(f, "{} {}", CustomStringSlice::$Name, self.0)
+                write!(f, "{} {}", $crate::cs![$Name()], self.0)
             }
         }
     };

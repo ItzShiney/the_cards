@@ -122,7 +122,7 @@ chrs! {
     БанкаСВареньем {
         name: cs!["БАНКА С ВАРЕНЬЕМ"],
         ru_gender: RuGender::Feminine,
-        groups: [Group::Shiney, Group::Reality],
+        groups: [Group::ByShiney, Group::Reality],
 
         stats: Stats::new(
             phy!(1),
@@ -131,14 +131,14 @@ chrs! {
         ),
 
         // TODO:
-        // пока INT противника > 2 ⇒
+        // пока INT противника > 2 ⟹
         // • не атакует
     }
 
     ДухТвоейКвартиры {
         name: cs!["ДУХ ТВОЕЙ КВАРТИРЫ"],
         ru_gender: RuGender::Masculine,
-        groups: [Group::Constantine, Group::Female],
+        groups: [Group::ByConstantine, Group::Female],
 
         epitaph: cs!["\"твоё личное бревно\""],
 
@@ -149,14 +149,14 @@ chrs! {
         ),
 
         // TODO:
-        // пока персонажей у владельца <= 2 ⇒
+        // пока персонажей у владельца <= 2 ⟹
         // • DMG больше на 2
     }
 
     Планя {
         name: cs!["ПЛАНЯ"],
         ru_gender: RuGender::Feminine,
-        groups: [Group::Constantine, Group::Female, Group::WePlanet],
+        groups: [Group::ByConstantine, Group::Female, Group::WePlanet],
 
         stats: Stats::new(
             phy!(5),
@@ -165,20 +165,20 @@ chrs! {
         ),
 
         // TODO:
-        // выставлена ⇒
+        // выставлена ⟹
         // • КРИНЖ И ПЕНИЕ: INT случайного персонажа в колоде противника -= 1
         //
-        // пока на поле ⇒
+        // пока на поле ⟹
         // • МАКСИМАЛЬНАЯ СПЛЮЩЕННОСТЬ: INT всех персонажей на поле меньше на 4
         //
-        // персонаж из биты вернулся к владельцу ⇒
+        // персонаж из биты вернулся к владельцу ⟹
         // • cs!["ВЕРНИ САНКИ"]: PHY всех персонажей в руке += 2
     }
 
     Delirium {
         name: cs!["DELIRIUM"],
         ru_gender: RuGender::Masculine,
-        groups: [Group::Maxvog, Group::TBoI, Group::Illusion],
+        groups: [Group::ByMaxvog, Group::TBoI, Group::Illusion],
 
         stats: Stats::new(
             phy!(?),
@@ -215,7 +215,7 @@ chrs! {
     Беатриче {
         name: cs!["БЕАТРИЧЕ"],
         ru_gender: RuGender::Feminine,
-        groups: [Group::Maxvog, Group::Umineko, Group::Illusion],
+        groups: [Group::ByMaxvog, Group::Female, Group::Umineko, Group::Illusion],
 
         stats: Stats::new(
             phy!(3),
@@ -224,14 +224,14 @@ chrs! {
         ),
 
         // TODO:
-        // умерла ⇒
+        // умерла ⟹
         // • с шансом 1/4 вернётся в руку
     }
 
     Ненети {
         name: cs!["Н\u{0301}ЕНЕТИ"],
         ru_gender: RuGender::Feminine,
-        groups: [Group::Shiney, Group::NewGame],
+        groups: [Group::ByShiney, Group::Female, Group::NewGame],
 
         stats: Stats::new(
             phy!(5),
@@ -243,7 +243,7 @@ chrs! {
     Коса {
         name: cs!["КОСА"],
         ru_gender: RuGender::Feminine,
-        groups: [Group::Constantine, Group::Reality],
+        groups: [Group::ByConstantine, Group::Female, Group::Reality],
 
         stats: Stats::new(
             phy!(3),
@@ -255,7 +255,7 @@ chrs! {
     Мирослав {
         name: cs!["МИРОСЛАВ"],
         ru_gender: RuGender::Masculine,
-        groups: [Group::Shiney, Group::Reality],
+        groups: [Group::ByShiney, Group::Male, Group::Reality],
 
         stats: Stats::new(
             phy!(4),
@@ -267,7 +267,7 @@ chrs! {
     МаксимовБаянЖивотворящий {
         name: cs!["МАКСИМОВ БАЯН ЖИВОТВОРЯЩИЙ"],
         ru_gender: RuGender::Masculine,
-        groups: [Group::Shiney, Group::Lifemaking],
+        groups: [Group::ByShiney, Group::Lifemaking],
 
         stats: Stats::new(
             phy!(6),
@@ -279,7 +279,7 @@ chrs! {
     Рей {
         name: cs!["РЕЙ"],
         ru_gender: RuGender::Masculine,
-        groups: [Group::Constantine],
+        groups: [Group::ByConstantine, Group::Male],
 
         stats: Stats::new(
             phy!(1),
@@ -291,7 +291,7 @@ chrs! {
     Тимми {
         name: cs!["ТИММИ"],
         ru_gender: RuGender::Masculine,
-        groups: [Group::Constantine, Group::SouthPark],
+        groups: [Group::ByConstantine, Group::Male, Group::SouthPark],
 
         epitaph: cs!["\"тимми тимми тимми\""],
 
@@ -305,7 +305,7 @@ chrs! {
     НостальгирующийКритик {
         name: cs!["НОСТАЛЬГИРУЮЩИЙ КРИТИК"],
         ru_gender: RuGender::Masculine,
-        groups: [Group::Constantine],
+        groups: [Group::ByConstantine, Group::Male],
 
         stats: Stats::new(
             phy!(6),
@@ -314,14 +314,14 @@ chrs! {
         ),
 
         // TODO:
-        // пока INT противника <= 3 ⇒
+        // пока INT противника <= 3 ⟹
         // • VIT этой карты на 1 меньше, DMG на 2 больше
     }
 
     Марио {
         name: cs!["МАРИО"],
         ru_gender: RuGender::Masculine,
-        groups: [Group::Shiney],
+        groups: [Group::ByShiney, Group::Male],
 
         stats: Stats::new(
             phy!(4),
@@ -330,14 +330,14 @@ chrs! {
         ),
 
         // TODO:
-        // активируемая способность & битва ⇒
+        // активируемая способность & битва ⟹
         // • ПРЫЖОК НА ЛИЦО: VIT противника /= 2
     }
 
     Рена {
         name: cs!["РЕНА"],
         ru_gender: RuGender::Feminine,
-        groups: [Group::Constantine, Group::Higurashi],
+        groups: [Group::ByConstantine, Group::Female, Group::Higurashi],
 
         stats: Stats::new(
             phy!(3),
@@ -349,7 +349,7 @@ chrs! {
     Борат {
         name: cs!["БОРАТ"],
         ru_gender: RuGender::Masculine,
-        groups: [Group::Constantine, Group::Memes],
+        groups: [Group::ByConstantine, Group::Male, Group::Memes],
 
         stats: Stats::new(
             phy!(4),
@@ -376,7 +376,7 @@ chrs! {
     ЧёрныйКубик {
         name: cs!["ЧЁРНЫЙ КУБИК"],
         ru_gender: RuGender::Masculine,
-        groups: [Group::Maxvog],
+        groups: [Group::ByMaxvog],
 
         stats: Stats::new(
             phy!(5),
@@ -384,12 +384,11 @@ chrs! {
             int!(3),
         ),
     }
-    // */
 
     Нож {
         name: cs!["НОЖ"],
         ru_gender: RuGender::Masculine,
-        groups: [Group::Shiney, Group::TBoI, Group::Undrawable],
+        groups: [Group::ByShiney, Group::TBoI, Group::Undrawable],
 
         stats: Stats::new(
             phy!(4),
@@ -404,12 +403,45 @@ chrs! {
                 trigger: CharacterTrigger::Placed,
                 conditions: vec![],
 
-                description: cs![Damage " = " Sum(cs!["9"], cs![Random(cs!["0"], cs!["1"])])].into(),
+                description: cs![Damage() " = " Sum { times: cs!["9"], body: cs![Random(cs!["0"]..=cs!["1"])] }].into(),
 
                 callback: |_game, _self_id, _went_trigger| {
                     todo!()
                 }
             }
         ],
+    }
+
+    ГлазКтулху {
+        name: cs!["ГЛАЗ КТУЛХУ"],
+        ru_gender: RuGender::Masculine,
+        groups: [Group::ByMaxvog, Group::Terraria],
+
+        stats: Stats::new(
+            phy!(8),
+            dmg!(6),
+            int!(2),
+        ),
+
+        // TODO:
+        // атакует ⟹
+        // • "ТАРАНИТ... ИНОГДА": с шансом 50% наносит на 1 больше
+    }
+    // */
+
+    Магдалина {
+        name: cs!["МАГДАЛИНА"],
+        ru_gender: RuGender::Masculine,
+        groups: [Group::ByShiney, Group::Female, Group::TBoI],
+
+        stats: Stats::new(
+            phy!(7),
+            dmg!(2),
+            int!(4),
+        ),
+
+        // TODO:
+        // активируемая способность ⟹
+        // • НЯМ СЕРДЦЕ: VIT += 2
     }
 }

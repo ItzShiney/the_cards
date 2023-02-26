@@ -1,4 +1,6 @@
+#[allow(unused)]
 use crate::{
+    chrs::CharacterType,
     cs,
     custom_string::CustomString,
     game_state::ability::active_ability::ActiveAbility,
@@ -109,11 +111,10 @@ macro_rules! acts {
 }
 
 acts! {
-    // /*
     ПустаяКарта {
         name: cs!["ПУСТАЯ КАРТА"],
         ru_gender: RuGender::Feminine,
-        groups: [Group::Shiney, Group::TBoI],
+        groups: [Group::ByShiney, Group::TBoI],
 
         abilities: [
             ActiveAbility {
@@ -135,10 +136,11 @@ acts! {
         ],
     }
 
+    /*
     Баян {
         name: cs!["БАЯН"],
         ru_gender: RuGender::Masculine,
-        groups: [Group::Maxvog, Group::Dismoral],
+        groups: [Group::ByMaxvog, Group::Dismoral],
 
         abilities: [
             ActiveAbility {
@@ -160,7 +162,7 @@ acts! {
     ЖёлтаяИскра {
         name: cs!["ЖЁЛТАЯ ИСКРА"],
         ru_gender: RuGender::Feminine,
-        groups: [Group::Shiney, Group::Undertale],
+        groups: [Group::ByShiney, Group::Undertale],
 
         abilities: [
             ActiveAbility {
@@ -184,7 +186,7 @@ acts! {
     ТетрадьСмерти {
         name: cs!["ТЕТРАДЬ СМЕРТИ"],
         ru_gender: RuGender::Feminine,
-        groups: [Group::Constantine, Group::DeathNote],
+        groups: [Group::ByConstantine, Group::DeathNote],
 
         abilities: [
             ActiveAbility {
@@ -207,7 +209,7 @@ acts! {
     Коммунизм {
         name: cs!["КОММУНИЗМ"],
         ru_gender: RuGender::Masculine,
-        groups: [Group::Constantine, Group::SocialOrder],
+        groups: [Group::ByConstantine, Group::SocialOrder],
 
         abilities: [
             ActiveAbility {
@@ -228,7 +230,7 @@ acts! {
     ОБратка {
         name: cs!["О,БРАТКА"],
         ru_gender: RuGender::Feminine,
-        groups: [Group::ZoinX],
+        groups: [Group::ByZoinX],
 
         abilities: [
             ActiveAbility {
@@ -247,12 +249,11 @@ acts! {
             }
         ],
     }
-    // */
 
     ЛезвиеНожа {
         name: cs!["ЛЕЗВИЕ НОЖА"],
         ru_gender: RuGender::Neuter,
-        groups: [Group::Shiney, Group::TBoI],
+        groups: [Group::ByShiney, Group::TBoI],
 
         abilities: [
             ActiveAbility {
@@ -261,9 +262,10 @@ acts! {
                 trigger: ActiveTrigger::UsedOnCharacter,
                 conditions: vec![],
 
+                // FIXME
                 description: cs![
-                    Damage " += 1\n"
-                    Bullet " если ранее была использована " Active(РучкаНожа) ", получи " Character(Нож)
+                    Damage() " += 1\n"
+                    Bullet() " если ранее была использована " Active(ActiveType::РучкаНожа) ", получи " Character(CharacterType::Нож)
                 ],
 
                 callback: |_game, _self_id, went_trigger| {
@@ -278,7 +280,7 @@ acts! {
     РучкаНожа {
         name: cs!["РУЧКА НОЖА"],
         ru_gender: RuGender::Feminine,
-        groups: [Group::Shiney, Group::TBoI],
+        groups: [Group::ByShiney, Group::TBoI],
 
         abilities: [
             ActiveAbility {
@@ -287,9 +289,10 @@ acts! {
                 trigger: ActiveTrigger::UsedOnCharacter,
                 conditions: vec![],
 
+                // FIXME
                 description: cs![
-                    Physique " += 1\n"
-                    Bullet " если ранее было использовано " Active(ЛезвиеНожа) ", получи " Character(Нож)
+                    Physique() " += 1\n"
+                    Bullet() " если ранее было использовано " Active(ActiveType::ЛезвиеНожа) ", получи " Character(CharacterType::Нож)
                 ],
 
                 callback: |_game, _self_id, went_trigger| {
@@ -300,4 +303,5 @@ acts! {
             },
         ],
     }
+    // */
 }

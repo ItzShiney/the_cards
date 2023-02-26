@@ -1,21 +1,16 @@
-use std::fmt::Display;
+use std::{fmt::Display, ops::RangeInclusive};
 
 use crate::{acts::ActiveType, chrs::CharacterType};
 
 macro_rules! custom_string_slice {
     (
-        {$(
+        $(
             $CustomName:ident $args:tt
                 => |$formatter:ident, $new_args:tt| $custom_fmt:expr;
-        )*}
-
-        {$(
-            $Name:ident => $Into:literal;
-        )*}
+        )*
     ) => {
         pub enum CustomStringSlice {
             $($CustomName $args,)*
-            $($Name,)*
         }
 
         impl Display for CustomStringSlice {
@@ -25,8 +20,6 @@ macro_rules! custom_string_slice {
                         let $formatter = f;
                         $custom_fmt
                     },)*
-
-                    $(Self::$Name => $Into.fmt(f),)*
                 }
             }
         }
@@ -34,35 +27,31 @@ macro_rules! custom_string_slice {
 }
 
 custom_string_slice![
-    {
-        Raw(String)
-            => |f, (__0)| write!(f, "{}", __0);
+    Raw(String) =>
+        |f, (__0)| write!(f, "{}", __0);
 
-        Character(CharacterType)
-            => |f, (type_)| write!(f, "\x1b[1m{}\x1b[0m", type_.name());
+    Character(CharacterType) =>
+        |f, (type_)| write!(f, "\x1b[1m{}\x1b[0m", type_.name());
 
-        Active(ActiveType)
-            => |f, (type_)| write!(f, "\x1b[1m{}\x1b[0m", type_.name());
+    Active(ActiveType) =>
+        |f, (type_)| write!(f, "\x1b[1m{}\x1b[0m", type_.name());
 
-        Sum { times: CustomString, body: CustomString }
-            => |f, { times, body }| write!(f, "∑[{} раз] {}", times, body);
+    Sum { times: CustomString, body: CustomString } =>
+        |f, { times, body }| write!(f, "∑[{} раз] {}", times, body);
 
-        Random { min: CustomString, max: CustomString }
-            => |f, { min, max }| write!(f, "🎲[{}..{}]", min, max);
-    }
+    Random(RangeInclusive<CustomString>) =>
+        |f, (range)| write!(f, "🎲[{}..{}]", range.start(), range.end());
 
-    {
-        Implies => "⟹";
-        Bullet => "•";
-        Mul => "⋅";
-        And => "∧";
+    Implies() => |f, ()| write!(f, "⟹");
+    Bullet() => |f, ()| write!(f, "•");
+    Mul() => |f, ()| write!(f, "⋅");
+    And() => |f, ()| write!(f, "∧");
 
-        Vitality => "\x1b[31mVIT\x1b[39m";
-        Physique => "\x1b[35mPHY\x1b[39m";
-        Defence => "\x1b[34mDEF\x1b[39m";
-        Damage => "\x1b[33mDMG\x1b[39m";
-        Intellect => "\x1b[36mINT\x1b[39m";
-    }
+    Vitality() => |f, ()| write!(f, "\x1b[31mVIT\x1b[39m");
+    Physique() => |f, ()| write!(f, "\x1b[35mPHY\x1b[39m");
+    Defence() => |f, ()| write!(f, "\x1b[34mDEF\x1b[39m");
+    Damage() => |f, ()| write!(f, "\x1b[33mDMG\x1b[39m");
+    Intellect() => |f, ()| write!(f, "\x1b[36mINT\x1b[39m");
 ];
 
 #[derive(Default)]
@@ -82,28 +71,8 @@ macro_rules! __cs_helper {
             .into_iter().chain($crate::__cs_helper![$($xs)*])
     };
 
-    (Character($CharacterType:ident) $($xs:tt)*) => {
-        [$crate::custom_string::CustomStringSlice::Character($crate::chrs::CharacterType::$CharacterType)]
-            .into_iter().chain($crate::__cs_helper![$($xs)*])
-    };
-
-    (Active($ActiveType:ident) $($xs:tt)*) => {
-        [$crate::custom_string::CustomStringSlice::Active($crate::acts::ActiveType::$ActiveType)]
-            .into_iter().chain($crate::__cs_helper![$($xs)*])
-    };
-
-    (Sum($times:expr, $body:expr) $($xs:tt)*) => {
-        [$crate::custom_string::CustomStringSlice::Sum { times: $times, body: $body }]
-            .into_iter().chain($crate::__cs_helper![$($xs)*])
-    };
-
-    (Random($min:expr, $max:expr) $($xs:tt)*) => {
-        [$crate::custom_string::CustomStringSlice::Random { min: $min, max: $max }]
-            .into_iter().chain($crate::__cs_helper![$($xs)*])
-    };
-
-    ($EnumCase:ident $($xs:tt)*) => {
-        [$crate::custom_string::CustomStringSlice::$EnumCase]
+    ($EnumCase:ident $args:tt $($xs:tt)*) => {
+        [$crate::custom_string::CustomStringSlice::$EnumCase $args]
             .into_iter().chain($crate::__cs_helper![$($xs)*])
     };
 }
