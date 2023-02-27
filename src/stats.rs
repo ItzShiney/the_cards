@@ -5,8 +5,6 @@ use std::{
 
 use macros::EnumAs;
 
-use crate::default_formatted::DefaultFormatted;
-
 pub type Stat0 = i32;
 
 // TODO:
@@ -193,18 +191,17 @@ impl Stats {
 
 impl Display for Stats {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let maybe_phy = DefaultFormatted(if self.vit.0 != self.phy.0 {
-            Some(DefaultFormatted((" / ", self.phy)))
-        } else {
-            None
-        });
+        write!(f, "{}", self.vit)?;
+        if self.vit.0 != self.phy.0 {
+            write!(f, " / {}", self.phy)?;
+        }
+        if self.def != def!(0) {
+            write!(f, " + {}", self.def)?;
+        }
+        writeln!(f)?;
 
-        let maybe_def = DefaultFormatted(if self.def != def!(0) {
-            Some(DefaultFormatted((" + ", self.def)))
-        } else {
-            None
-        });
+        writeln!(f, "{}", self.dmg)?;
 
-        write!(f, "{}{}{}\n{}\n{}", self.vit, maybe_phy, maybe_def, self.dmg, self.int)
+        writeln!(f, "{}", self.int)
     }
 }

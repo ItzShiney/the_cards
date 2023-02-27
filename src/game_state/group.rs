@@ -56,6 +56,9 @@ groups![
         NewGame > "new game": [Anime, Shows];
         DeathNote > "death note": [Anime, Shows];
 
+    Programming > "программирование";
+        ProgrammingLanguages > "языки программирования": [Programming];
+
     Reality > "реальность";
     SocialOrder > "общественный строй";
 

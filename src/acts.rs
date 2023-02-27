@@ -136,7 +136,7 @@ acts! {
         ],
     }
 
-    // /*
+    /*
     Баян {
         name: cs!["БАЯН"],
         ru_gender: RuGender::Masculine,

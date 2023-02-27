@@ -1,5 +1,7 @@
 use std::{fmt::Display, ops::RangeInclusive};
 
+use itertools::Itertools;
+
 use crate::{acts::ActiveType, chrs::CharacterType};
 
 macro_rules! custom_string_slice {
@@ -58,6 +60,9 @@ custom_string_slice![
 
         Random(RangeInclusive<CustomString>) =>
             |f, (range)| write!(f, "🎲[{}..{}]", range.start(), range.end());
+
+        Mean(Vec<CustomString>) =>
+            |f, (args)| write!(f, "⟨{}⟩", args.into_iter().join(", "));
     }
 
     {

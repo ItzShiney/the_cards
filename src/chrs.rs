@@ -124,15 +124,19 @@ chrs! {
         ru_gender: RuGender::Feminine,
         groups: [Group::ByShiney, Group::Reality],
 
+        // 1/3/-0
         stats: Stats::new(
-            phy!(1),
-            dmg!(2),
+            phy!(1), // легко разбивается
+            dmg!(2), // бьёт осколками
             int!(0),
         ),
 
         // TODO:
         // пока INT противника > 2 ⟹
         // • не атакует
+        //
+        // ударил [PYROKINESIS] ⟹
+        // • "И ТОЛЬКО УМЕР ОТ ВАРЕНЬЯ": тот мгновенно умирает
     }
 
     ДухТвоейКвартиры {
@@ -142,10 +146,11 @@ chrs! {
 
         epitaph: cs!["\"твоё личное бревно\""],
 
+        // 4/3/-4
         stats: Stats::new(
-            phy!(7),
+            phy!(8),
             dmg!(5),
-            int!(2),
+            int!(1),
         ),
 
         // TODO:
@@ -158,9 +163,10 @@ chrs! {
         ru_gender: RuGender::Feminine,
         groups: [Group::ByConstantine, Group::Female, Group::WePlanet],
 
+        // 3/3/-4
         stats: Stats::new(
-            phy!(5),
-            dmg!(5),
+            phy!(4),
+            dmg!(4),
             int!(2),
         ),
 
@@ -172,7 +178,7 @@ chrs! {
         // • МАКСИМАЛЬНАЯ СПЛЮЩЕННОСТЬ: INT всех персонажей на поле меньше на 4
         //
         // персонаж из биты вернулся к владельцу ⟹
-        // • cs!["ВЕРНИ САНКИ"]: PHY всех персонажей в руке += 2
+        // • "ВЕРНИ САНКИ": PHY всех персонажей в руке += 2
     }
 
     Delirium {
@@ -180,10 +186,11 @@ chrs! {
         ru_gender: RuGender::Masculine,
         groups: [Group::ByMaxvog, Group::TBoI, Group::Illusion],
 
+        // ?/?/0
         stats: Stats::new(
             phy!(?),
             dmg!(?),
-            int!(0),
+            int!(0), // представляет собой безумие
         ),
 
         abilities: [
@@ -217,10 +224,11 @@ chrs! {
         ru_gender: RuGender::Feminine,
         groups: [Group::ByMaxvog, Group::Female, Group::Umineko, Group::Illusion],
 
+        // 1/4/-3
         stats: Stats::new(
-            phy!(3),
+            phy!(5),
             dmg!(8),
-            int!(1),
+            int!(7),
         ),
 
         // TODO:
@@ -233,10 +241,11 @@ chrs! {
         ru_gender: RuGender::Feminine,
         groups: [Group::ByShiney, Group::Female, Group::NewGame],
 
+        // 5/1/-1
         stats: Stats::new(
-            phy!(5),
-            dmg!(2),
-            int!(2),
+            phy!(7),
+            dmg!(1),
+            int!(4),
         ),
     }
 
@@ -245,9 +254,10 @@ chrs! {
         ru_gender: RuGender::Feminine,
         groups: [Group::ByConstantine, Group::Female, Group::Reality],
 
+        // 2/3/-1
         stats: Stats::new(
             phy!(3),
-            dmg!(4),
+            dmg!(0),
             int!(8),
         ),
     }
@@ -257,10 +267,11 @@ chrs! {
         ru_gender: RuGender::Masculine,
         groups: [Group::ByShiney, Group::Male, Group::Reality],
 
+        // 2/2/-4
         stats: Stats::new(
-            phy!(4),
+            phy!(3),
             dmg!(4),
-            int!(1),
+            int!(0),
         ),
     }
 
@@ -269,10 +280,11 @@ chrs! {
         ru_gender: RuGender::Masculine,
         groups: [Group::ByShiney, Group::Lifemaking],
 
+        // 4/1/-0
         stats: Stats::new(
             phy!(6),
-            dmg!(4),
-            int!(0),
+            dmg!(3),
+            int!(8),
         ),
     }
 
@@ -281,8 +293,9 @@ chrs! {
         ru_gender: RuGender::Masculine,
         groups: [Group::ByConstantine, Group::Male],
 
+        // 1/3/-2
         stats: Stats::new(
-            phy!(1),
+            phy!(2),
             dmg!(5),
             int!(6),
         ),
@@ -295,8 +308,9 @@ chrs! {
 
         epitaph: cs!["\"тимми тимми тимми\""],
 
+        // 1/0/-5
         stats: Stats::new(
-            phy!(2),
+            phy!(1),
             dmg!(0),
             int!(0),
         ),
@@ -307,10 +321,11 @@ chrs! {
         ru_gender: RuGender::Masculine,
         groups: [Group::ByConstantine, Group::Male],
 
+        // 4/3/-2
         stats: Stats::new(
-            phy!(6),
-            dmg!(5),
-            int!(5),
+            phy!(7),
+            dmg!(6),
+            int!(6),
         ),
 
         // TODO:
@@ -323,10 +338,11 @@ chrs! {
         ru_gender: RuGender::Masculine,
         groups: [Group::ByShiney, Group::Male],
 
+        // 2/2/-3
         stats: Stats::new(
-            phy!(4),
+            phy!(5),
             dmg!(5),
-            int!(3),
+            int!(6),
         ),
 
         // TODO:
@@ -339,10 +355,11 @@ chrs! {
         ru_gender: RuGender::Feminine,
         groups: [Group::ByConstantine, Group::Female, Group::Higurashi],
 
+        // 2/3/-3
         stats: Stats::new(
-            phy!(3),
-            dmg!(5),
-            int!(4),
+            phy!(4),
+            dmg!(7),
+            int!(6),
         ),
     }
 
@@ -351,6 +368,7 @@ chrs! {
         ru_gender: RuGender::Masculine,
         groups: [Group::ByConstantine, Group::Male, Group::Memes],
 
+        // 2/2/-4
         stats: Stats::new(
             phy!(4),
             dmg!(3),
@@ -359,7 +377,7 @@ chrs! {
 
         abilities: [
             CharacterAbility {
-                name: None,
+                name: Some(cs!["\"Я РЕПОРТЁР ИЗ КАЗАХСТАНА\""]),
 
                 trigger: CharacterTrigger::Placed,
                 conditions: vec![],
@@ -378,10 +396,11 @@ chrs! {
         ru_gender: RuGender::Masculine,
         groups: [Group::ByMaxvog],
 
+        // 3/1/-3
         stats: Stats::new(
-            phy!(5),
-            dmg!(2),
-            int!(3),
+            phy!(3),
+            dmg!(1),
+            int!(5),
         ),
     }
 
@@ -390,8 +409,9 @@ chrs! {
         ru_gender: RuGender::Masculine,
         groups: [Group::ByShiney, Group::TBoI, Group::Undrawable],
 
+        // 2/?/-0
         stats: Stats::new(
-            phy!(4),
+            phy!(3),
             dmg!(?),
             int!(1),
         ),
@@ -417,6 +437,7 @@ chrs! {
         ru_gender: RuGender::Masculine,
         groups: [Group::ByMaxvog, Group::Terraria],
 
+        // 4/3/-3
         stats: Stats::new(
             phy!(8),
             dmg!(6),
@@ -433,27 +454,58 @@ chrs! {
         ru_gender: RuGender::Feminine,
         groups: [Group::ByShiney, Group::Female, Group::TBoI],
 
+        // 4/1/-2
         stats: Stats::new(
             phy!(7),
             dmg!(2),
-            int!(6),
+            int!(6), // TODO: брать у CharacterType::Айзек
         ),
 
         // TODO:
         // активируемая способность ⟹
         // • НЯМ СЕРДЦЕ: VIT += 2
     }
-    // */
 
     Рика {
         name: cs!["РИКА"],
         ru_gender: RuGender::Feminine,
         groups: [Group::ByConstantine, Group::Female, Group::Higurashi],
 
+        // 1/1/-1
         stats: Stats::new(
-            phy!(3),
-            dmg!(4),
+            phy!(2),
+            dmg!(2),
             int!(6),
         ),
     }
+
+    Питон {
+        name: cs!["ПИТОН"],
+        ru_gender: RuGender::Masculine,
+        groups: [Group::ByShiney, Group::ProgrammingLanguages],
+
+        // 2/3/-0
+        stats: Stats::new(
+            phy!(5), // народная любовь
+            dmg!(9), // больно от того, насколько он плох местами
+            int!(3),
+        ),
+
+        // TODO:
+        // • удары дизморалят
+    }
+
+    Сатока {
+        name: cs!["САТОКА"],
+        ru_gender: RuGender::Feminine,
+        groups: [Group::ByShiney, Group::Female, Group::Higurashi],
+
+        // 3/2/-4
+        stats: Stats::new(
+            phy!(5), // терпит много лещей
+            dmg!(3),
+            int!(7), // ловушками перебивает спецотряд
+        ),
+    }
+    // */
 }
