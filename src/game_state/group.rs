@@ -28,23 +28,26 @@ macro_rules! groups {
 
         impl Display for Group {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                match self {
-                    $(Self::$Name => $Into,)*
-                }
-                .fmt(f)
+                write!(
+                    f,
+                    "\x1b[1m[{}]\x1b[22m",
+                    match self {
+                        $(Self::$Name => $Into,)*
+                    }
+                )
             }
         }
     };
 }
 
 groups![
-    ByShiney > "\x1b[34m@лёня\x1b[0m";
-    ByMaxvog > "\x1b[34m@максим\x1b[0m";
-    ByConstantine > "\x1b[34m@костя\x1b[0m";
-    ByZoinX > "\x1b[34m@лёша\x1b[0m";
+    ByShiney > "\x1b[34m@лёня\x1b[39m";
+    ByMaxvog > "\x1b[34m@максим\x1b[39m";
+    ByConstantine > "\x1b[34m@костя\x1b[39m";
+    ByZoinX > "\x1b[34m@лёша\x1b[39m";
 
-    Male > "\x1b[36m♂\x1b[0m";
-    Female > "\x1b[35m♀️\x1b[0m";
+    Male > "\x1b[36m♂\x1b[39m";
+    Female > "\x1b[35m♀️\x1b[39m";
 
     Illusion > "иллюзия";
     Dismoral > "дизморалит";
@@ -94,7 +97,7 @@ groups![
         Hololive > "hololive": [VTubers];
         Nijisanji > "nijisanji": [VTubers];
 
-    Undrawable > "\x1b[31mнераздаваемая\x1b[0m";
+    Undrawable > "\x1b[31mнераздаваемая\x1b[39m";
 ];
 
 fn fmt_groups(
@@ -105,12 +108,12 @@ fn fmt_groups(
         groups.flat_map(|group| group.supers()).collect()
     }
 
-    let res = groups.clone().map(|x| format!("[{x}]")).join(" ");
+    let res = groups.clone().join(" ");
     write!(f, "{}", res)?;
 
     let supers = supers(groups);
     if !supers.is_empty() {
-        write!(f, "\x1b[90m > {}\x1b[0m", DefaultFormatted(&supers))
+        write!(f, "\x1b[90m > {}\x1b[39m", DefaultFormatted(&supers))
     } else {
         Ok(())
     }

@@ -2,7 +2,7 @@ use std::{fmt::Display, ops::RangeInclusive};
 
 use itertools::Itertools;
 
-use crate::{acts::ActiveType, chrs::CharacterType};
+use crate::{acts::ActiveType, chrs::CharacterType, game_state::group::Group};
 
 macro_rules! custom_string_slice {
     (
@@ -50,12 +50,18 @@ custom_string_slice![
             |f, (__0)| write!(f, "{}", __0);
 
         Character(CharacterType) =>
-            |f, (type_)| write!(f, "\x1b[1m{}\x1b[0m", type_.name());
+            |f, (type_)| write!(f, "\x1b[1m[{}]\x1b[0m", type_.name());
 
         Active(ActiveType) =>
-            |f, (type_)| write!(f, "\x1b[1m{}\x1b[0m", type_.name());
+            |f, (type_)| write!(f, "\x1b[1m[{}]\x1b[0m", type_.name());
 
-        Sum { times: CustomString, body: CustomString } =>
+        Group(Group) =>
+            |f, (group)| write!(f, "{}", group);
+
+        Sum { body: CustomString } =>
+            |f, { body }| write!(f, "∑ {}", body);
+
+        SumTimes { times: CustomString, body: CustomString } =>
             |f, { times, body }| write!(f, "∑[{} раз] {}", times, body);
 
         Random(RangeInclusive<CustomString>) =>
@@ -123,6 +129,7 @@ macro_rules! cs {
         #[allow(unused)] use $crate::custom_string::CustomStringSlice::*;
         #[allow(unused)] use $crate::chrs::CharacterType::*;
         #[allow(unused)] use $crate::acts::ActiveType::*;
+        #[allow(unused)] use $crate::game_state::group::Group::*;
         $crate::custom_string::CustomString::from(vec![$($args.into()),*])
     }};
 }

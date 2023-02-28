@@ -200,7 +200,7 @@ chrs! {
                 trigger: CharacterTrigger::Placed,
                 conditions: vec![],
 
-                description: cs!["выбери персонажа в руке. {vit} = его {vit}, {dmg} = его {dmg}"].into(),
+                description: cs!["выбери персонажа в руке. {vit} = его {vit}, {dmg} = его {dmg}"],
 
                 // TODO: заменить код с state_mut на set_phy_vit
                 callback: |game, self_id, _went_trigger| {
@@ -382,7 +382,7 @@ chrs! {
                 trigger: CharacterTrigger::Placed,
                 conditions: vec![],
 
-                description: cs!["возьми активку из стопки добора. если возможно, используй на этого персонажа, иначе положи обратно"].into(),
+                description: cs!["возьми активку из стопки добора. если возможно, используй на этого персонажа, иначе положи обратно"],
 
                 callback: |_game, _self_id, _went_trigger| {
                     todo!()
@@ -423,7 +423,7 @@ chrs! {
                 trigger: CharacterTrigger::Placed,
                 conditions: vec![],
 
-                description: cs![Damage, " = ", Sum { times: cs!["9"], body: cs![Random(cs!["0"]..=cs!["1"])] }].into(),
+                description: cs![Damage, " = ", SumTimes { times: cs!["9"], body: cs![Random(cs!["0"]..=cs!["1"])] }],
 
                 callback: |_game, _self_id, _went_trigger| {
                     todo!()
@@ -447,6 +447,20 @@ chrs! {
         // TODO:
         // атакует ⟹
         // • "ТАРАНИТ... ИНОГДА": с шансом 50% наносит на 1 больше
+
+        /*
+        callbacks: {
+            attack: |game, self_id, mut args| {
+                if game.random_bool(0.5) {
+                    args.damage += 1;
+                }
+
+                Chain::Continue(args)
+            },
+
+            ..default()
+        }
+        */
     }
 
     Магдалина {
@@ -507,5 +521,52 @@ chrs! {
             int!(7), // ловушками перебивает спецотряд
         ),
     }
+
+    Робеспьер {
+        name: cs!["РОБЕСПЬЕР"],
+        ru_gender: RuGender::Masculine,
+        groups: [Group::ByConstantine, Group::Male, Group::Reality],
+
+        epitaph: cs!["\"vive la révolution\""],
+
+        // 2/5/-3
+        stats: Stats::new(
+            phy!(5),
+            dmg!(5),
+            int!(5),
+        ),
+    }
     // */
+
+    ГВ {
+        name: cs!["ГВ"],
+        ru_gender: RuGender::Masculine,
+        groups: [Group::ByMaxvog, Group::Male, Group::Female, Group::Umineko],
+
+        // 0/5/-3
+        stats: Stats::new(
+            phy!(?),
+            dmg!(7),
+            int!(7),
+        ),
+
+        // TODO:
+        // активируемая способность:
+        // • выбери [umineko]-персонажа и замени на него
+
+        abilities: [
+            CharacterAbility {
+                name: None,
+
+                trigger: CharacterTrigger::Placed,
+                conditions: vec![],
+
+                description: cs![Physique, " = ", Sum { body: cs![Physique, " всех ", Group(Illusion), " в руке"] }],
+
+                callback: |_game, _self_id, _went_trigger| {
+                    todo!()
+                }
+            }
+        ],
+    }
 }

@@ -202,6 +202,6 @@ impl Display for Stats {
 
         writeln!(f, "{}", self.dmg)?;
 
-        writeln!(f, "{}", self.int)
+        write!(f, "{}", self.int)
     }
 }
