@@ -1,9 +1,14 @@
-use crate::cs;
-#[allow(unused)]
 use crate::{
-    custom_string::CustomString, dmg, game_state::ability::character_ability::CharacterAbility,
-    game_state::ability::character_trigger::CharacterTrigger, game_state::group::Group,
-    gendered::RuGender, int, phy, stats::Stats,
+    cs,
+    custom_string::CustomString,
+    described::Described,
+    dmg,
+    game_state::ability_description::AbilityDescription,
+    game_state::group::Group,
+    gendered::RuGender,
+    host::{Chain, GameCallbacks},
+    int, phy,
+    stats::Stats,
 };
 
 use std::collections::BTreeSet;
@@ -20,7 +25,7 @@ macro_rules! chrs {
 
                 stats: $stats:expr,
 
-                $(abilities: $abilities:tt,)?
+                $(abilities: $abilities:expr,)?
             }
         )*
     ) => {paste::paste!{
@@ -94,18 +99,14 @@ macro_rules! chrs {
                 }
             }
 
-            pub fn abilities(self) -> &'static Vec<CharacterAbility> {
+            pub fn abilities(self) -> &'static $crate::host::GameCallbacks {
                 lazy_static::lazy_static! {
                     $(
-                        static ref [<$CardName:snake:upper>]: Vec<CharacterAbility> = Vec::from(
+                        static ref [<$CardName:snake:upper>]: $crate::host::GameCallbacks =
                             (
                                 $($abilities,)?
-                                {
-                                    let x: [CharacterAbility; 0] = [];
-                                    x
-                                },
-                            ).0
-                        );
+                                $crate::host::GameCallbacks::default(),
+                            ).0;
                     )*
                 }
 
@@ -193,30 +194,32 @@ chrs! {
             int!(0), // представляет собой безумие
         ),
 
-        abilities: [
-            CharacterAbility {
-                name: None,
-
-                trigger: CharacterTrigger::Placed,
-                conditions: vec![],
-
-                description: cs!["выбери персонажа в руке. {vit} = его {vit}, {dmg} = его {dmg}"],
+        abilities: GameCallbacks {
+            place: Some(Described {
+                description: AbilityDescription {
+                    name: None,
+                    description: cs!["выбери персонажа в руке. ", Vitality, " = его ", Vitality, ", ", Damage, " = его ", Damage],
+                },
 
                 // TODO: заменить код с state_mut на set_phy_vit
-                callback: |game, self_id, _went_trigger| {
-                    let owner_id = game.state().chrs.find_owner(self_id).unwrap();
+                value: |game, args| {
+                    let owner_id = game.state().chrs.find_owner(args.chr_id).unwrap();
                     let copied_chr_id = game.choose_hand_chr(owner_id);
 
                     let stats = &game.state().chr(copied_chr_id).stats;
                     let copied_phy = stats.phy;
                     let copied_vit = stats.vit;
 
-                    let self_ = game.state_mut().chr_mut(self_id);
+                    let self_ = game.state_mut().chr_mut(args.chr_id);
                     self_.stats.phy = copied_phy;
                     self_.stats.vit = copied_vit;
+
+                    Chain::Continue(args)
                 }
-            }
-        ],
+            }),
+
+            ..Default::default()
+        },
     }
 
     Беатриче {
@@ -375,20 +378,20 @@ chrs! {
             int!(1),
         ),
 
-        abilities: [
-            CharacterAbility {
-                name: Some(cs!["\"Я РЕПОРТЁР ИЗ КАЗАХСТАНА\""]),
+        abilities: GameCallbacks {
+            place: Some(Described {
+                description: AbilityDescription {
+                    name: Some(cs!["\"Я РЕПОРТЁР ИЗ КАЗАХСТАНА\""]),
+                    description: cs!["возьми активку из стопки добора. если возможно, используй на этого персонажа, иначе положи обратно"],
+                },
 
-                trigger: CharacterTrigger::Placed,
-                conditions: vec![],
-
-                description: cs!["возьми активку из стопки добора. если возможно, используй на этого персонажа, иначе положи обратно"],
-
-                callback: |_game, _self_id, _went_trigger| {
+                value: |_game, _self_id| {
                     todo!()
                 }
-            }
-        ],
+            }),
+
+            ..Default::default()
+        },
     }
 
     ЧёрныйКубик {
@@ -416,20 +419,20 @@ chrs! {
             int!(1),
         ),
 
-        abilities: [
-            CharacterAbility {
-                name: None,
+        abilities: GameCallbacks {
+            place: Some(Described {
+                description: AbilityDescription {
+                    name: None,
+                    description: cs![Damage, " = ", SumTimes { times: cs!["9"], body: cs![Random(cs!["0"]..=cs!["1"])] }],
+                },
 
-                trigger: CharacterTrigger::Placed,
-                conditions: vec![],
-
-                description: cs![Damage, " = ", SumTimes { times: cs!["9"], body: cs![Random(cs!["0"]..=cs!["1"])] }],
-
-                callback: |_game, _self_id, _went_trigger| {
+                value: |_game, _self_id| {
                     todo!()
                 }
-            }
-        ],
+            }),
+
+            ..Default::default()
+        },
     }
 
     ГлазКтулху {
@@ -554,19 +557,19 @@ chrs! {
         // активируемая способность:
         // • выбери [umineko]-персонажа и замени на него
 
-        abilities: [
-            CharacterAbility {
-                name: None,
+        abilities: GameCallbacks {
+            place: Some(Described {
+                description: AbilityDescription {
+                    name: None,
+                    description: cs![Physique, " = ", Sum { body: cs![Physique, " всех ", Group(Illusion), " в руке"] }],
+                },
 
-                trigger: CharacterTrigger::Placed,
-                conditions: vec![],
-
-                description: cs![Physique, " = ", Sum { body: cs![Physique, " всех ", Group(Illusion), " в руке"] }],
-
-                callback: |_game, _self_id, _went_trigger| {
+                value: |_game, _args| {
                     todo!()
                 }
-            }
-        ],
+            }),
+
+            ..Default::default()
+        },
     }
 }

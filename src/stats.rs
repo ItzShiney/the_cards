@@ -191,10 +191,10 @@ impl Stats {
 
 impl Display for Stats {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "{}", self.vit)?;
         if self.vit.0 != self.phy.0 {
-            write!(f, " / {}", self.phy)?;
+            write!(f, "{} / ", self.vit)?;
         }
+        write!(f, "{}", self.phy)?;
         if self.def != def!(0) {
             write!(f, " + {}", self.def)?;
         }
@@ -203,5 +203,35 @@ impl Display for Stats {
         writeln!(f, "{}", self.dmg)?;
 
         write!(f, "{}", self.int)
+    }
+}
+
+pub enum Stat {
+    Vitality,
+    Physique,
+    Defence,
+    Damage,
+    Intellect,
+}
+
+impl Stats {
+    pub fn stat(&self, type_: Stat) -> &StatValue {
+        match type_ {
+            Stat::Vitality => &self.vit.0,
+            Stat::Physique => &self.phy.0,
+            Stat::Defence => &self.def.0,
+            Stat::Damage => &self.dmg.0,
+            Stat::Intellect => &self.int.0,
+        }
+    }
+
+    pub fn stat_mut(&mut self, type_: Stat) -> &mut StatValue {
+        match type_ {
+            Stat::Vitality => &mut self.vit.0,
+            Stat::Physique => &mut self.phy.0,
+            Stat::Defence => &mut self.def.0,
+            Stat::Damage => &mut self.dmg.0,
+            Stat::Intellect => &mut self.int.0,
+        }
     }
 }

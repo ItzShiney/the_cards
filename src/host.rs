@@ -1,9 +1,9 @@
-use crate::game_state::ability::active_trigger::{ActiveTrigger, WentActiveTrigger};
-use crate::game_state::active_id::ActiveID;
-use crate::game_state::character_id::CharacterID;
+use crate::described::Described;
+use crate::game_state::act_id::ActiveID;
+use crate::game_state::chr_id::CharacterID;
 use crate::game_state::player_id::PlayerID;
 use crate::game_state::GameState;
-use crate::stats::{Stat0, Stats};
+use crate::stats::{Stat, Stat0, StatValue};
 
 pub struct Host {
     pub callbacks: GameCallbacks,
@@ -25,69 +25,69 @@ impl Host {
     }
 }
 
-pub enum Chain<T = ()> {
-    Continue,
-    Break(T),
+pub enum Chain<Continue, Result = ()> {
+    Continue(Continue),
+    Break(Result),
 }
 
 macro_rules! callbacks {
     (
         $(
-            fn $name:ident(
-                $self:ident,
+            pub fn $name:ident(
+                &mut $self:ident
                 $(
-                    $arg_name:ident : $ArgType:ty,
-                )*
+                    , $arg_name:ident : $ArgType:ty
+                )* $(,)?
             ) $(-> $Return:ty)? $callback_action:block
         )*
     ) => {paste::paste! {
         $(
-            pub struct [<$name:camel CallbackArgs>] {
+            pub struct [<$name:camel Args>] {
                 $(pub $arg_name: $ArgType,)*
             }
-        )*
 
-        $(
-            pub type [<$name:camel Callback>] = Box<dyn Fn(&mut Host, &[<$name:camel CallbackArgs>]) -> Chain<$($Return)?>>;
+            pub type [<$name:camel Callback>] = fn(&mut Host, [<$name:camel Args>]) -> Chain<[<$name:camel Args>], $($Return)?>;
         )*
 
         #[derive(Default)]
         pub struct GameCallbacks {
             $(
-                [<$name:camel:snake _callbacks>]: Vec<[<$name:camel Callback>]>,
+                pub $name: Option<$crate::described::Described<[<$name:camel Callback>]>>,
             )*
         }
 
-        impl GameCallbacks {
-            $(
-                pub fn [<add_ $name:camel:snake _callback>](&mut self, callback: [<$name:camel Callback>]) {
-                    self.[<$name:camel:snake _callbacks>].push(callback);
-                }
-            )*
+        impl ::std::fmt::Display for GameCallbacks {
+            fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+                $(
+                    if let Some($crate::described::Described { ref description, .. }) = self.$name {
+                        writeln!(f, "{}", description)?;
+                    }
+                )*
+
+                Ok(())
+            }
         }
 
         impl Host {
             $(
-                pub fn [<$name:camel:snake _args>] (&mut $self, args: [<$name:camel CallbackArgs>] ) $(-> $Return)? {
-                    while let Some(callback) = $self.callbacks.[<$name:camel:snake _callbacks>].pop() {
-                        match callback($self, &args) {
-                            Chain::Continue => {}
-                            Chain::Break(x) => return x,
+                pub fn [<$name:camel:snake _args>] (&mut $self, #[allow(unused_mut)] mut args: [<$name:camel Args>] ) $(-> $Return)? {
+                    while let Some($crate::described::Described { value: callback, .. }) = $self.callbacks.$name {
+                        match callback($self, args) {
+                            Chain::Continue(new_args) => {
+                                args = new_args;
+                            }
+
+                            Chain::Break(result) => return result,
                         }
                     }
 
                     #[allow(unused)]
-                    let [<$name:camel CallbackArgs>] { $($arg_name,)* } = args;
-
+                    let [<$name:camel Args>] { $($arg_name,)* } = args;
                     $callback_action
                 }
 
-                pub fn $name (&mut $self, $($arg_name: $ArgType,)* ) $(-> $Return)? {
-                    $self.[<$name:camel:snake _args>] (
-                        [<$name:camel CallbackArgs>] {
-                            $($arg_name,)*
-                        }
-                    )
+                pub fn $name (&mut $self, $(#[allow(unused_mut)] mut $arg_name: $ArgType,)* ) $(-> $Return)? {
+                    $self.[<$name:camel:snake _args>]([<$name:camel Args>] { $($arg_name,)* })
                 }
             )*
         }
@@ -95,99 +95,64 @@ macro_rules! callbacks {
 }
 
 callbacks! {
-    fn waste_act(
-        self,
+    pub fn waste_act(
+        &mut self,
         act_id: ActiveID,
     ) {
         self.state.acts.add_to_waste_pile(act_id);
     }
 
-    fn use_on_character(
-        self,
+    pub fn use_on_field(
+        &mut self,
         act_id: ActiveID,
-        chr_id: CharacterID,
-    ) {
-        let abilities = self.state.act(act_id).type_.abilities();
-        let Some(ability) = self.state.find_matching_ability(ActiveTrigger::UsedOnCharacter, abilities) else { panic!("{act_id:?} can't be used on {chr_id:?}") };
+    ) -> Result<(), ()> {
+        todo!()
+    }
 
-        let went_trigger = WentActiveTrigger::UsedOnCharacter(chr_id);
-        (ability.callback)(self, act_id, went_trigger);
+    pub fn use_on_character(
+        &mut self,
+        act_id: ActiveID,
+        target_id: CharacterID,
+    ) -> Result<(), ()> {
+        let Described { value: callback, .. } = self.state().act(act_id).type_.abilities().use_on_character.as_ref().ok_or(())?;
+
+        (callback)(self, UseOnCharacterArgs { act_id, target_id });
 
         self.state.acts.remove_from_some_player(act_id);
+        Ok(())
     }
 
-    fn sub_vit(
-        self,
+    pub fn modify(
+        &mut self,
+        stat_type: Stat,
         chr_id: CharacterID,
         val: Stat0,
     ) {
-        self.state.chr_mut(chr_id).stats.vit.0 -= val;
+        let phy = self.state.chr_mut(chr_id).stats.phy.0.into_value().unwrap();
+        let vit = &mut self.state.chr_mut(chr_id).stats.vit;
+        let new_vit = (vit.0.into_value().unwrap() + val).max(0).min(phy);
+        vit.0 = StatValue::Var(new_vit);
     }
 
-    fn add_vit(
-        self,
-        chr_id: CharacterID,
-        val: Stat0,
-    ) {
-        self.state.chr_mut(chr_id).stats.vit.0 += val;
-        todo!("limit to phy")
-    }
-
-    fn set_vit(
-        self,
-        chr_id: CharacterID,
-        val: Stat0,
-    ) {
-        todo!("add_vit(phy - vit) or sub_vit(vit - phy)")
-    }
-
-    fn sub_def(
-        self,
-        chr_id: CharacterID,
-        val: Stat0,
-    ) {
-        self.state.chr_mut(chr_id).stats.def.0 -= val;
-    }
-
-    fn sub_dmg(
-        self,
-        chr_id: CharacterID,
-        val: Stat0,
-    ) {
-        self.state.chr_mut(chr_id).stats.dmg.0 -= val;
-    }
-
-    fn hurt(
-        self,
+    pub fn hurt(
+        &mut self,
         chr_id: CharacterID,
         dmg: Stat0,
     ) {
         let old_def = self.state().chr(chr_id).stats.def.0.into_value().unwrap();
-        self.sub_def(chr_id, dmg);
+        self.modify(Stat::Defence, chr_id, dmg);
         let new_def = self.state().chr(chr_id).stats.def.0.into_value().unwrap();
 
         let def_dmg_taken = old_def - new_def;
         let vit_dmg_to_take = dmg - def_dmg_taken;
 
         if vit_dmg_to_take > 0 {
-            self.sub_vit(chr_id, vit_dmg_to_take);
+            self.modify(Stat::Vitality, chr_id, vit_dmg_to_take);
         }
     }
 
-    fn init_stats(
-        self,
-        chr_id: CharacterID,
-        stats: Stats,
-    ) {
-        if self.state.chr(chr_id).stats != Stats::UNINIT {
-            panic!("trying to init inited stats");
-        }
-
-        self.state.chr_mut(chr_id).stats = stats;
-    }
-
-    fn place(
-        self,
+    pub fn place(
+        &mut self,
         chr_id: CharacterID,
     ) {
         let player_id = self.state.chrs.find_owner(chr_id).expect(format!("expected some player to own {:?}", chr_id).as_str());
@@ -209,29 +174,31 @@ callbacks! {
         }
     }
 
-    fn choose_hand_act(
-        self,
+    pub fn choose_hand_act(
+        &mut self,
         player_id: PlayerID,
     ) -> ActiveID {
         todo!()
     }
 
-    fn choose_hand_chr(
-        self,
+    pub fn choose_hand_chr(
+        &mut self,
         player_id: PlayerID,
     ) -> CharacterID {
         todo!()
     }
 
-    fn end_subturn(
-        self,
-    ) {
+    pub fn end_subturn(&mut self) {
         self.state.end_subturn()
     }
 
-    fn end_turn(
-        self,
-    ) {
+    pub fn end_turn(&mut self) {
         self.state.end_turn()
+    }
+}
+
+impl Host {
+    pub fn set(&mut self, _stat_type: Stat, _chr_id: CharacterID, _value: Stat0) {
+        todo!("self.modify(current_value - value)")
     }
 }

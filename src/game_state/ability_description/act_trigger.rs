@@ -1,10 +1,6 @@
 use std::fmt::Display;
 
-use crate::{
-    game_state::CharacterID,
-    gendered::{Gendered, RuGender},
-    trigger_trait::TriggerTrait,
-};
+use crate::gendered::{Gendered, RuGender};
 
 #[derive(Clone, Copy)]
 pub enum UseTarget {
@@ -41,13 +37,4 @@ impl Display for Gendered<&ActiveTrigger> {
             ActiveTrigger::UsedOnOwnCharacter => write!(f, "{использовано} на своего персонажа"),
         }
     }
-}
-
-impl TriggerTrait for ActiveTrigger {
-    type Went = WentActiveTrigger;
-}
-
-pub enum WentActiveTrigger {
-    UsedOnField,
-    UsedOnCharacter(CharacterID),
 }

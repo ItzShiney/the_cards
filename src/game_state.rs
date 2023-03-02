@@ -1,8 +1,8 @@
-pub mod ability;
-pub mod active_id;
-pub mod active_info;
-pub mod character_id;
-pub mod character_info;
+pub mod ability_description;
+pub mod act_id;
+pub mod act_info;
+pub mod chr_id;
+pub mod chr_info;
 pub mod condition;
 pub mod group;
 pub mod id_manager;
@@ -15,16 +15,14 @@ use std::mem::take;
 
 use crate::acts::ActiveType;
 use crate::chrs::CharacterType;
-use crate::trigger_trait::TriggerTrait;
 use itertools::Itertools;
 use rand::seq::IteratorRandom;
 use rand::thread_rng;
 
-use self::ability::Ability;
-use self::active_id::ActiveID;
-use self::active_info::ActiveInfo;
-use self::character_id::CharacterID;
-use self::character_info::CharacterInfo;
+use self::act_id::ActiveID;
+use self::act_info::ActiveInfo;
+use self::chr_id::CharacterID;
+use self::chr_info::CharacterInfo;
 use self::condition::Condition;
 use self::id_manager::id_trait::IDTrait;
 use self::id_manager::IDManager;
@@ -84,11 +82,13 @@ impl<ID: IDTrait + Debug, CardInfo> GameOfCardType<ID, CardInfo> {
         self.cards.get(&id).unwrap()
     }
 
-    fn get_mut(&mut self, id: ID) -> &mut CardInfo {
+    // FIXME: remove pub
+    pub fn get_mut(&mut self, id: ID) -> &mut CardInfo {
         self.cards.get_mut(&id).unwrap()
     }
 
-    fn add(&mut self, card: CardInfo) -> ID {
+    // FIXME: remove pub
+    pub fn add(&mut self, card: CardInfo) -> ID {
         let id = self.id_manager.next_id();
         self.cards.insert(id, card);
         id
@@ -98,7 +98,8 @@ impl<ID: IDTrait + Debug, CardInfo> GameOfCardType<ID, CardInfo> {
         self.hands.get(&player_id).unwrap()
     }
 
-    fn hand_mut(&mut self, player_id: PlayerID) -> &mut Vec<ID> {
+    // FIXME: remove pub
+    pub fn hand_mut(&mut self, player_id: PlayerID) -> &mut Vec<ID> {
         self.hands.get_mut(&player_id).unwrap()
     }
 
@@ -411,36 +412,6 @@ impl GameState {
 }
 
 impl GameState {
-    pub fn is_matching_ability<Trigger: TriggerTrait + PartialEq, ID>(
-        &self,
-        trigger: Trigger,
-        ability: &Ability<Trigger, ID>,
-    ) -> bool {
-        ability.trigger == trigger
-            && ability.conditions.iter().all(|condition| self.is_satisfied_condition(condition))
-    }
-
-    pub fn find_matching_ability_idx<Trigger: TriggerTrait + Copy + PartialEq, ID>(
-        &self,
-        trigger: Trigger,
-        abilities: &[Ability<Trigger, ID>],
-    ) -> Option<usize> {
-        for (ability_idx, ability) in abilities.iter().enumerate() {
-            if self.is_matching_ability(trigger, ability) {
-                return Some(ability_idx);
-            }
-        }
-        None
-    }
-
-    pub fn find_matching_ability<'abilities, Trigger: TriggerTrait + Copy + PartialEq, ID>(
-        &self,
-        trigger: Trigger,
-        abilities: &'abilities [Ability<Trigger, ID>],
-    ) -> Option<&'abilities Ability<Trigger, ID>> {
-        Some(&abilities[self.find_matching_ability_idx(trigger, abilities)?])
-    }
-
     pub fn check_conditions(&self, conditions: &[Condition]) -> bool {
         conditions.iter().all(|condition| self.is_satisfied_condition(condition))
     }

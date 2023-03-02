@@ -1,12 +1,13 @@
 #[allow(unused)]
 use crate::{
-    chrs::CharacterType,
-    cs,
-    custom_string::CustomString,
-    game_state::ability::active_ability::ActiveAbility,
-    game_state::ability::active_trigger::{ActiveTrigger, WentActiveTrigger},
-    game_state::group::Group,
+    chrs::CharacterType, cs, custom_string::CustomString, game_state::group::Group,
     gendered::RuGender,
+};
+use crate::{
+    described::Described,
+    game_state::ability_description::AbilityDescription,
+    host::{Chain, GameCallbacks},
+    stats::Stat,
 };
 
 use std::collections::BTreeSet;
@@ -21,7 +22,7 @@ macro_rules! acts {
 
                 $(epitaph: $epitaph:expr,)?
 
-                abilities: $abilities:tt,
+                abilities: $abilities:expr,
             }
         )*
     ) => {paste::paste!{
@@ -37,10 +38,10 @@ macro_rules! acts {
                 ]
             }
 
-            pub fn name(self) -> &'static CustomString {
+            pub fn name(self) -> &'static $crate::custom_string::CustomString {
                 lazy_static::lazy_static! {
                     $(
-                        static ref [<$CardName:snake:upper>]: CustomString = $name;
+                        static ref [<$CardName:snake:upper>]: $crate::custom_string::CustomString = $name;
                     )*
                 }
 
@@ -49,10 +50,10 @@ macro_rules! acts {
                 }
             }
 
-            pub fn ru_gender(self) -> RuGender {
+            pub fn ru_gender(self) -> $crate::gendered::RuGender {
                 lazy_static::lazy_static! {
                     $(
-                        static ref [<$CardName:snake:upper>]: RuGender = $ru_gender;
+                        static ref [<$CardName:snake:upper>]: $crate::gendered::RuGender = $ru_gender;
                     )*
                 }
 
@@ -95,10 +96,10 @@ macro_rules! acts {
                 }
             }
 
-            pub fn abilities(self) -> &'static Vec<ActiveAbility> {
+            pub fn abilities(self) -> &'static $crate::host::GameCallbacks {
                 lazy_static::lazy_static! {
                     $(
-                        static ref [<$CardName:snake:upper>]: Vec<ActiveAbility> = vec! $abilities;
+                        static ref [<$CardName:snake:upper>]: $crate::host::GameCallbacks = $abilities;
                     )*
                 }
 
@@ -116,24 +117,23 @@ acts! {
         ru_gender: RuGender::Feminine,
         groups: [Group::ByShiney, Group::TBoI],
 
-        abilities: [
-            ActiveAbility {
-                name: None,
+        abilities: GameCallbacks {
+            use_on_field: Some(
+                Described { description: AbilityDescription {
+                    name: None,
+                    description: cs!["выбери активку в руке. эта карта повторит эффект выбранной"],
+                },
 
-                trigger: ActiveTrigger::UsedOnField,
-                conditions: vec![],
-
-                description: cs!["выбери активку в руке. эта карта повторит эффект выбранной"]
-                    .into(),
-
-                callback: |game, self_id, _went_trigger| {
-                    let owner_id = game.state().acts.find_owner(self_id).unwrap();
+                value: |game, args| {
+                    let owner_id = game.state().acts.find_owner(args.act_id).unwrap();
                     let imitated_act_id = game.choose_hand_act(owner_id);
 
                     todo!("mimic {:?}", imitated_act_id)
                 }
-            }
-        ],
+            }),
+
+            ..Default::default()
+        },
     }
 
     // /*
@@ -142,21 +142,21 @@ acts! {
         ru_gender: RuGender::Masculine,
         groups: [Group::ByMaxvog, Group::Dismoral],
 
-        abilities: [
-            ActiveAbility {
-                name: Some(cs!["\"ЭТОТ АНЕКДОТ ЕЩЁ МОЙ ДЕД МОЕМУ ОТЦУ РАССКАЗЫВАЛ\""].into()),
+        abilities: GameCallbacks {
+            use_on_character: Some(Described {
+                description: AbilityDescription {
+                    name: Some(cs!["\"ЭТОТ АНЕКДОТ ЕЩЁ МОЙ ДЕД МОЕМУ ОТЦУ РАССКАЗЫВАЛ\""].into()),
+                    description: cs![Damage, " -= 3"].into(),
+                },
 
-                trigger: ActiveTrigger::UsedOnEnemyCharacter,
-                conditions: vec![],
-
-                description: cs!["{dmg} -= 3"].into(),
-
-                callback: |game, _self_id, went_trigger| {
-                    let WentActiveTrigger::UsedOnCharacter(chr_id) = went_trigger else { unreachable!() };
-                    game.sub_dmg(chr_id, 3);
+                value: |game, args| {
+                    game.modify(Stat::Damage, args.target_id, 3);
+                    Chain::Continue(args)
                 }
-            }
-        ],
+            }),
+
+            ..Default::default()
+        },
     }
 
     ЖёлтаяИскра {
@@ -164,23 +164,23 @@ acts! {
         ru_gender: RuGender::Feminine,
         groups: [Group::ByShiney, Group::Undertale],
 
-        abilities: [
-            ActiveAbility {
-                name: None,
+        abilities: GameCallbacks {
+            use_on_character: Some(Described {
+                description: AbilityDescription {
+                    name: None,
+                    description: cs![Vitality, " = ", Physique].into(),
+                },
 
-                trigger: ActiveTrigger::UsedOnCharacter,
-                conditions: vec![],
+                value: |game, args| {
+                    let phy = game.state().chr(args.target_id).stats.phy.0.into_value().unwrap();
+                    game.set(Stat::Vitality, args.target_id, phy);
 
-                description: cs!["{vit} = {phy}"].into(),
-
-                callback: |game, _self_id, went_trigger| {
-                    let WentActiveTrigger::UsedOnCharacter(chr_id) = went_trigger else { unreachable!() };
-
-                    let phy = game.state().chr(chr_id).stats.phy.0.into_value().unwrap();
-                    game.set_vit(chr_id, phy);
+                    Chain::Continue(args)
                 }
-            }
-        ],
+            }),
+
+            ..Default::default()
+        },
     }
 
     ТетрадьСмерти {
@@ -188,22 +188,20 @@ acts! {
         ru_gender: RuGender::Feminine,
         groups: [Group::ByConstantine, Group::DeathNote],
 
-        abilities: [
-            ActiveAbility {
-                name: None,
+        abilities: GameCallbacks {
+            use_on_character: Some(Described {
+                description: AbilityDescription {
+                    name: None,
+                    description: cs!["мгновенно убивает его"].into(),
+                },
 
-                trigger: ActiveTrigger::UsedOnCharacter,
-                conditions: vec![],
-
-                description: cs!["мгновенно убивает его"].into(),
-
-                callback: |_game, _self_id, went_trigger| {
-                    let WentActiveTrigger::UsedOnCharacter(_chr_id) = went_trigger else { unreachable!() };
-
+                value: |_game, _args| {
                     todo!()
                 }
-            }
-        ],
+            }),
+
+            ..Default::default()
+        },
     }
 
     Коммунизм {
@@ -211,20 +209,20 @@ acts! {
         ru_gender: RuGender::Masculine,
         groups: [Group::ByConstantine, Group::SocialOrder],
 
-        abilities: [
-            ActiveAbility {
-                name: None,
+        abilities: GameCallbacks {
+            use_on_field: Some(Described {
+                description: AbilityDescription {
+                    name: None,
+                    description: cs!["каждый игрок передаёт свою колоду следующему по направлению ходов. эта карта уничтожается. пропускает ход"].into(),
+                },
 
-                trigger: ActiveTrigger::UsedAsTurn,
-                conditions: vec![],
-
-                description: cs!["каждый игрок передаёт свою колоду следующему по направлению ходов. эта карта уничтожается"].into(),
-
-                callback: |_game, _self_id, _went_trigger| {
+                value: |_game, _self_id| {
                     todo!()
                 }
-            }
-        ],
+            }),
+
+            ..Default::default()
+        },
     }
 
     ОБратка {
@@ -232,22 +230,20 @@ acts! {
         ru_gender: RuGender::Feminine,
         groups: [Group::ByZoinX],
 
-        abilities: [
-            ActiveAbility {
-                name: None,
+        abilities: GameCallbacks {
+            use_on_character: Some(Described {
+                description: AbilityDescription {
+                    name: None,
+                    description: cs!["персонаж выставляется как твой"].into(),
+                },
 
-                trigger: ActiveTrigger::UsedOnEnemyCharacter,
-                conditions: vec![],
-
-                description: cs!["персонаж выставляется как твой"].into(),
-
-                callback: |_game, _self_id, went_trigger| {
-                    let WentActiveTrigger::UsedOnCharacter(_chr_id) = went_trigger else { unreachable!() };
-
+                value: |_game, _args| {
                     todo!()
                 }
-            }
-        ],
+            }),
+
+            ..Default::default()
+        },
     }
 
     ЛезвиеНожа {
@@ -255,26 +251,23 @@ acts! {
         ru_gender: RuGender::Neuter,
         groups: [Group::ByShiney, Group::TBoI],
 
-        abilities: [
-            ActiveAbility {
-                name: None,
+        abilities: GameCallbacks {
+            use_on_character: Some(Described {
+                description: AbilityDescription {
+                    name: None,
+                    description: cs![ // FIXME
+                        Damage, " += 1\n",
+                        Bullet, " если ранее была использована ", РучкаНожа, ", получи ", Нож
+                    ],
+                },
 
-                trigger: ActiveTrigger::UsedOnCharacter,
-                conditions: vec![],
-
-                // FIXME
-                description: cs![
-                    Damage, " += 1\n",
-                    Bullet, " если ранее была использована ", РучкаНожа, ", получи ", Нож
-                ],
-
-                callback: |_game, _self_id, went_trigger| {
-                    let WentActiveTrigger::UsedOnCharacter(_chr_id) = went_trigger else { unreachable!() };
-
+                value: |_game, _args| {
                     todo!()
                 }
-            },
-        ],
+            }),
+
+            ..Default::default()
+        },
     }
 
     РучкаНожа {
@@ -282,26 +275,23 @@ acts! {
         ru_gender: RuGender::Feminine,
         groups: [Group::ByShiney, Group::TBoI],
 
-        abilities: [
-            ActiveAbility {
-                name: None,
+        abilities: GameCallbacks {
+            use_on_character: Some(Described {
+                description: AbilityDescription {
+                    name: None,
+                    description: cs![ // FIXME
+                        Physique, " += 1\n",
+                        Bullet, " если ранее было использовано ", ЛезвиеНожа, ", получи ", Нож
+                    ],
+                },
 
-                trigger: ActiveTrigger::UsedOnCharacter,
-                conditions: vec![],
-
-                // FIXME
-                description: cs![
-                    Physique, " += 1\n",
-                    Bullet, " если ранее было использовано ", ЛезвиеНожа, ", получи ", Нож
-                ],
-
-                callback: |_game, _self_id, went_trigger| {
-                    let WentActiveTrigger::UsedOnCharacter(_chr_id) = went_trigger else { unreachable!() };
-
+                value: |_game, _args| {
                     todo!()
                 }
-            },
-        ],
+            }),
+
+            ..Default::default()
+        },
     }
     // */
 }

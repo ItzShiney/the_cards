@@ -1,28 +1,23 @@
 use std::fmt::{self, Display, Formatter};
 
-use crate::{
-    chrs::CharacterType, default_formatted::DefaultFormatted, gendered::Gendered, stats::Stats,
-};
+use crate::{acts::ActiveType, default_formatted::DefaultFormatted};
 
 #[derive(Clone)]
-pub struct CharacterInfo {
-    pub type_: CharacterType,
-    pub stats: Stats,
+pub struct ActiveInfo {
+    pub type_: ActiveType,
 }
 
-impl From<CharacterType> for CharacterInfo {
-    fn from(type_: CharacterType) -> Self {
-        Self { type_, stats: type_.stats() }
+impl From<ActiveType> for ActiveInfo {
+    fn from(type_: ActiveType) -> Self {
+        Self { type_ }
     }
 }
 
-impl Display for CharacterInfo {
+impl Display for ActiveInfo {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let name = self.type_.name();
         let groups = self.type_.groups();
-        let stats = &self.stats;
         let epitaph = self.type_.epitaph();
-        let ru_gender = self.type_.ru_gender();
         let abilities = self.type_.abilities();
 
         writeln!(f, "──────────────────────────────────────")?;
@@ -32,15 +27,11 @@ impl Display for CharacterInfo {
             writeln!(f, "{}", DefaultFormatted(groups))?;
         }
 
-        writeln!(f, "\n{}", stats)?;
-
         if let Some(epitaph) = epitaph {
             writeln!(f, "\n\x1b[3m{}\x1b[0m", epitaph)?;
         }
 
-        if !abilities.is_empty() {
-            writeln!(f, "\n{}", Gendered { ru_gender, value: abilities })?;
-        }
+        writeln!(f, "{}", abilities)?;
 
         write!(f, "──────────────────────────────────────")
     }

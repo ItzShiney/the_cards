@@ -1,16 +1,9 @@
 use std::fmt::Display;
 
-use crate::{
-    gendered::{Gendered, RuGender},
-    trigger_trait::TriggerTrait,
-};
+use crate::gendered::{Gendered, RuGender};
 
 pub enum CharacterTrigger {
     Placed,
-}
-
-impl TriggerTrait for CharacterTrigger {
-    type Went = WentCharacterTrigger;
 }
 
 impl Display for Gendered<&CharacterTrigger> {
@@ -28,8 +21,4 @@ impl Display for Gendered<&CharacterTrigger> {
             }
         }
     }
-}
-
-pub enum WentCharacterTrigger {
-    Placed,
 }
