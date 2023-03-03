@@ -150,7 +150,7 @@ acts! {
                 },
 
                 value: |game, args| {
-                    game.modify(Stat::Damage, args.target_id, 3);
+                    game.modify_stat(args.target_id, Stat::Damage, 3);
                     Chain::Continue(args)
                 }
             }),

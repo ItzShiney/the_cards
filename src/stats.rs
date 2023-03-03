@@ -206,6 +206,7 @@ impl Display for Stats {
     }
 }
 
+#[derive(Clone, Copy)]
 pub enum Stat {
     Vitality,
     Physique,

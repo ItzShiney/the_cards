@@ -1,14 +1,7 @@
 use crate::{
-    cs,
-    custom_string::CustomString,
-    described::Described,
-    dmg,
-    game_state::ability_description::AbilityDescription,
-    game_state::group::Group,
-    gendered::RuGender,
-    host::{Chain, GameCallbacks},
-    int, phy,
-    stats::Stats,
+    cs, custom_string::CustomString, described::Described, dmg,
+    game_state::ability_description::AbilityDescription, game_state::group::Group,
+    gendered::RuGender, host::GameCallbacks, int, phy, stats::Stats,
 };
 
 use std::collections::BTreeSet;
@@ -195,7 +188,7 @@ chrs! {
         ),
 
         abilities: GameCallbacks {
-            place: Some(Described {
+            post_place: Some(Described {
                 description: AbilityDescription {
                     name: None,
                     description: cs!["выбери персонажа в руке. ", Vitality, " = его ", Vitality, ", ", Damage, " = его ", Damage],
@@ -213,8 +206,6 @@ chrs! {
                     let self_ = game.state_mut().chr_mut(args.chr_id);
                     self_.stats.phy = copied_phy;
                     self_.stats.vit = copied_vit;
-
-                    Chain::Continue(args)
                 }
             }),
 
@@ -379,7 +370,7 @@ chrs! {
         ),
 
         abilities: GameCallbacks {
-            place: Some(Described {
+            post_place: Some(Described {
                 description: AbilityDescription {
                     name: Some(cs!["\"Я РЕПОРТЁР ИЗ КАЗАХСТАНА\""]),
                     description: cs!["возьми активку из стопки добора. если возможно, используй на этого персонажа, иначе положи обратно"],
@@ -420,7 +411,7 @@ chrs! {
         ),
 
         abilities: GameCallbacks {
-            place: Some(Described {
+            post_place: Some(Described {
                 description: AbilityDescription {
                     name: None,
                     description: cs![Damage, " = ", SumTimes { times: cs!["9"], body: cs![Random(cs!["0"]..=cs!["1"])] }],
@@ -558,7 +549,7 @@ chrs! {
         // • выбери [umineko]-персонажа и замени на него
 
         abilities: GameCallbacks {
-            place: Some(Described {
+            post_place: Some(Described {
                 description: AbilityDescription {
                     name: None,
                     description: cs![Physique, " = ", Sum { body: cs![Physique, " всех ", Group(Illusion), " в руке"] }],
