@@ -1,10 +1,17 @@
 use crate::{
-    cs, custom_string::CustomString, described::Described, dmg,
-    game_state::ability_description::AbilityDescription, game_state::group::Group,
-    gendered::RuGender, host::GameCallbacks, int, phy, stats::Stats,
+    cs,
+    custom_string::CustomString,
+    described::Described,
+    dmg,
+    game_state::ability_description::AbilityDescription,
+    game_state::group::Group,
+    gendered::RuGender,
+    host::GameCallbacks,
+    int, phy,
+    stats::{Stat, Stats},
 };
 
-use std::collections::BTreeSet;
+use std::{collections::BTreeSet, iter::repeat_with};
 
 macro_rules! chrs {
     (
@@ -194,18 +201,18 @@ chrs! {
                     description: cs!["выбери персонажа в руке. ", Vitality, " = его ", Vitality, ", ", Damage, " = его ", Damage],
                 },
 
-                // TODO: заменить код с state_mut на set_phy_vit
                 value: |game, args| {
-                    let owner_id = game.state().chrs.find_owner(args.chr_id).unwrap();
+                    let self_id = args.chr_id;
+                    let owner_id = game.state().chrs.find_owner(self_id).unwrap();
                     let copied_chr_id = game.choose_hand_chr(owner_id);
+                    // println!("DELIRIUM копирует:\n{}", game.state().chr(copied_chr_id));
 
                     let stats = &game.state().chr(copied_chr_id).stats;
-                    let copied_phy = stats.phy;
-                    let copied_vit = stats.vit;
+                    let phy = stats.phy.0.into_value().unwrap();
+                    let dmg = stats.dmg.0.into_value().unwrap();
 
-                    let self_ = game.state_mut().chr_mut(args.chr_id);
-                    self_.stats.phy = copied_phy;
-                    self_.stats.vit = copied_vit;
+                    game.set_phy_vit(self_id, phy);
+                    game.set_stat(self_id, Stat::Damage, dmg);
                 }
             }),
 
@@ -376,8 +383,14 @@ chrs! {
                     description: cs!["возьми активку из стопки добора. если возможно, используй на этого персонажа, иначе положи обратно"],
                 },
 
-                value: |_game, _self_id| {
-                    todo!()
+                value: |game, args| {
+                    let self_id = args.chr_id;
+                    let owner_id = game.state().chrs.find_owner(self_id).unwrap();
+
+                    let Some(gained_act_id) = game.state_mut().acts.pick(owner_id) else { return };
+                    if game.use_on_character(gained_act_id, self_id).is_err() {
+                        todo!("вернуть в стопку добора")
+                    }
                 }
             }),
 
@@ -414,11 +427,14 @@ chrs! {
             post_place: Some(Described {
                 description: AbilityDescription {
                     name: None,
-                    description: cs![Damage, " = ", SumTimes { times: cs!["9"], body: cs![Random(cs!["0"]..=cs!["1"])] }],
+                    description: cs![Damage, " = ", Sum { times: cs!["9"], body: cs![Random(cs!["0"]..=cs!["1"])] }],
                 },
 
-                value: |_game, _self_id| {
-                    todo!()
+                value: |game, args| {
+                    let value = repeat_with(|| { game.random(0, 1) }).take(9).sum();
+
+                    let self_id = args.chr_id;
+                    game.set_stat(self_id, Stat::Damage, value);
                 }
             }),
 
@@ -552,11 +568,26 @@ chrs! {
             post_place: Some(Described {
                 description: AbilityDescription {
                     name: None,
-                    description: cs![Physique, " = ", Sum { body: cs![Physique, " всех ", Group(Illusion), " в руке"] }],
+                    description: cs![Physique, " = ", SumAll { body: cs![Physique, " всех ", Group(Illusion), " в руке"] }],
                 },
 
-                value: |_game, _args| {
-                    todo!()
+                value: |game, args| {
+                    let self_id = args.chr_id;
+                    let owner_id = game.state().chrs.find_owner(self_id).unwrap();
+
+                    let phy = {
+                        game.state().chrs.hand(owner_id).clone().into_iter().filter_map(|chr_id| {
+                            let chr = game.state().chr(chr_id);
+                            // TODO: проверять все группы, не только главные (groups())
+                            if chr.type_.groups().contains(&Group::Illusion) {
+                                Some(chr.stats.phy.0.into_value().unwrap())
+                            } else {
+                                None
+                            }
+                        }).sum()
+                    };
+
+                    game.set_phy_vit(self_id, phy);
                 }
             }),
 

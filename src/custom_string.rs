@@ -47,7 +47,7 @@ macro_rules! custom_string_slice {
 custom_string_slice![
     {
         Raw(String) =>
-            |f, (__0)| write!(f, "{}", __0);
+            |f, (str)| write!(f, "{}", str);
 
         Character(CharacterType) =>
             |f, (type_)| write!(f, "\x1b[1m[{}]\x1b[0m", type_.name());
@@ -58,10 +58,10 @@ custom_string_slice![
         Group(Group) =>
             |f, (group)| write!(f, "{}", group);
 
-        Sum { body: CustomString } =>
+        SumAll { body: CustomString } =>
             |f, { body }| write!(f, "∑ {}", body);
 
-        SumTimes { times: CustomString, body: CustomString } =>
+        Sum { times: CustomString, body: CustomString } =>
             |f, { times, body }| write!(f, "∑[{} раз] {}", times, body);
 
         Random(RangeInclusive<CustomString>) =>

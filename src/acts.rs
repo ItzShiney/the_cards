@@ -145,8 +145,8 @@ acts! {
         abilities: GameCallbacks {
             use_on_character: Some(Described {
                 description: AbilityDescription {
-                    name: Some(cs!["\"ЭТОТ АНЕКДОТ ЕЩЁ МОЙ ДЕД МОЕМУ ОТЦУ РАССКАЗЫВАЛ\""].into()),
-                    description: cs![Damage, " -= 3"].into(),
+                    name: Some(cs!["\"ЭТОТ АНЕКДОТ ЕЩЁ МОЙ ДЕД МОЕМУ ОТЦУ РАССКАЗЫВАЛ\""]),
+                    description: cs![Damage, " -= 3"],
                 },
 
                 value: |game, args| {
@@ -168,12 +168,12 @@ acts! {
             use_on_character: Some(Described {
                 description: AbilityDescription {
                     name: None,
-                    description: cs![Vitality, " = ", Physique].into(),
+                    description: cs![Vitality, " = ", Physique],
                 },
 
                 value: |game, args| {
                     let phy = game.state().chr(args.target_id).stats.phy.0.into_value().unwrap();
-                    game.set(Stat::Vitality, args.target_id, phy);
+                    game.set_stat(args.target_id, Stat::Vitality, phy);
 
                     Chain::Continue(args)
                 }
@@ -192,11 +192,12 @@ acts! {
             use_on_character: Some(Described {
                 description: AbilityDescription {
                     name: None,
-                    description: cs!["мгновенно убивает его"].into(),
+                    description: cs!["мгновенно убивает его"],
                 },
 
-                value: |_game, _args| {
-                    todo!()
+                value: |game, args| {
+                    game.kill(args.target_id);
+                    Chain::Continue(args)
                 }
             }),
 
@@ -213,7 +214,7 @@ acts! {
             use_on_field: Some(Described {
                 description: AbilityDescription {
                     name: None,
-                    description: cs!["каждый игрок передаёт свою колоду следующему по направлению ходов. эта карта уничтожается. пропускает ход"].into(),
+                    description: cs!["каждый игрок передаёт свою колоду следующему по направлению ходов. эта карта уничтожается. пропускает ход"],
                 },
 
                 value: |_game, _self_id| {
@@ -234,7 +235,7 @@ acts! {
             use_on_character: Some(Described {
                 description: AbilityDescription {
                     name: None,
-                    description: cs!["персонаж выставляется как твой"].into(),
+                    description: cs!["противник выставляется как твой персонаж"],
                 },
 
                 value: |_game, _args| {

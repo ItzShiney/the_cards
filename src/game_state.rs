@@ -103,15 +103,36 @@ impl<ID: IDTrait + Debug, CardInfo> GameOfCardType<ID, CardInfo> {
         self.hands.get_mut(&player_id).unwrap()
     }
 
-    pub fn gain(&mut self, player_id: PlayerID, cards_count: usize) -> usize {
-        for cards_gained in 1..=cards_count {
-            let Some(card_id) = self.gain_pile.pop() else {
-                return cards_gained - 1;
+    pub fn draw(&mut self) -> Option<ID> {
+        self.gain_pile.pop()
+    }
+
+    pub fn draw_n(&mut self, cards_count: usize) -> Vec<ID> {
+        let mut res = Vec::default();
+
+        for _ in 1..=cards_count {
+            let Some(card_id) = self.draw() else {
+                return res;
             };
 
-            self.add_to_player(card_id, player_id);
+            res.push(card_id);
         }
-        cards_count
+
+        res
+    }
+
+    pub fn pick(&mut self, player_id: PlayerID) -> Option<ID> {
+        let res = self.draw()?;
+        self.add_to_player(res, player_id);
+        Some(res)
+    }
+
+    pub fn pick_n(&mut self, player_id: PlayerID, cards_count: usize) -> Vec<ID> {
+        let res = self.draw_n(cards_count);
+        for id in res.iter().copied() {
+            self.add_to_player(id, player_id);
+        }
+        res
     }
 
     pub fn add_to_player(&mut self, id: ID, player_id: PlayerID) {
@@ -244,8 +265,8 @@ impl GameState {
         self.init_gain_pile();
 
         for player_id in self.players_map.keys().copied() {
-            self.chrs.gain(player_id, Self::INIT_CHARACTERS_PER_HAND);
-            self.acts.gain(player_id, Self::INIT_ACTIVES_PER_HAND);
+            self.chrs.pick_n(player_id, Self::INIT_CHARACTERS_PER_HAND);
+            self.acts.pick_n(player_id, Self::INIT_ACTIVES_PER_HAND);
         }
     }
 
@@ -263,7 +284,7 @@ impl GameState {
         for _ in 1..=total_chrs_count {
             let chr_types = CharacterType::all();
             let chr_type = chr_types.into_iter().choose(&mut thread_rng()).unwrap();
-            let chr = chr_type.into();
+            let chr = CharacterInfo::new(chr_type);
 
             let chr_id = self.add_chr(chr);
             self.chrs.add_to_gain_pile(chr_id);
@@ -272,7 +293,7 @@ impl GameState {
         for _ in 1..=total_acts_count {
             let act_types = ActiveType::all();
             let act_type = act_types.into_iter().choose(&mut thread_rng()).unwrap();
-            let act = act_type.into();
+            let act = ActiveInfo::new(act_type);
 
             let act_id = self.add_act(act);
             self.acts.add_to_gain_pile(act_id);

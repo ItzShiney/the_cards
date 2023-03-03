@@ -1,3 +1,4 @@
+#![allow(clippy::uninlined_format_args)]
 pub mod acts;
 pub mod chrs;
 pub mod custom_string;
@@ -13,6 +14,8 @@ use chrs::CharacterType;
 use game_state::{GameState, Player};
 use host::Host;
 
+use crate::game_state::chr_info::CharacterInfo;
+
 fn main() {
     for chr_type in CharacterType::all() {
         let mut game = Host::new(GameState::new(vec![
@@ -21,10 +24,10 @@ fn main() {
         ]));
 
         let attacker_id = game.state().attacker().player_id;
-        let chr_id = game.state().chrs.hand(attacker_id)[0];
-        game.state_mut().chrs.get_mut(chr_id).type_ = chr_type;
+        let chr_id = game.state_mut().chrs.add(CharacterInfo::new(chr_type));
+        game.state_mut().chrs.add_to_player(chr_id, attacker_id);
 
-        game.place(chr_id);
+        game.place(chr_id).unwrap();
         println!("{}", game.state().chr(chr_id));
     }
 

@@ -8,8 +8,8 @@ pub struct CharacterInfo {
     pub stats: Stats,
 }
 
-impl From<CharacterType> for CharacterInfo {
-    fn from(type_: CharacterType) -> Self {
+impl CharacterInfo {
+    pub fn new(type_: CharacterType) -> Self {
         Self { type_, stats: type_.stats() }
     }
 }

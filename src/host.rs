@@ -1,3 +1,5 @@
+use rand::{thread_rng, Rng};
+
 use crate::described::Described;
 use crate::game_state::act_id::ActiveID;
 use crate::game_state::chr_id::CharacterID;
@@ -84,7 +86,7 @@ macro_rules! callbacks {
                         }
                     }
 
-                    #[allow(unused)] let id = ($(args.$arg_name,)* 0).0;
+                    #[allow(unused)] let id = ($(args.$arg_name,)* 0,).0;
                     $(
                         if let Some($crate::described::Described { value: callback, .. }) = $self.state().$self_namespace.get(id).type_.abilities().$name {
                             match (callback)($self, args) {
@@ -98,6 +100,7 @@ macro_rules! callbacks {
                     )?
                     #[allow(unused)] let id = ();
 
+                    #[allow(clippy::redundant_closure_call)]
                     let res = (|| {
                         #[allow(unused)]
                         let [<$name:camel Args>] { $($arg_name,)* } = args.clone();
@@ -114,7 +117,7 @@ macro_rules! callbacks {
                         (callback)($self, args);
                     }
 
-                    #[allow(unused)] let id = ($(args.$arg_name,)* 0).0;
+                    #[allow(unused)] let id = ($(args.$arg_name,)* 0,).0;
                     $(
                         if let Some($crate::described::Described { value: callback, .. }) = $self.state().$self_namespace.get(id).type_.abilities().[<post_ $name>] {
                             (callback)($self, args);
@@ -150,12 +153,14 @@ callbacks! {
         &mut self @ acts,
         act_id: ActiveID,
         target_id: CharacterID,
-    ) {
-        let Some(Described { value: callback, .. }) = self.state().act(act_id).type_.abilities().use_on_character else { return };
+    ) -> Result<(), ()> {
+        let Some(Described { value: callback, .. }) =
+            self.state().act(act_id).type_.abilities().use_on_character else { return Err(()) };
 
         (callback)(self, UseOnCharacterArgs { act_id, target_id });
 
         self.state.acts.remove_from_some_player(act_id);
+        Ok(())
     }
 
     pub fn modify_stat(
@@ -190,40 +195,73 @@ callbacks! {
     pub fn place(
         &mut self @ chrs,
         chr_id: CharacterID,
-    ) {
-        let player_id = self.state.chrs.find_owner(chr_id).expect(format!("expected some player to own {:?}", chr_id).as_str());
+    ) -> Result<(), ()> {
+        let Some(player_id) = self.state.chrs.find_owner(chr_id) else { return Err(()) };
 
         if player_id == self.state.attacker().player_id {
             let attacker_chr_id = &mut self.state.attacker_mut().chr_id;
+
             if attacker_chr_id.is_some() {
-                panic!("attacker is already placed");
+                return Err(());
             }
+
             *attacker_chr_id = Some(chr_id);
+            Ok(())
         } else if player_id == self.state.defender().player_id {
             let defender_chr_id = &mut self.state.defender_mut().chr_id;
+
             if defender_chr_id.is_some() {
-                panic!("defender is already placed");
+                return Err(());
             }
+
             *defender_chr_id = Some(chr_id);
+            Ok(())
         } else {
-            panic!("{:?} is not in battle", player_id);
+            return Err(());
         }
     }
-}
 
-impl Host {
-    pub fn set(&mut self, _stat_type: Stat, _chr_id: CharacterID, _value: Stat0) {
-        todo!("self.modify(current_value - value)")
+    pub fn kill(
+        &mut self @ chrs,
+        chr_id: CharacterID,
+    ) {
+        todo!()
+    }
+
+    pub fn random(
+        &mut self,
+        min: Stat0,
+        max: Stat0,
+    ) -> Stat0 {
+        thread_rng().gen_range(min..=max)
     }
 }
 
 impl Host {
-    pub fn choose_hand_act(&mut self, _player_id: PlayerID) -> ActiveID {
-        todo!()
+    pub fn set_stat(&mut self, chr_id: CharacterID, stat_type: Stat, value: Stat0) {
+        // FIXME
+        match self.state.chr_mut(chr_id).stats.stat_mut(stat_type) {
+            StatValue::Var(stat) => *stat = value,
+            StatValue::Const(_) => panic!("set const"),
+            stat @ StatValue::Unknown => *stat = StatValue::Var(value),
+        }
     }
 
-    pub fn choose_hand_chr(&mut self, _player_id: PlayerID) -> CharacterID {
-        todo!()
+    pub fn set_phy_vit(&mut self, chr_id: CharacterID, value: Stat0) {
+        self.set_stat(chr_id, Stat::Physique, value);
+        self.set_stat(chr_id, Stat::Vitality, value);
+    }
+}
+
+impl Host {
+    pub fn choose_hand_act(&mut self, player_id: PlayerID) -> ActiveID {
+        // TODO: просить игрока выбрать
+        self.state().acts.hand(player_id)[0]
+    }
+
+    pub fn choose_hand_chr(&mut self, player_id: PlayerID) -> CharacterID {
+        // TODO: просить игрока выбрать
+        self.state().chrs.hand(player_id)[0]
     }
 
     pub fn end_subturn(&mut self) {
