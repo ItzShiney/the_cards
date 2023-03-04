@@ -196,7 +196,7 @@ callbacks! {
         &mut self @ chrs,
         chr_id: CharacterID,
     ) -> Result<(), ()> {
-        let Some(player_id) = self.state.chrs.find_owner(chr_id) else { return Err(()) };
+        let Some(player_id) = self.state.chrs.try_find_owner(chr_id) else { return Err(()) };
 
         if player_id == self.state.attacker().player_id {
             let attacker_chr_id = &mut self.state.attacker_mut().chr_id;
@@ -225,7 +225,7 @@ callbacks! {
         &mut self @ chrs,
         chr_id: CharacterID,
     ) {
-        todo!()
+        self.state_mut().kill(chr_id);
     }
 
     pub fn random(

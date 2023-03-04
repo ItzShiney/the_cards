@@ -203,7 +203,7 @@ chrs! {
 
                 value: |game, args| {
                     let self_id = args.chr_id;
-                    let owner_id = game.state().chrs.find_owner(self_id).unwrap();
+                    let owner_id = game.state().chrs.find_owner(self_id);
                     let copied_chr_id = game.choose_hand_chr(owner_id);
                     // println!("DELIRIUM копирует:\n{}", game.state().chr(copied_chr_id));
 
@@ -385,7 +385,7 @@ chrs! {
 
                 value: |game, args| {
                     let self_id = args.chr_id;
-                    let owner_id = game.state().chrs.find_owner(self_id).unwrap();
+                    let owner_id = game.state().chrs.find_owner(self_id);
 
                     let Some(gained_act_id) = game.state_mut().acts.pick(owner_id) else { return };
                     if game.use_on_character(gained_act_id, self_id).is_err() {
@@ -573,7 +573,7 @@ chrs! {
 
                 value: |game, args| {
                     let self_id = args.chr_id;
-                    let owner_id = game.state().chrs.find_owner(self_id).unwrap();
+                    let owner_id = game.state().chrs.find_owner(self_id);
 
                     let phy = {
                         game.state().chrs.hand(owner_id).clone().into_iter().filter_map(|chr_id| {

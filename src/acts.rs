@@ -5,7 +5,7 @@ use crate::{
 };
 use crate::{
     described::Described,
-    game_state::ability_description::AbilityDescription,
+    game_state::{ability_description::AbilityDescription, chr_info::CharacterInfo},
     host::{Chain, GameCallbacks},
     stats::Stat,
 };
@@ -125,7 +125,7 @@ acts! {
                 },
 
                 value: |game, args| {
-                    let owner_id = game.state().acts.find_owner(args.act_id).unwrap();
+                    let owner_id = game.state().acts.find_owner(args.act_id);
                     let imitated_act_id = game.choose_hand_act(owner_id);
 
                     todo!("mimic {:?}", imitated_act_id)
@@ -151,6 +151,7 @@ acts! {
 
                 value: |game, args| {
                     game.modify_stat(args.target_id, Stat::Damage, 3);
+
                     Chain::Continue(args)
                 }
             }),
@@ -245,11 +246,8 @@ acts! {
                 },
 
                 value: |game, args| {
-                    let self_id = args.act_id;
-                    let owner_id = game.state().acts.find_owner(self_id);
-
-                    let target_id = args.target_id;
-                    let target_owner_id = game.state().chrs.find_owner(target_id);
+                    let owner_id = game.state().acts.try_find_owner(args.act_id);
+                    let target_owner_id = game.state().chrs.try_find_owner(args.target_id);
 
                     if owner_id == target_owner_id {
                         return Chain::Break(Err(()));
@@ -278,8 +276,18 @@ acts! {
                     ],
                 },
 
-                value: |_game, _args| {
-                    todo!()
+                value: |game, args| {
+                    game.modify_stat(args.target_id, Stat::Physique, 1);
+
+                    #[allow(unreachable_code)]
+                    if todo!("ранее была использована РУЧКА НОЖА") {
+                        let owner_id = game.state().acts.find_owner(args.act_id);
+
+                        let drawn_chr_id = game.state_mut().chrs.add(CharacterInfo::new(CharacterType::Нож));
+                        game.state_mut().chrs.add_to_player(drawn_chr_id, owner_id);
+                    }
+
+                    Chain::Continue(args)
                 }
             }),
 
@@ -303,8 +311,15 @@ acts! {
                 },
 
                 value: |game, args| {
-                    let target_id = args.target_id;
-                    game.modify_stat(target_id, Stat::Physique, 1);
+                    game.modify_stat(args.target_id, Stat::Physique, 1);
+
+                    #[allow(unreachable_code)]
+                    if todo!("ранее было использовано ЛЕЗВИЕ НОЖА") {
+                        let owner_id = game.state().acts.find_owner(args.act_id);
+
+                        let drawn_chr_id = game.state_mut().chrs.add(CharacterInfo::new(CharacterType::Нож));
+                        game.state_mut().chrs.add_to_player(drawn_chr_id, owner_id);
+                    }
 
                     Chain::Continue(args)
                 }

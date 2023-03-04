@@ -143,7 +143,7 @@ impl<ID: IDTrait + Debug, CardInfo> GameOfCardType<ID, CardInfo> {
         self.hand_mut(player_id).retain(|&hand_id| hand_id != id);
     }
 
-    pub fn find_owner(&self, id: ID) -> Option<PlayerID> {
+    pub fn try_find_owner(&self, id: ID) -> Option<PlayerID> {
         for (&player_id, hand) in self.hands.iter() {
             if hand.contains(&id) {
                 return Some(player_id);
@@ -152,9 +152,14 @@ impl<ID: IDTrait + Debug, CardInfo> GameOfCardType<ID, CardInfo> {
         None
     }
 
+    pub fn find_owner(&self, id: ID) -> PlayerID {
+        self.try_find_owner(id).unwrap()
+    }
+
     pub fn remove_from_some_player(&mut self, id: ID) -> PlayerID {
-        let player_id =
-            self.find_owner(id).expect(format!("expected some player to own {:?}", id).as_str());
+        let player_id = self
+            .try_find_owner(id)
+            .expect(format!("expected some player to own {:?}", id).as_str());
         self.remove_from_player(id, player_id);
         player_id
     }
@@ -392,25 +397,39 @@ impl GameState {
 impl GameState {
     fn remove_from_field(&mut self, subturner: Subturner) {
         let subturner_on_field = self.subturner_on_field_mut(subturner);
-
         let Some(chr_id) = subturner_on_field.chr_id.take() else { panic!("expected chr to be on field") };
-        let owner_id = subturner_on_field.player_id;
         let used_act_ids = take(&mut subturner_on_field.used_act_ids);
 
         if self.is_dead(chr_id) {
-            self.chrs.add_to_wastepile(chr_id);
+            self.kill(chr_id);
         } else {
-            self.chrs.add_to_player(chr_id, owner_id);
+            self.leave_field(chr_id);
         }
 
         for act_id in used_act_ids {
-            // TODO: Host::waste
             self.acts.add_to_wastepile(act_id);
         }
     }
 
-    fn is_dead(&self, chr_id: CharacterID) -> bool {
+    pub fn leave_field(&mut self, chr_id: CharacterID) {
+        if self.is_dead(chr_id) {
+            self.kill(chr_id);
+            return;
+        }
+
+        // TODO: vit = phy
+
+        let owner_id = self.chrs.find_owner(chr_id);
+        self.chrs.add_to_player(chr_id, owner_id);
+    }
+
+    pub fn is_dead(&self, chr_id: CharacterID) -> bool {
         self.chr(chr_id).stats.vit.0.into_value() == Some(0)
+    }
+
+    // TODO: vit = phy
+    pub fn kill(&mut self, chr_id: CharacterID) {
+        self.chrs.add_to_wastepile(chr_id);
     }
 
     fn change_turner(&mut self) {
