@@ -12,16 +12,30 @@ pub type Stat0 = i32;
 // Статы обязаны быть инициализированными, а may_init_change будет сигнализировать о том, что стат скорее всего будет изменён. Отображается как VIT 5?
 #[derive(Debug, Clone, Copy, PartialEq, Eq, EnumAs)]
 pub enum StatValue {
-    Unknown,
+    WillChange(Stat0),
     Var(Stat0),
     Const(Stat0),
 }
 
+#[macro_export]
+macro_rules! stat {
+    ($value:literal?) => {
+        $crate::stats::StatValue::WillChange($value)
+    };
+
+    ($value:literal) => {
+        $crate::stats::StatValue::Var($value)
+    };
+
+    ($value:literal=const) => {
+        $crate::stats::StatValue::Const($value)
+    };
+}
+
 impl StatValue {
-    pub fn into_value(self) -> Option<Stat0> {
+    pub fn into_value(self) -> Stat0 {
         match self {
-            StatValue::Unknown => None,
-            StatValue::Var(x) | StatValue::Const(x) => Some(x),
+            StatValue::WillChange(x) | StatValue::Var(x) | StatValue::Const(x) => x,
         }
     }
 }
@@ -29,14 +43,9 @@ impl StatValue {
 impl Display for StatValue {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            Self::Unknown => "?".fmt(f),
-
-            Self::Var(x) => x.fmt(f),
-
-            Self::Const(x) => {
-                x.fmt(f)?;
-                "=const".fmt(f)
-            }
+            Self::WillChange(x) => write!(f, "{}?", x),
+            Self::Var(x) => write!(f, "{}", x),
+            Self::Const(x) => write!(f, "{}=const", x),
         }
     }
 }
@@ -44,8 +53,14 @@ impl Display for StatValue {
 impl SubAssign<Stat0> for StatValue {
     fn sub_assign(&mut self, rhs: Stat0) {
         match self {
-            Self::Unknown => panic!("operations on ?"),
+            Self::WillChange(val) => {
+                let mut res = Self::Var(*val);
+                res -= rhs;
+                *self = res;
+            }
+
             Self::Var(val) => *val = (*val - rhs).max(0),
+
             Self::Const(_) => panic!("operations on const"),
         }
     }
@@ -54,14 +69,20 @@ impl SubAssign<Stat0> for StatValue {
 impl AddAssign<Stat0> for StatValue {
     fn add_assign(&mut self, rhs: Stat0) {
         match self {
-            Self::Unknown => panic!("operations on ?"),
+            Self::WillChange(val) => {
+                let mut res = Self::Var(*val);
+                res += rhs;
+                *self = res;
+            }
+
             Self::Var(val) => *val = (*val + rhs).max(0),
+
             Self::Const(_) => panic!("operations on const"),
         }
     }
 }
 
-macro_rules! stat {
+macro_rules! make_stat {
     ($Name:ident) => {
         #[derive(Debug, Clone, Copy, PartialEq, Eq)]
         pub struct $Name(pub StatValue);
@@ -74,84 +95,44 @@ macro_rules! stat {
     };
 }
 
-stat!(Vitality);
-stat!(Physique);
-stat!(Defence);
-stat!(Damage);
-stat!(Intellect);
+make_stat!(Vitality);
+make_stat!(Physique);
+make_stat!(Defence);
+make_stat!(Damage);
+make_stat!(Intellect);
 
 #[macro_export]
 macro_rules! vit {
-    (?) => {
-        $crate::stats::Vitality(StatValue::Unknown)
-    };
-
-    (const $value:expr) => {
-        $crate::stats::Vitality(StatValue::Const($value))
-    };
-
-    ($value:expr) => {
-        $crate::stats::Vitality(StatValue::Var($value))
+    ($($xs:tt)*) => {
+        $crate::stats::Vitality($crate::stat!($($xs)*))
     };
 }
 
 #[macro_export]
 macro_rules! phy {
-    (?) => {
-        $crate::stats::Physique($crate::stats::StatValue::Unknown)
-    };
-
-    (const $value:expr) => {
-        $crate::stats::Physique($crate::stats::StatValue::Const($value))
-    };
-
-    ($value:expr) => {
-        $crate::stats::Physique($crate::stats::StatValue::Var($value))
+    ($($xs:tt)*) => {
+        $crate::stats::Physique($crate::stat!($($xs)*))
     };
 }
 
 #[macro_export]
 macro_rules! def {
-    (?) => {
-        $crate::stats::Defence($crate::stats::StatValue::Unknown)
-    };
-
-    (const $value:expr) => {
-        $crate::stats::Defence($crate::stats::StatValue::Const($value))
-    };
-
-    ($value:expr) => {
-        $crate::stats::Defence($crate::stats::StatValue::Var($value))
+    ($($xs:tt)*) => {
+        $crate::stats::Defence($crate::stat!($($xs)*))
     };
 }
 
 #[macro_export]
 macro_rules! dmg {
-    (?) => {
-        $crate::stats::Damage($crate::stats::StatValue::Unknown)
-    };
-
-    (const $value:expr) => {
-        $crate::stats::Damage($crate::stats::StatValue::Const($value))
-    };
-
-    ($value:expr) => {
-        $crate::stats::Damage($crate::stats::StatValue::Var($value))
+    ($($xs:tt)*) => {
+        $crate::stats::Damage($crate::stat!($($xs)*))
     };
 }
 
 #[macro_export]
 macro_rules! int {
-    (?) => {
-        $crate::stats::Intellect($crate::stats::StatValue::Unknown)
-    };
-
-    (const $value:expr) => {
-        $crate::stats::Intellect($crate::stats::StatValue::Const($value))
-    };
-
-    ($value:expr) => {
-        $crate::stats::Intellect($crate::stats::StatValue::Var($value))
+    ($($xs:tt)*) => {
+        $crate::stats::Intellect($crate::stat!($($xs)*))
     };
 }
 
@@ -165,25 +146,15 @@ pub struct Stats {
 }
 
 impl Stats {
-    pub const UNINIT: Stats =
-        Stats { vit: vit!(?), phy: phy!(?), def: def!(?), dmg: dmg!(?), int: int!(?) };
-
     pub fn new(phy: Physique, dmg: Damage, int: Intellect) -> Self {
-        let vit = match phy.0 {
-            StatValue::Unknown => Vitality(StatValue::Unknown),
-            StatValue::Var(x) | StatValue::Const(x) => Vitality(StatValue::Var(x)),
-        };
-
+        let vit = Vitality(phy.0);
         let def = def!(0);
 
         Self { vit, phy, def, dmg, int }
     }
 
     pub fn new_def(phy: Physique, def: Defence, dmg: Damage, int: Intellect) -> Self {
-        let vit = match phy.0 {
-            StatValue::Unknown => Vitality(StatValue::Unknown),
-            StatValue::Var(x) | StatValue::Const(x) => Vitality(StatValue::Var(x)),
-        };
+        let vit = Vitality(phy.0);
 
         Self { vit, phy, def, dmg, int }
     }

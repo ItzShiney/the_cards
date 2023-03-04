@@ -173,7 +173,7 @@ acts! {
                 },
 
                 value: |game, args| {
-                    let phy = game.state().chr(args.target_id).stats.phy.0.into_value().unwrap();
+                    let phy = game.state().chr(args.target_id).stats.phy.0.into_value();
                     game.set_stat(args.target_id, Stat::Vitality, phy);
 
                     Chain::Continue(args)

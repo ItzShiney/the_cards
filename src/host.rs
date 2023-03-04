@@ -169,9 +169,9 @@ callbacks! {
         stat_type: Stat,
         val: Stat0,
     ) {
-        let phy = self.state.chr_mut(chr_id).stats.phy.0.into_value().unwrap();
+        let phy = self.state.chr_mut(chr_id).stats.phy.0.into_value();
         let vit = &mut self.state.chr_mut(chr_id).stats.vit;
-        let new_vit = (vit.0.into_value().unwrap() + val).max(0).min(phy);
+        let new_vit = (vit.0.into_value() + val).max(0).min(phy);
         vit.0 = StatValue::Var(new_vit);
     }
 
@@ -180,9 +180,9 @@ callbacks! {
         chr_id: CharacterID,
         dmg: Stat0,
     ) {
-        let old_def = self.state().chr(chr_id).stats.def.0.into_value().unwrap();
+        let old_def = self.state().chr(chr_id).stats.def.0.into_value();
         self.modify_stat(chr_id, Stat::Defence, dmg);
-        let new_def = self.state().chr(chr_id).stats.def.0.into_value().unwrap();
+        let new_def = self.state().chr(chr_id).stats.def.0.into_value();
 
         let def_dmg_taken = old_def - new_def;
         let vit_dmg_to_take = dmg - def_dmg_taken;
@@ -242,8 +242,8 @@ impl Host {
         // FIXME
         match self.state.chr_mut(chr_id).stats.stat_mut(stat_type) {
             StatValue::Var(stat) => *stat = value,
-            StatValue::Const(_) => panic!("set const"),
-            stat @ StatValue::Unknown => *stat = StatValue::Var(value),
+            StatValue::Const(_) => panic!("attempt to change const"),
+            stat @ StatValue::WillChange(_) => *stat = StatValue::Var(value),
         }
     }
 

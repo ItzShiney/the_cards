@@ -189,8 +189,8 @@ chrs! {
 
         // ?/?/0
         stats: Stats::new(
-            phy!(?),
-            dmg!(?),
+            phy!(5?),
+            dmg!(5?),
             int!(0), // представляет собой безумие
         ),
 
@@ -208,8 +208,8 @@ chrs! {
                     // println!("DELIRIUM копирует:\n{}", game.state().chr(copied_chr_id));
 
                     let stats = &game.state().chr(copied_chr_id).stats;
-                    let phy = stats.phy.0.into_value().unwrap();
-                    let dmg = stats.dmg.0.into_value().unwrap();
+                    let phy = stats.phy.0.into_value();
+                    let dmg = stats.dmg.0.into_value();
 
                     game.set_phy_vit(self_id, phy);
                     game.set_stat(self_id, Stat::Damage, dmg);
@@ -419,7 +419,7 @@ chrs! {
         // 2/?/-0
         stats: Stats::new(
             phy!(3),
-            dmg!(?),
+            dmg!(5?),
             int!(1),
         ),
 
@@ -555,7 +555,7 @@ chrs! {
 
         // 0/5/-3
         stats: Stats::new(
-            phy!(?),
+            phy!(5?),
             dmg!(7),
             int!(7),
         ),
@@ -580,7 +580,7 @@ chrs! {
                             let chr = game.state().chr(chr_id);
                             // TODO: проверять все группы, не только главные (groups())
                             if chr.type_.groups().contains(&Group::Illusion) {
-                                Some(chr.stats.phy.0.into_value().unwrap())
+                                Some(chr.stats.phy.0.into_value())
                             } else {
                                 None
                             }
