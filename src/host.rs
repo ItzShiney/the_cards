@@ -139,7 +139,7 @@ callbacks! {
         &mut self @ acts,
         act_id: ActiveID,
     ) {
-        self.state.acts.add_to_waste_pile(act_id);
+        self.state.acts.add_to_wastepile(act_id);
     }
 
     pub fn use_on_field(

@@ -57,8 +57,8 @@ pub struct GameOfCardType<ID: IDTrait, CardInfo> {
     id_manager: IDManager<ID>,
     cards: HashMap<ID, CardInfo>,
 
-    gain_pile: Vec<ID>,
-    waste_pile: Vec<ID>,
+    drawpile: Vec<ID>,
+    wastepile: Vec<ID>,
 
     hands: HashMap<PlayerID, Vec<ID>>,
 }
@@ -69,8 +69,8 @@ impl<ID: IDTrait, CardInfo> Default for GameOfCardType<ID, CardInfo> {
             id_manager: Default::default(),
             cards: Default::default(),
 
-            gain_pile: Default::default(),
-            waste_pile: Default::default(),
+            drawpile: Default::default(),
+            wastepile: Default::default(),
 
             hands: Default::default(),
         }
@@ -104,7 +104,7 @@ impl<ID: IDTrait + Debug, CardInfo> GameOfCardType<ID, CardInfo> {
     }
 
     pub fn draw(&mut self) -> Option<ID> {
-        self.gain_pile.pop()
+        self.drawpile.pop()
     }
 
     pub fn draw_n(&mut self, cards_count: usize) -> Vec<ID> {
@@ -159,20 +159,20 @@ impl<ID: IDTrait + Debug, CardInfo> GameOfCardType<ID, CardInfo> {
         player_id
     }
 
-    pub fn add_to_gain_pile(&mut self, id: ID) {
-        self.gain_pile.push(id);
+    pub fn add_to_drawpile(&mut self, id: ID) {
+        self.drawpile.push(id);
     }
 
-    pub fn remove_from_gain_pile(&mut self, id: ID) {
-        self.gain_pile.retain(|&pile_id| pile_id != id);
+    pub fn remove_from_drawpile(&mut self, id: ID) {
+        self.drawpile.retain(|&pile_id| pile_id != id);
     }
 
-    pub fn add_to_waste_pile(&mut self, id: ID) {
-        self.waste_pile.push(id);
+    pub fn add_to_wastepile(&mut self, id: ID) {
+        self.wastepile.push(id);
     }
 
-    pub fn remove_from_waste_pile(&mut self, id: ID) {
-        self.waste_pile.retain(|&pile_id| pile_id != id);
+    pub fn remove_from_wastepile(&mut self, id: ID) {
+        self.wastepile.retain(|&pile_id| pile_id != id);
     }
 }
 
@@ -287,7 +287,7 @@ impl GameState {
             let chr = CharacterInfo::new(chr_type);
 
             let chr_id = self.add_chr(chr);
-            self.chrs.add_to_gain_pile(chr_id);
+            self.chrs.add_to_drawpile(chr_id);
         }
 
         for _ in 1..=total_acts_count {
@@ -296,7 +296,7 @@ impl GameState {
             let act = ActiveInfo::new(act_type);
 
             let act_id = self.add_act(act);
-            self.acts.add_to_gain_pile(act_id);
+            self.acts.add_to_drawpile(act_id);
         }
     }
 }
@@ -398,14 +398,14 @@ impl GameState {
         let used_act_ids = take(&mut subturner_on_field.used_act_ids);
 
         if self.is_dead(chr_id) {
-            self.chrs.add_to_waste_pile(chr_id);
+            self.chrs.add_to_wastepile(chr_id);
         } else {
             self.chrs.add_to_player(chr_id, owner_id);
         }
 
         for act_id in used_act_ids {
             // TODO: Host::waste
-            self.acts.add_to_waste_pile(act_id);
+            self.acts.add_to_wastepile(act_id);
         }
     }
 

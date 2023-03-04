@@ -389,7 +389,7 @@ chrs! {
 
                     let Some(gained_act_id) = game.state_mut().acts.pick(owner_id) else { return };
                     if game.use_on_character(gained_act_id, self_id).is_err() {
-                        todo!("вернуть в стопку добора")
+                        game.state_mut().acts.add_to_drawpile(gained_act_id);
                     }
                 }
             }),

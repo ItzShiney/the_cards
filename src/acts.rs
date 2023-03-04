@@ -211,13 +211,18 @@ acts! {
         groups: [Group::ByConstantine, Group::SocialOrder],
 
         abilities: GameCallbacks {
+            // TODO: использовано в качестве своего хода =>
             use_on_field: Some(Described {
                 description: AbilityDescription {
                     name: None,
-                    description: cs!["каждый игрок передаёт свою колоду следующему по направлению ходов. эта карта уничтожается. пропускает ход"],
+                    description: cs![
+                        "каждый игрок передаёт свою колоду следующему по направлению ходов\n",
+                        Bullet, "эта карта уничтожается\n",
+                        Bullet, "ход заканчивается"
+                    ],
                 },
 
-                value: |_game, _self_id| {
+                value: |_game, _args| {
                     todo!()
                 }
             }),
@@ -232,13 +237,24 @@ acts! {
         groups: [Group::ByZoinX],
 
         abilities: GameCallbacks {
+            // TODO: использовано на противника & твой персонаж не выставлен =>
             use_on_character: Some(Described {
                 description: AbilityDescription {
                     name: None,
-                    description: cs!["противник выставляется как твой персонаж"],
+                    description: cs!["персонаж противника становится твоим и выставляется от тебя"],
                 },
 
-                value: |_game, _args| {
+                value: |game, args| {
+                    let self_id = args.act_id;
+                    let owner_id = game.state().acts.find_owner(self_id);
+
+                    let target_id = args.target_id;
+                    let target_owner_id = game.state().chrs.find_owner(target_id);
+
+                    if owner_id == target_owner_id {
+                        return Chain::Break(Err(()));
+                    }
+
                     todo!()
                 }
             }),
@@ -286,8 +302,11 @@ acts! {
                     ],
                 },
 
-                value: |_game, _args| {
-                    todo!()
+                value: |game, args| {
+                    let target_id = args.target_id;
+                    game.modify_stat(target_id, Stat::Physique, 1);
+
+                    Chain::Continue(args)
                 }
             }),
 
