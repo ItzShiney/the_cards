@@ -82,6 +82,9 @@ custom_string_slice![
         Defence => |f| write!(f, "\x1b[34mDEF\x1b[39m");
         Damage => |f| write!(f, "\x1b[33mDMG\x1b[39m");
         Intellect => |f| write!(f, "\x1b[36mINT\x1b[39m");
+
+        LE => |f| write!(f, "≤");
+        GE => |f| write!(f, "≥");
     }
 ];
 

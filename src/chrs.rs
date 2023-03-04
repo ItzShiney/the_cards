@@ -6,7 +6,7 @@ use crate::{
     game_state::ability_description::AbilityDescription,
     game_state::group::Group,
     gendered::RuGender,
-    host::GameCallbacks,
+    host::{Chain, GameCallbacks},
     int, phy,
     stats::{Stat, Stats},
 };
@@ -132,12 +132,26 @@ chrs! {
             int!(0),
         ),
 
-        // TODO:
-        // пока INT противника > 2 ⟹
-        // • не атакует
-        //
-        // ударил [PYROKINESIS] ⟹
-        // • "И ТОЛЬКО УМЕР ОТ ВАРЕНЬЯ": тот мгновенно умирает
+        abilities: GameCallbacks {
+            attack: Some(Described {
+                description: AbilityDescription {
+                    name: None,
+                    description: cs!["не атакует, если ", Intellect, " противника ", GE, " 3"],
+                },
+
+                value: |game, args| {
+                    let self_id = args.attacker_id;
+
+                    if game.state().chr(self_id).stats.int.0.into_value() >= 3 {
+                        return Chain::Break(());
+                    }
+
+                    Chain::Continue(args)
+                }
+            }),
+
+            ..Default::default()
+        },
     }
 
     ДухТвоейКвартиры {

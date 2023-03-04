@@ -175,6 +175,15 @@ callbacks! {
         vit.0 = StatValue::Var(new_vit);
     }
 
+    pub fn attack(
+        &mut self @ chrs,
+        attacker_id: CharacterID,
+        target_id: CharacterID,
+    ) {
+        let dmg = self.state().chr(attacker_id).stats.dmg.0.into_value();
+        self.hurt(target_id, dmg);
+    }
+
     pub fn hurt(
         &mut self @ chrs,
         chr_id: CharacterID,
