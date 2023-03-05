@@ -2,8 +2,9 @@ pub mod macro_;
 
 use crate::{
     acts,
+    group::Group,
     host::chain::Chain,
-    {chrs::CharacterType, cs, custom_string::CustomString, game_state::group::Group},
+    {chrs::CharacterType, cs, custom_string::CustomString},
     {game_state::chr_info::CharacterInfo, host::GameCallbacks, stats::Stat},
 };
 

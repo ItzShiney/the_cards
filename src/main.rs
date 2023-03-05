@@ -5,6 +5,7 @@ pub mod custom_string;
 pub mod default_formatted;
 pub mod effect;
 pub mod game_state;
+pub mod group;
 pub mod host;
 pub mod stats;
 

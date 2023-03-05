@@ -2,8 +2,6 @@ pub mod act_id;
 pub mod act_info;
 pub mod chr_id;
 pub mod chr_info;
-pub mod condition;
-pub mod group;
 pub mod id_manager;
 pub mod player_id;
 pub mod player_id_manager;
@@ -17,7 +15,6 @@ use self::act_id::ActiveID;
 use self::act_info::ActiveInfo;
 use self::chr_id::CharacterID;
 use self::chr_info::CharacterInfo;
-use self::condition::Condition;
 use self::id_manager::id_trait::IDTrait;
 use self::id_manager::IDManager;
 use self::player_id::PlayerID;
@@ -312,14 +309,6 @@ impl GameState {
 
     pub fn other_subturner_mut(&mut self) -> &mut SubturnerOnField {
         self.subturner_on_field_mut(self.current_subturner.other())
-    }
-
-    pub fn check_conditions(&self, conditions: &[Condition]) -> bool {
-        conditions.iter().all(|condition| self.check_condition(condition))
-    }
-
-    pub fn check_condition(&self, _condition: &Condition) -> bool {
-        todo!()
     }
 
     pub fn pick_defender_id(&self, attacker_id: PlayerID) -> PlayerID {

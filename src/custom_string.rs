@@ -2,7 +2,7 @@ use std::{fmt::Display, ops::RangeInclusive};
 
 use itertools::Itertools;
 
-use crate::{acts::ActiveType, chrs::CharacterType, game_state::group::Group};
+use crate::{acts::ActiveType, chrs::CharacterType, group::Group};
 
 macro_rules! custom_string_slice {
     (
@@ -158,7 +158,7 @@ macro_rules! cs {
         #[allow(unused)] use $crate::custom_string::CustomStringSlice::*;
         #[allow(unused)] use $crate::chrs::CharacterType::*;
         #[allow(unused)] use $crate::acts::ActiveType::*;
-        #[allow(unused)] use $crate::game_state::group::Group::*;
+        #[allow(unused)] use $crate::group::Group::*;
         $crate::custom_string::CustomString::from(vec![$($args.into()),*])
     }};
 }

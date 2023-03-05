@@ -4,7 +4,7 @@ use crate::{
     chrs, cs,
     custom_string::CustomString,
     dmg,
-    game_state::group::Group,
+    group::Group,
     host::{chain::Chain, GameCallbacks},
     int, phy,
     stats::{Stat, Stats},

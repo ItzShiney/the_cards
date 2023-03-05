@@ -13,9 +13,9 @@ use crate::{
     game_state::act_info::ActiveInfo,
     game_state::chr_id::CharacterID,
     game_state::chr_info::CharacterInfo,
-    game_state::group::Group,
     game_state::player_id::PlayerID,
     game_state::{GameState, Subturner},
+    group::Group,
     stats::{Stat, Stat0, StatValue},
 };
 
