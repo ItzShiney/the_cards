@@ -40,66 +40,75 @@ macro_rules! groups {
     };
 }
 
-// TODO: переименовать на русский
 groups![
-    ByShiney > "\x1b[34m@лёня\x1b[39m";
-    ByMaxvog > "\x1b[34m@максим\x1b[39m";
-    ByConstantine > "\x1b[34m@костя\x1b[39m";
-    ByZoinX > "\x1b[34m@лёша\x1b[39m";
+    СделаноЛёней > "\x1b[35m@лёня\x1b[39m";
+    СделаноМаксимом > "\x1b[36m@максим\x1b[39m";
+    СделаноКостей > "\x1b[33m@костя\x1b[39m";
+    СделаноЛёшей > "\x1b[31m@лёша\x1b[39m";
 
-    Male > "\x1b[36m♂\x1b[39m";
-    Female > "\x1b[35m♀️\x1b[39m";
+    Скрытая > "\x1b[90mскрытая\x1b[39m";
 
-    Illusion > "иллюзия";
-    Moral > "моралит";
-    Dismoral > "дизморалит";
+    Мужчина > "\x1b[36m♂\x1b[39m";
+    Женщина > "\x1b[35m♀️\x1b[39m";
 
-    Anime > "аниме";
-        ReZero > "re:zero": [Anime, Shows];
-        Monogatari > "monogatari": [Anime, Shows];
-        BocchiTheRock > "bocchi": [Anime, Shows];
-        NewGame > "new game": [Anime, Shows];
-        DeathNote > "death note": [Anime, Shows];
+    Иллюзия > "иллюзия";
+    Моралит > "моралит";
+    Дизморалит > "дизморалит";
 
-    Programming > "программирование";
-        ProgrammingLanguages > "языки программирования": [Programming];
+    Суеверия > "суеверия";
+        Таро > "таро": [Суеверия];
+        Зодиак > "зодиак": [Суеверия];
 
-    Reality > "реальность";
-    SocialOrder > "общественный строй";
+    Аниме > "аниме";
+        ReZero > "re:zero": [Аниме, Сериалы];
+        Monogatari > "monogatari": [Аниме, Сериалы];
+        Bocchi > "bocchi": [Аниме, Сериалы];
+        NewGame > "new game": [Аниме, Сериалы];
+        DeathNote > "death note": [Аниме, Сериалы];
 
-    Music > "музыка";
-        Pyrokinesis > "pyrokinesis": [Music];
+    Программирование > "программирование";
+        ЯзыкиПрограммирования > "языки программирования": [Программирование];
 
-    Memes > "мемы";
-        Quotes > "цитаты": [Memes];
-            ConstantineQuotes > "цитаты кости": [Quotes];
-            ChubarovQuotes > "цитаты чубарова": [Quotes];
-        Lifemaking > "животворит": [Memes];
+    Реальность > "реальность";
+        Химия > "химия": [Реальность];
 
-    Shows > "сериалы";
-        SouthPark > "south park": [Shows];
+    ОбщественныйСтрой > "общественный строй";
 
-    Games > "игры";
-        TBoI > "tboi": [Games];
-        Portal > "portal": [Games];
-        Undertale > "undertale": [Games];
-        Terraria > "terraria": [Games];
-        Minecraft > "minecraft": [Games];
+    Музыка > "музыка";
+        Pyrokinesis > "pyrokinesis": [Музыка];
+
+    Цитаты > "цитаты";
+        ЦитатыКости > "цитаты кости": [Цитаты];
+        ЦитатыЧубарова > "цитаты чубарова": [Цитаты];
+
+    Мемы > "мемы";
+        Животворит > "животворит": [Мемы]; // убрать надгруппу?
+        ПепежноеСущество > "пепежное существо": [Мемы];
+
+    Сериалы > "сериалы";
+        SouthPark > "south park": [Сериалы];
+
+    Игры > "игры";
+        TBoI > "tboi": [Игры];
+        Portal > "portal": [Игры];
+        Undertale > "undertale": [Игры];
+        Terraria > "terraria": [Игры];
+        Minecraft > "minecraft": [Игры];
             DreamSMP > "dream smp": [Minecraft];
 
-    VisualNovels > "новеллы": [Games, Anime];
-        WhenTheyCry > "wtc": [VisualNovels];
-            Higurashi > "higurashi": [WhenTheyCry];
-            Umineko > "umineko": [WhenTheyCry];
-        SteinsGate > "steins;gate": [VisualNovels];
-        SayaNoUta > "saya no uta": [VisualNovels];
+        Новеллы > "новеллы": [Аниме, Игры];
+            WhenTheyCry > "wtc": [Новеллы];
+                Higurashi > "higurashi": [WhenTheyCry];
+                Umineko > "umineko": [WhenTheyCry];
+            SteinsGate > "steins;gate": [Новеллы];
+            SayaNoUta > "saya no uta": [Новеллы];
 
-    VTubers > "втуберы": [Anime];
-        WePlanet > "weplanet": [VTubers];
-        Hololive > "hololive": [VTubers];
-        Nijisanji > "nijisanji": [VTubers];
+    Втуберы > "втуберы": [Аниме];
+        WePlanet > "weplanet": [Втуберы];
+        Hololive > "hololive": [Втуберы];
+        Nijisanji > "nijisanji": [Втуберы];
 
-    Undrawable > "\x1b[31mнераздаваемая\x1b[39m";
+    Нераздаваемая > "\x1b[31mнераздаваемая\x1b[39m";
 ];
 
 fn fmt_groups(

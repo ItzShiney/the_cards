@@ -97,6 +97,14 @@ macro_rules! make_stat {
                 write!(f, "{} {}", $crate::cs![$Name], self.0)
             }
         }
+
+        impl ::std::ops::Deref for $Name {
+            type Target = StatValue;
+
+            fn deref(&self) -> &Self::Target {
+                &self.0
+            }
+        }
     };
 }
 

@@ -73,7 +73,7 @@ impl Host {
         for _ in 1..=total_chrs_count {
             let chr_type = CharacterType::all()
                 .into_iter()
-                .filter(|&chr_type| !chr_type.groups().contains(&Group::Undrawable))
+                .filter(|&chr_type| !chr_type.groups().contains(&Group::Нераздаваемая))
                 .choose(&mut thread_rng())
                 .unwrap();
 
@@ -86,7 +86,7 @@ impl Host {
         for _ in 1..=total_acts_count {
             let act_type = ActiveType::all()
                 .into_iter()
-                .filter(|&act_type| !act_type.groups().contains(&Group::Undrawable))
+                .filter(|&act_type| !act_type.groups().contains(&Group::Нераздаваемая))
                 .choose(&mut thread_rng())
                 .unwrap();
 
@@ -164,18 +164,18 @@ callbacks! {
     #[pre(true)]
     pub fn hurt(
         &mut self,
-        chr_id: CharacterID,
+        target_id: CharacterID,
         dmg: Stat0,
     ) -> Result<(), ()> {
-        let old_def = self.state.chr(chr_id).stats.def.0.into_value();
-        self.stat_add(chr_id, StatType::Defence, dmg);
-        let new_def = self.state.chr(chr_id).stats.def.0.into_value();
+        let old_def = self.state.chr(target_id).stats.def.0.into_value();
+        self.stat_add(target_id, StatType::Defence, dmg);
+        let new_def = self.state.chr(target_id).stats.def.0.into_value();
 
         let def_dmg_taken = old_def - new_def;
         let vit_dmg_to_take = dmg - def_dmg_taken;
 
         if vit_dmg_to_take > 0 {
-            self.stat_add(chr_id, StatType::Vitality, vit_dmg_to_take);
+            self.stat_add(target_id, StatType::Vitality, vit_dmg_to_take);
         }
         Ok(())
     }
@@ -281,6 +281,10 @@ callbacks! {
     pub fn force_set_phy_vit(&mut self, chr_id: CharacterID, value: Stat0) {
         self.force_set_stat(chr_id, StatType::Physique, value);
         self.force_set_stat(chr_id, StatType::Vitality, value);
+    }
+
+    pub fn replace(&mut self, replaced_chr_id: CharacterID, replacing_chr_id: CharacterID) {
+        todo!()
     }
 }
 

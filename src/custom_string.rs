@@ -90,10 +90,9 @@ custom_string_slice![
     {
         Activatable => |f| writeln!(f, "активируемая способность:");
 
-        Implies => |f| write!(f, "⟹");
+        Implies => |f| write!(f, "⟹ ");
         Bullet => |f| write!(f, "•");
         Mul => |f| write!(f, "⋅");
-        And => |f| write!(f, "&"); // ∧
 
         Vitality => |f| write!(f, "\x1b[31mVIT\x1b[39m");
         Physique => |f| write!(f, "\x1b[35mPHY\x1b[39m");

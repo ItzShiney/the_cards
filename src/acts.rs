@@ -1,5 +1,6 @@
 pub mod macro_;
 
+#[allow(unused)]
 use crate::{
     acts,
     group::Group,
@@ -14,7 +15,7 @@ acts! {
     // /*
     ПустаяКарта {
         name: cs!["ПУСТАЯ КАРТА"],
-        groups: [Group::ByShiney, Group::TBoI],
+        groups: [Group::СделаноЛёней, Group::TBoI],
 
         description: cs![
             Condition(cs!["использована"]),
@@ -35,7 +36,7 @@ acts! {
 
     Баян {
         name: cs!["БАЯН"],
-        groups: [Group::ByMaxvog, Group::Dismoral],
+        groups: [Group::СделаноМаксимом, Group::Дизморалит],
 
         description: cs![
             Condition(cs!["использован на персонажа"]),
@@ -54,7 +55,7 @@ acts! {
 
     ЖёлтаяИскра {
         name: cs!["ЖЁЛТАЯ ИСКРА"],
-        groups: [Group::ByShiney, Group::Undertale],
+        groups: [Group::СделаноЛёней, Group::Undertale],
 
         description: cs![
             Condition(cs!["использована на персонажа"]),
@@ -75,7 +76,7 @@ acts! {
 
     ТетрадьСмерти {
         name: cs!["ТЕТРАДЬ СМЕРТИ"],
-        groups: [Group::ByConstantine, Group::DeathNote],
+        groups: [Group::СделаноКостей, Group::DeathNote],
 
         description: cs![
             Condition(cs!["использована на персонажа"]),
@@ -94,10 +95,10 @@ acts! {
 
     ОБратка {
         name: cs!["О,БРАТКА"],
-        groups: [Group::ByZoinX],
+        groups: [Group::СделаноЛёшей],
 
         description: cs![
-            Condition(cs!["использована на противника ", And, " твой персонаж не выставлен"]),
+            Condition(cs!["использована на противника, единственного на поле"]),
             Point(cs!["персонаж противника становится твоим и выставляется от тебя"]),
         ],
 
@@ -119,7 +120,7 @@ acts! {
 
     ЛезвиеНожа {
         name: cs!["ЛЕЗВИЕ НОЖА"],
-        groups: [Group::ByShiney, Group::TBoI],
+        groups: [Group::СделаноЛёней, Group::TBoI],
 
         description: cs![
             Condition(cs!["использовано на персонажа"]),
@@ -148,7 +149,7 @@ acts! {
 
     РучкаНожа {
         name: cs!["РУЧКА НОЖА"],
-        groups: [Group::ByShiney, Group::TBoI],
+        groups: [Group::СделаноЛёней, Group::TBoI],
 
         description: cs![
             Condition(cs!["использовано на персонажа"]),
@@ -177,7 +178,7 @@ acts! {
 
     Коммунизм {
         name: cs!["КОММУНИЗМ"],
-        groups: [Group::ByConstantine, Group::SocialOrder],
+        groups: [Group::СделаноКостей, Group::ОбщественныйСтрой],
 
         description: cs![
             Condition(cs!["использован в качестве своего хода"]),
@@ -185,31 +186,25 @@ acts! {
             Point(cs!["эта карта уничтожается"]),
         ],
 
-        abilities: GameCallbacks {
-            use_on_field: Some(|_game, _args| {
-                todo!()
-            }),
-
-            ..Default::default()
-        },
+        // TODO
     }
 
     Монархия {
         name: cs!["МОНАРХИЯ"],
-        groups: [Group::ByShiney, Group::SocialOrder],
+        groups: [Group::СделаноЛёней, Group::ОбщественныйСтрой],
 
-        // TODO
         description: cs![
             Condition(cs!["использована в ответ на ", Коммунизм]),
             Point(cs!["отменяет его эффект"]),
             Point(cs!["эта карта уничтожается"]),
         ],
+
+        // TODO
     }
-    // */
 
     УтешительныйПриз {
         name: cs!["УТЕШИТЕЛЬНЫЙ ПРИЗ"],
-        groups: [Group::ByShiney, Group::TBoI, Group::Moral],
+        groups: [Group::СделаноЛёней, Group::TBoI, Group::Моралит],
 
         description: cs![
             Epitaph(cs![
@@ -233,7 +228,7 @@ acts! {
 
     НеутешительныйПриз {
         name: cs!["НЕУТЕШИТЕЛЬНЫЙ ПРИЗ"],
-        groups: [Group::ByMaxvog, Group::Dismoral],
+        groups: [Group::СделаноМаксимом, Group::Дизморалит],
 
         // арт — уголёк
 
@@ -254,4 +249,322 @@ acts! {
             ..Default::default()
         }
     }
+
+    Биология {
+        name: cs!["НЕДОСЫП"],
+        groups: [Group::СделаноЛёней, Group::Реальность, Group::Дизморалит],
+
+        description: cs![
+            Condition(cs!["использован на персонажа"]),
+            Point(cs![Vitality, " & ", Intellect, " -= 4"]),
+        ],
+
+        abilities: GameCallbacks {
+            use_on_character: Some(|game, args| {
+                game.stat_add(args.target_id, StatType::Vitality, -4);
+                game.stat_add(args.target_id, StatType::Intellect, -4);
+                Chain::Continue(args)
+            }),
+
+            ..Default::default()
+        }
+    }
+
+    СатокинаБита {
+        name: cs!["САТОКИНА БИТА"],
+        groups: [Group::СделаноКостей, Group::Higurashi],
+
+        description: cs![
+            Condition(cs!["использована на персонажа"]),
+            Point(cs![Damage, " += 3"]),
+        ],
+
+        abilities: GameCallbacks {
+            use_on_character: Some(|game, args| {
+                game.stat_add(args.target_id, StatType::Damage, 3);
+                Chain::Continue(args)
+            }),
+
+            ..Default::default()
+        }
+    }
+
+    Охаги {
+        name: cs!["ОХАГИ"],
+        groups: [Group::СделаноКостей, Group::Higurashi],
+
+        description: cs![
+            Condition(cs!["использованы на персонажа с ", Intellect, " ", LE, " 3"]),
+            Point(cs!["наносят 1 ", Damage]),
+        ],
+
+        abilities: GameCallbacks {
+            use_on_character: Some(|game, args| {
+                let chr_int = game.state().chr(args.target_id).stats.int.into_value();
+                if !(chr_int <= 3) {
+                    return Chain::Break(Err(()));
+                }
+
+                let _ = game.hurt(args.target_id, 1);
+                Chain::Continue(args)
+            }),
+
+            ..Default::default()
+        }
+    }
+
+    Тупость {
+        name: cs!["ТУПОСТЬ"],
+        groups: [Group::СделаноЛёней, Group::Моралит],
+
+        description: cs![
+            Condition(cs!["использована в ответ на ", Дизморалит, "-активку"]),
+            Point(cs!["отменяет её эффект"]),
+        ],
+
+        // TODO
+    }
+
+    Зеркало {
+        name: cs!["ЗЕРКАЛО"],
+        groups: [Group::СделаноЛёшей, Group::Реальность],
+
+        description: cs![
+            Condition(cs!["использовано на персонажа"]),
+            Point(cs!["копирует выбранную способность противника"]),
+        ],
+
+        // TODO
+        // (нужна какая-то пометка, какие способности возможно копировать)
+    }
+
+    Хривна {
+        name: cs!["ХРИВНА"],
+        groups: [Group::СделаноКостей, Group::Реальность],
+
+        description: cs![
+            Condition(cs!["использована на персонажа"]),
+            Point(cs![Intellect, " -= 1"]),
+        ],
+
+        abilities: GameCallbacks {
+            use_on_character: Some(|game, args| {
+                game.stat_add(args.target_id, StatType::Intellect, -1);
+                Chain::Continue(args)
+            }),
+
+            ..Default::default()
+        }
+    }
+
+    CuOH2 {
+        name: cs!["CU(OH)₂"],
+        groups: [Group::СделаноЛёней, Group::Химия],
+
+        description: cs![
+            Condition(cs!["использован на персонажа"]),
+            Point(cs![Vitality, " /= 2"]),
+        ],
+
+        abilities: GameCallbacks {
+            use_on_character: Some(|_game, _args| {
+                todo!()
+            }),
+
+            ..Default::default()
+        }
+    }
+
+    МегаовощнойКейти {
+        name: cs!["МЕГАОВОЩНОЙ КЕЙТИ"],
+        groups: [Group::СделаноКостей, Group::Higurashi],
+
+        description: cs![
+            Condition(cs!["использован на персонажа"]),
+            Point(cs![Intellect, " = 0"]),
+        ],
+
+        abilities: GameCallbacks {
+            use_on_character: Some(|_game, _args| {
+                todo!("int = 0")
+            }),
+
+            ..Default::default()
+        }
+    }
+
+    Ластик {
+        name: cs!["ЛАСТИК"],
+        groups: [Group::СделаноЛёней, Group::Реальность],
+
+        description: cs![
+            Condition(cs!["использовано в качестве хода"]),
+            Point(cs!["уничтожает все карты в бите и по одной выбранной каждым игроком у себя в руке"]),
+        ],
+
+        // TODO
+    }
+
+    МойРотРазворот {
+        name: cs!["МОЙ РОТ РАЗВОРОТ"],
+        groups: [Group::СделаноЛёней, Group::Мемы],
+
+        description: cs![
+            Condition(cs!["использовано в начале своего хода"]),
+            Point(cs!["меняет направление ходов на противоположное"]),
+        ],
+
+        // TODO
+    }
+
+    Чёрт480 {
+        name: cs!["ЧЁРТ 480"],
+        groups: [Group::СделаноЛёней, Group::Скрытая, Group::ПепежноеСущество, Group::ЦитатыКости],
+
+        description: cs![
+            Condition(cs!["использовано в битве"]),
+            Point(cs!["следующая активка, использованная противником, не сработает"]),
+        ],
+
+        // TODO
+    }
+
+    ПионерУжеВКоммунизме {
+        name: cs!["\"ЛЕЖИТ ПИОНЕР БЕЗ ПРИЗНАКОВ ЖИЗНИ, ЕМУ ХОРОШО, ОН УЖЕ В КОММУНИЗМЕ\""],
+        groups: [Group::СделаноКостей, Group::Цитаты],
+
+        description: cs![
+            Condition(cs!["использовано на карту в руке"]),
+            Point(cs!["отдай её следующему по направлению ходов игроку"]),
+        ],
+
+        // TODO
+    }
+
+    Козерог {
+        name: cs!["КОЗЕРОГ"],
+        groups: [Group::СделаноЛёней, Group::TBoI, Group::Зодиак],
+
+        description: cs![
+            Condition(cs!["использовано на персонажа"]),
+            NamedPoint(cs!["\"ALL STATS UP\""], cs![Physique, " & ", Vitality, " & ", Defence, " & ", Damage, " & ", Intellect, " += 2"]),
+        ],
+
+        abilities: GameCallbacks {
+            use_on_character: Some(|game, args| {
+                game.stat_add(args.target_id, StatType::Physique, 2);
+                game.stat_add(args.target_id, StatType::Vitality, 2);
+                game.stat_add(args.target_id, StatType::Defence, 2);
+                game.stat_add(args.target_id, StatType::Damage, 2);
+                game.stat_add(args.target_id, StatType::Intellect, 2);
+                Chain::Continue(args)
+            }),
+
+            ..Default::default()
+        }
+    }
+
+    Берн {
+        name: cs!["БЕРН"],
+        groups: [Group::СделаноМаксимом, Group::Umineko],
+
+        description: cs![
+            Point(cs!["для ", ГВ, " ", Physique, " = 3"]),
+            __,
+            Condition(cs!["использована на противника, единственного на поле"]),
+            Point(cs!["противник обязан поменять персонажа"]),
+        ],
+
+        abilities: GameCallbacks {
+            use_on_character: Some(|game, args| {
+                let target_owner_id = game.state().chrs.find_owner(args.target_id);
+                let replacing_chr_id = game.choose_hand_chr(target_owner_id);
+                game.replace(args.target_id, replacing_chr_id);
+                Chain::Continue(args)
+            }),
+
+            ..Default::default()
+        }
+    }
+
+    Разум {
+        name: cs!["РАЗУМ"],
+        groups: [Group::СделаноЛёней, Group::TBoI],
+
+        description: cs![
+            Condition(cs!["использован на персонажа"]),
+            NamedPoint(cs!["\"I KNOW ALL\""], cs![Intellect, " += 3"]),
+            Point(cs!["уже были использованы ", Тело, " и ", Душа, " ", Implies, " получи ", Godhead]),
+        ],
+
+        abilities: GameCallbacks {
+            use_on_character: Some(|game, args| {
+                game.stat_add(args.target_id, StatType::Intellect, 3);
+                Chain::Continue(args)
+            }),
+
+            ..Default::default()
+        }
+    }
+
+    Тело {
+        name: cs!["ТЕЛО"],
+        groups: [Group::СделаноЛёней, Group::TBoI],
+
+        description: cs![
+            Condition(cs!["использовано на персонажа"]),
+            NamedPoint(cs!["\"I FEEL ALL\""], cs![Physique, " & ", Vitality, " += 3"]),
+            Point(cs!["уже были использованы ", Разум, " и ", Душа, " ", Implies, " получи ", Godhead]),
+        ],
+
+        abilities: GameCallbacks {
+            use_on_character: Some(|game, args| {
+                game.stat_add(args.target_id, StatType::Physique, 3);
+                game.stat_add(args.target_id, StatType::Vitality, 3);
+                Chain::Continue(args)
+            }),
+
+            ..Default::default()
+        }
+    }
+
+    Душа {
+        name: cs!["ДУША"],
+        groups: [Group::СделаноЛёней, Group::TBoI],
+
+        description: cs![
+            Condition(cs!["использована на персонажа"]),
+            NamedPoint(cs!["\"I AM ALL\""], cs![Defence, " += 3"]),
+            Point(cs!["уже были использованы ", Разум, " и ", Тело, " ", Implies, " получи ", Godhead]),
+        ],
+
+        abilities: GameCallbacks {
+            use_on_character: Some(|game, args| {
+                game.stat_add(args.target_id, StatType::Defence, 3);
+                Chain::Continue(args)
+            }),
+
+            ..Default::default()
+        }
+    }
+
+    Godhead {
+        name: cs!["GODHEAD"],
+        groups: [Group::СделаноЛёней, Group::TBoI],
+
+        description: cs![
+            Condition(cs!["использован на персонажа"]),
+            NamedPoint(cs!["\"GOD TEARS\""], cs![Damage, " += 3"]),
+        ],
+
+        abilities: GameCallbacks {
+            use_on_character: Some(|game, args| {
+                game.stat_add(args.target_id, StatType::Damage, 3);
+                Chain::Continue(args)
+            }),
+
+            ..Default::default()
+        }
+    }
+    // */
 }

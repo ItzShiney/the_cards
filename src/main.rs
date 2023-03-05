@@ -35,5 +35,6 @@ fn main() {
         Player { nickname: "maxvog".into() },
     ]));
 
-    println!("{}", ActiveInfo::new(ActiveType::all().pop().unwrap()));
+    print_chrs();
+    print_acts();
 }
