@@ -11,7 +11,7 @@ use crate::{
 use std::collections::BTreeSet;
 
 acts! {
-    // /*
+    /*
     ПустаяКарта {
         name: cs!["ПУСТАЯ КАРТА"],
         groups: [Group::ByShiney, Group::TBoI],
@@ -86,25 +86,6 @@ acts! {
             use_on_character: Some(|game, args| {
                 let _ = game.die(args.target_id);
                 Chain::Continue(args)
-            }),
-
-            ..Default::default()
-        },
-    }
-
-    Коммунизм {
-        name: cs!["КОММУНИЗМ"],
-        groups: [Group::ByConstantine, Group::SocialOrder],
-
-        description: cs![
-            Condition(cs!["использован в качестве своего хода"]),
-            Point(cs!["каждый игрок передаёт свою колоду следующему по направлению ходов"]),
-            Point(cs!["эта карта уничтожается"]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_field: Some(|_game, _args| {
-                todo!()
             }),
 
             ..Default::default()
@@ -194,4 +175,35 @@ acts! {
         },
     }
     // */
+
+    Коммунизм {
+        name: cs!["КОММУНИЗМ"],
+        groups: [Group::ByConstantine, Group::SocialOrder],
+
+        description: cs![
+            Condition(cs!["использован в качестве своего хода"]),
+            Point(cs!["каждый игрок передаёт свою колоду следующему по направлению ходов"]),
+            Point(cs!["эта карта уничтожается"]),
+        ],
+
+        abilities: GameCallbacks {
+            use_on_field: Some(|_game, _args| {
+                todo!()
+            }),
+
+            ..Default::default()
+        },
+    }
+
+    Монархия {
+        name: cs!["МОНАРХИЯ"],
+        groups: [Group::ByShiney, Group::SocialOrder],
+
+        // TODO
+        description: cs![
+            Condition(cs!["использована в ответ на ", Коммунизм]),
+            Point(cs!["отменяет его эффект"]),
+            Point(cs!["эта карта уничтожается"]),
+        ],
+    }
 }

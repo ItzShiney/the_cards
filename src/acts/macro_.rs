@@ -8,7 +8,7 @@ macro_rules! acts {
 
                 $(description: $description:expr,)?
 
-                abilities: $abilities:expr,
+                $(abilities: $abilities:expr)? $(,)?
             }
         )*
     ) => {paste::paste!{
@@ -73,12 +73,16 @@ macro_rules! acts {
             pub fn abilities(self) -> &'static $crate::host::GameCallbacks {
                 lazy_static::lazy_static! {
                     $(
-                        static ref [<$CardName:snake:upper>]: $crate::host::GameCallbacks = $abilities;
+                        static ref [<$CardName:snake:upper>]: $crate::host::GameCallbacks =
+                            (
+                                $($abilities,)?
+                                $crate::host::GameCallbacks::default(),
+                            ).0;
                     )*
                 }
 
                 match self {
-                    $(Self::$CardName => &*[<$CardName:snake:upper>],)*
+                    $(Self::$CardName => &[<$CardName:snake:upper>],)*
                 }
             }
         }

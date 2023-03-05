@@ -16,6 +16,18 @@ use host::Host;
 
 use crate::game_state::{act_info::ActiveInfo, chr_info::CharacterInfo};
 
+pub fn print_chrs() {
+    for chr_type in CharacterType::all() {
+        println!("{}", CharacterInfo::new(chr_type));
+    }
+}
+
+pub fn print_acts() {
+    for act_type in ActiveType::all() {
+        println!("{}", ActiveInfo::new(act_type));
+    }
+}
+
 fn main() {
     #[allow(unused)]
     let game = Host::new(GameState::new(vec![
@@ -23,11 +35,5 @@ fn main() {
         Player { nickname: "maxvog".into() },
     ]));
 
-    for chr_type in CharacterType::all() {
-        println!("{}", CharacterInfo::new(chr_type));
-    }
-
-    for act_type in ActiveType::all() {
-        println!("{}", ActiveInfo::new(act_type));
-    }
+    println!("{}", ActiveInfo::new(ActiveType::all().pop().unwrap()));
 }
