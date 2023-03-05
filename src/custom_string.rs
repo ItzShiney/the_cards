@@ -69,6 +69,12 @@ custom_string_slice![
 
         Mean(Vec<CustomString>) =>
             |f, (args)| write!(f, "⟨{}⟩", args.into_iter().join(", "));
+
+        Condition(CustomString) =>
+            |f, (condition)| write!(f, "{} {}\n", condition, Self::Implies);
+
+        Point(CustomString) =>
+            |f, (line)| write!(f, "{} {}", Self::Bullet, line);
     }
 
     {
