@@ -5,7 +5,7 @@ use crate::{
     group::Group,
     host::chain::Chain,
     {chrs::CharacterType, cs, custom_string::CustomString},
-    {game_state::chr_info::CharacterInfo, host::GameCallbacks, stats::Stat},
+    {game_state::chr_info::CharacterInfo, host::GameCallbacks, stats::StatType},
 };
 
 use std::collections::BTreeSet;
@@ -44,7 +44,7 @@ acts! {
 
         abilities: GameCallbacks {
             use_on_character: Some(|game, args| {
-                game.modify_stat(args.target_id, Stat::Damage, 3);
+                game.stat_add(args.target_id, StatType::Damage, 3);
                 Chain::Continue(args)
             }),
 
@@ -64,7 +64,7 @@ acts! {
         abilities: GameCallbacks {
             use_on_character: Some(|game, args| {
                 let phy = game.state().chr(args.target_id).stats.phy.0.into_value();
-                game.force_set_stat(args.target_id, Stat::Vitality, phy);
+                game.force_set_stat(args.target_id, StatType::Vitality, phy);
 
                 Chain::Continue(args)
             }),
@@ -148,7 +148,7 @@ acts! {
 
         abilities: GameCallbacks {
             use_on_character: Some(|game, args| {
-                game.modify_stat(args.target_id, Stat::Physique, 1);
+                game.stat_add(args.target_id, StatType::Physique, 1);
 
                 #[allow(unreachable_code)]
                 if todo!("ранее была использована РУЧКА НОЖА") {
@@ -177,7 +177,7 @@ acts! {
 
         abilities: GameCallbacks {
             use_on_character: Some(|game, args| {
-                game.modify_stat(args.target_id, Stat::Physique, 1);
+                game.stat_add(args.target_id, StatType::Physique, 1);
 
                 #[allow(unreachable_code)]
                 if todo!("ранее было использовано ЛЕЗВИЕ НОЖА") {

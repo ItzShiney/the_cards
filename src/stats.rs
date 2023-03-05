@@ -187,7 +187,7 @@ impl Display for Stats {
 }
 
 #[derive(Clone, Copy)]
-pub enum Stat {
+pub enum StatType {
     Vitality,
     Physique,
     Defence,
@@ -196,23 +196,23 @@ pub enum Stat {
 }
 
 impl Stats {
-    pub fn stat(&self, type_: Stat) -> &StatValue {
+    pub fn stat(&self, type_: StatType) -> &StatValue {
         match type_ {
-            Stat::Vitality => &self.vit.0,
-            Stat::Physique => &self.phy.0,
-            Stat::Defence => &self.def.0,
-            Stat::Damage => &self.dmg.0,
-            Stat::Intellect => &self.int.0,
+            StatType::Vitality => &self.vit.0,
+            StatType::Physique => &self.phy.0,
+            StatType::Defence => &self.def.0,
+            StatType::Damage => &self.dmg.0,
+            StatType::Intellect => &self.int.0,
         }
     }
 
-    pub fn stat_mut(&mut self, type_: Stat) -> &mut StatValue {
+    pub fn stat_mut(&mut self, type_: StatType) -> &mut StatValue {
         match type_ {
-            Stat::Vitality => &mut self.vit.0,
-            Stat::Physique => &mut self.phy.0,
-            Stat::Defence => &mut self.def.0,
-            Stat::Damage => &mut self.dmg.0,
-            Stat::Intellect => &mut self.int.0,
+            StatType::Vitality => &mut self.vit.0,
+            StatType::Physique => &mut self.phy.0,
+            StatType::Defence => &mut self.def.0,
+            StatType::Damage => &mut self.dmg.0,
+            StatType::Intellect => &mut self.int.0,
         }
     }
 }

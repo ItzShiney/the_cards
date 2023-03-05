@@ -83,7 +83,7 @@ groups![
         TBoI > "tboi": [Games];
         Portal > "portal": [Games];
         Undertale > "undertale": [Games];
-        Terraria > "minecraft": [Games];
+        Terraria > "terraria": [Games];
         Minecraft > "minecraft": [Games];
             DreamSMP > "dream smp": [Minecraft];
 

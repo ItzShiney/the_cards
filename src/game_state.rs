@@ -253,12 +253,12 @@ impl GameState {
         self.chrs.get(id)
     }
 
-    pub fn act(&self, id: ActiveID) -> &ActiveInfo {
-        self.acts.get(id)
-    }
-
     pub fn chr_mut(&mut self, id: CharacterID) -> &mut CharacterInfo {
         self.chrs.get_mut(id)
+    }
+
+    pub fn act(&self, id: ActiveID) -> &ActiveInfo {
+        self.acts.get(id)
     }
 
     pub fn act_mut(&mut self, id: ActiveID) -> &mut ActiveInfo {
@@ -273,12 +273,18 @@ impl GameState {
         self.acts.add(act)
     }
 
-    pub fn end_subturn(&mut self) {
-        self.current_subturner.switch()
+    pub fn subturner_by_id(&self, player_id: PlayerID) -> Subturner {
+        self.try_subturner_by_id(player_id).unwrap()
     }
 
-    pub fn current_subturner(&self) -> Subturner {
-        self.current_subturner
+    pub fn try_subturner_by_id(&self, player_id: PlayerID) -> Option<Subturner> {
+        if player_id == self.current_subturner_on_field().player_id {
+            Some(self.current_subturner)
+        } else if player_id == self.other_subturner_on_field().player_id {
+            Some(self.current_subturner.other())
+        } else {
+            None
+        }
     }
 
     pub fn subturner_on_field(&self, subturner: Subturner) -> &SubturnerOnField {
@@ -331,5 +337,13 @@ impl GameState {
 
     pub fn is_dead(&self, chr_id: CharacterID) -> bool {
         self.chr(chr_id).stats.vit.0.into_value() == 0
+    }
+
+    // TODO поделить на функции?
+    pub fn enemy_chr_id(&self, chr_id: CharacterID) -> Option<CharacterID> {
+        let owner_id = self.chrs.find_owner(chr_id);
+        let subturner = self.subturner_by_id(owner_id);
+        let other_subturner = subturner.other();
+        self.subturner_on_field(other_subturner).chr_id
     }
 }

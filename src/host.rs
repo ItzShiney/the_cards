@@ -16,7 +16,7 @@ use crate::{
     game_state::player_id::PlayerID,
     game_state::{GameState, Subturner},
     group::Group,
-    stats::{Stat, Stat0, StatValue},
+    stats::{Stat0, StatType, StatValue},
 };
 
 pub struct Host {
@@ -126,20 +126,21 @@ callbacks! {
 
     #[@chrs]
     #[pre(true)]
-    pub fn stat(
+    pub fn stat_map(
         &mut self,
         chr_id: CharacterID,
-        stat_type: Stat,
+        stat_type: StatType,
+        val: Stat0
     ) -> Stat0 {
-        self.state.chr(chr_id).stats.stat(stat_type).into_value()
+        val
     }
 
     #[@chrs]
     #[pre(true)]
-    pub fn modify_stat(
+    pub fn stat_add(
         &mut self,
         chr_id: CharacterID,
-        stat_type: Stat,
+        stat_type: StatType,
         val: Stat0,
     ) {
         let phy = self.state.chr_mut(chr_id).stats.phy.0.into_value();
@@ -150,12 +151,12 @@ callbacks! {
 
     #[@chrs]
     #[pre(true)]
-    pub fn attack(
+    pub fn attack_map(
         &mut self,
         attacker_id: CharacterID,
         target_id: CharacterID,
+        dmg: Stat0,
     ) -> Result<(), ()> {
-        let dmg = self.state.chr(attacker_id).stats.dmg.0.into_value();
         self.hurt(target_id, dmg)
     }
 
@@ -167,14 +168,14 @@ callbacks! {
         dmg: Stat0,
     ) -> Result<(), ()> {
         let old_def = self.state.chr(chr_id).stats.def.0.into_value();
-        self.modify_stat(chr_id, Stat::Defence, dmg);
+        self.stat_add(chr_id, StatType::Defence, dmg);
         let new_def = self.state.chr(chr_id).stats.def.0.into_value();
 
         let def_dmg_taken = old_def - new_def;
         let vit_dmg_to_take = dmg - def_dmg_taken;
 
         if vit_dmg_to_take > 0 {
-            self.modify_stat(chr_id, Stat::Vitality, vit_dmg_to_take);
+            self.stat_add(chr_id, StatType::Vitality, vit_dmg_to_take);
         }
         Ok(())
     }
@@ -238,7 +239,7 @@ callbacks! {
     }
 
     pub fn end_subturn(&mut self) {
-        self.state.end_subturn()
+        self.state.current_subturner.switch()
     }
 
     pub fn end_turn(&mut self) {
@@ -273,17 +274,27 @@ callbacks! {
         }
     }
 
-    pub fn force_set_stat(&mut self, chr_id: CharacterID, stat_type: Stat, value: Stat0) {
+    pub fn force_set_stat(&mut self, chr_id: CharacterID, stat_type: StatType, value: Stat0) {
         self.state.chr_mut(chr_id).stats.stat_mut(stat_type).set(value)
     }
 
     pub fn force_set_phy_vit(&mut self, chr_id: CharacterID, value: Stat0) {
-        self.force_set_stat(chr_id, Stat::Physique, value);
-        self.force_set_stat(chr_id, Stat::Vitality, value);
+        self.force_set_stat(chr_id, StatType::Physique, value);
+        self.force_set_stat(chr_id, StatType::Vitality, value);
     }
 }
 
 impl Host {
+    pub fn stat(&mut self, chr_id: CharacterID, stat_type: StatType) -> Stat0 {
+        let val = self.state.chr(chr_id).stats.stat(stat_type).into_value();
+        self.stat_map(chr_id, stat_type, val)
+    }
+
+    pub fn attack(&mut self, attacker_id: CharacterID, target_id: CharacterID) -> Result<(), ()> {
+        let dmg = self.state.chr(attacker_id).stats.dmg.0.into_value();
+        self.attack_map(attacker_id, target_id, dmg)
+    }
+
     pub fn choose_hand_act(&mut self, player_id: PlayerID) -> ActiveID {
         // TODO: просить игрока выбрать
         self.state.acts.hand(player_id)[0]

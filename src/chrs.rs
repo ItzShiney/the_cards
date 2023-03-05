@@ -7,7 +7,7 @@ use crate::{
     group::Group,
     host::{chain::Chain, GameCallbacks},
     int, phy,
-    stats::{Stat, Stats},
+    stats::{StatType, Stats},
 };
 
 use std::{collections::BTreeSet, iter::repeat_with};
@@ -30,7 +30,7 @@ chrs! {
         ],
 
         abilities: GameCallbacks {
-            attack: Some(|game, args| {
+            attack_map: Some(|game, args| {
                 if game.state().chr(args.attacker_id).stats.int.0.into_value() >= 3 {
                     Chain::Break(Err(()))
                 } else {
@@ -114,7 +114,7 @@ chrs! {
                 let dmg = stats.dmg.0.into_value();
 
                 game.force_set_phy_vit(self_id, phy);
-                game.force_set_stat(self_id, Stat::Damage, dmg);
+                game.force_set_stat(self_id, StatType::Damage, dmg);
             }),
 
             ..Default::default()
@@ -242,6 +242,25 @@ chrs! {
             Condition(cs!["пока ", Intellect, " противника ", LE, " 3"]),
             Point(cs![Vitality, " этой карты на 1 меньше, ", Damage, " на 2 больше"]),
         ],
+
+        abilities: GameCallbacks {
+            stat_map: Some(|game, mut args| {
+                let Some(enemy_id) = game.state().enemy_chr_id(args.chr_id) else { return Chain::Continue(args) };
+                let enemy_int = game.state().chr(enemy_id).stats.int.0.into_value();
+
+                if enemy_int <= 3 {
+                    match args.stat_type {
+                        StatType::Vitality => args.val -= 1,
+                        StatType::Damage => args.val += 2,
+                        _ => {}
+                    }
+                }
+
+                Chain::Continue(args)
+            }),
+
+            ..Default::default()
+        }
     }
 
     Марио {
@@ -341,7 +360,7 @@ chrs! {
                     let value = repeat_with(|| { game.random(0, 1) }).take(9).sum();
 
                     let self_id = args.chr_id;
-                    game.force_set_stat(self_id, Stat::Damage, value);
+                    game.force_set_stat(self_id, StatType::Damage, value);
                 }
             ),
 
@@ -360,23 +379,21 @@ chrs! {
             int!(2),
         ),
 
-        // TODO:
-        // атакует ⟹
-        // • "ТАРАНИТ... ИНОГДА": с шансом 50% наносит на 1 больше
+        description: cs![
+            NamedPoint(cs!["\"ТАРАНИТ... ИНОГДА\""], cs!["с шансом 1/2 наносит на 1 ", Damage, " больше"]),
+        ],
 
-        /*
-        callbacks: {
-            attack: |game, self_id, mut args| {
-                if game.random_bool(0.5) {
-                    args.damage += 1;
+        abilities: GameCallbacks {
+            attack_map: Some(|game, mut args| {
+                if game.random_bool(1./2.) {
+                    args.dmg += 1;
                 }
 
                 Chain::Continue(args)
-            },
+            }),
 
-            ..default()
+            ..Default::default()
         }
-        */
     }
 
     Магдалина {
@@ -387,7 +404,7 @@ chrs! {
         stats: Stats::new(
             phy!(7),
             dmg!(2),
-            int!(6), // TODO: брать у CharacterType::Айзек
+            int!(6), // TODO брать у CharacterType::Айзек
         ),
 
         description: cs![
@@ -419,7 +436,7 @@ chrs! {
             int!(3),
         ),
 
-        // TODO:
+        // TODO
         // • удары дизморалят
     }
 
