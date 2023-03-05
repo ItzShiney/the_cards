@@ -16,69 +16,17 @@ use host::Host;
 use crate::game_state::{act_info::ActiveInfo, chr_info::CharacterInfo};
 
 fn main() {
-    /*
-    for chr_type in CharacterType::all() {
-        let mut game = Host::new(GameState::new(vec![
-            Player { nickname: "Shiney".into() },
-            Player { nickname: "maxvog".into() },
-        ]));
-
-        let attacker_id = game.state().attacker.player_id;
-        let chr_id = game.state_mut().chrs.add(CharacterInfo::new(chr_type));
-        game.state_mut().chrs.add_to_player(chr_id, attacker_id);
-
-        game.place(chr_id).unwrap();
-        println!("{}", game.state().chr(chr_id));
-    }
-    */
+    #[allow(unused)]
+    let game = Host::new(GameState::new(vec![
+        Player { nickname: "Shiney".into() },
+        Player { nickname: "maxvog".into() },
+    ]));
 
     for chr_type in CharacterType::all() {
-        let mut game = Host::new(GameState::new(vec![
-            Player { nickname: "Shiney".into() },
-            Player { nickname: "maxvog".into() },
-        ]));
-
-        let attacker_id = game.state().attacker.player_id;
-        let chr_id = game.state_mut().chrs.add(CharacterInfo::new(chr_type));
-        game.state_mut().chrs.add_to_player(chr_id, attacker_id);
-
-        println!("{}", game.state().chr(chr_id));
+        println!("{}", CharacterInfo::new(chr_type));
     }
 
     for act_type in ActiveType::all() {
-        let mut game = Host::new(GameState::new(vec![
-            Player { nickname: "Shiney".into() },
-            Player { nickname: "maxvog".into() },
-        ]));
-
-        let attacker_id = game.state().attacker.player_id;
-        let act_id = game.state_mut().acts.add(ActiveInfo::new(act_type));
-        game.state_mut().acts.add_to_player(act_id, attacker_id);
-
-        println!("{}", game.state().act(act_id));
+        println!("{}", ActiveInfo::new(act_type));
     }
-
-    /*
-    {
-        let player_id = game.state().current_subturner_on_field().player_id;
-
-        let chr_id = game.state().chrs.hand(player_id)[0];
-        game.place(chr_id);
-
-        game.end_subturn();
-    };
-
-    {
-        let player_id = game.state().current_subturner_on_field().player_id;
-
-        let chr_id = game.state().chrs.hand(player_id)[0];
-        game.place(chr_id);
-
-        game.end_subturn();
-    };
-
-    {
-        game.end_turn();
-    }
-    */
 }

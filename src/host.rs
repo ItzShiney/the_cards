@@ -1,18 +1,23 @@
+pub mod chain;
+pub mod macro_;
+
 use std::mem::take;
 
-use rand::seq::IteratorRandom;
-use rand::{thread_rng, Rng};
+use rand::{seq::IteratorRandom, thread_rng, Rng};
 
-use crate::acts::ActiveType;
-use crate::chrs::CharacterType;
-use crate::game_state::act_id::ActiveID;
-use crate::game_state::act_info::ActiveInfo;
-use crate::game_state::chr_id::CharacterID;
-use crate::game_state::chr_info::CharacterInfo;
-use crate::game_state::group::Group;
-use crate::game_state::player_id::PlayerID;
-use crate::game_state::{GameState, Subturner};
-use crate::stats::{Stat, Stat0, StatValue};
+use crate::{
+    acts::ActiveType,
+    callbacks,
+    chrs::CharacterType,
+    game_state::act_id::ActiveID,
+    game_state::act_info::ActiveInfo,
+    game_state::chr_id::CharacterID,
+    game_state::chr_info::CharacterInfo,
+    game_state::group::Group,
+    game_state::player_id::PlayerID,
+    game_state::{GameState, Subturner},
+    stats::{Stat, Stat0, StatValue},
+};
 
 pub struct Host {
     pub callbacks: GameCallbacks,
@@ -91,109 +96,6 @@ impl Host {
             self.state.acts.add_to_drawpile(act_id);
         }
     }
-}
-
-// TODO: вынести в отдельный файл
-pub enum Chain<Continue, Result = ()> {
-    Continue(Continue),
-    Break(Result),
-}
-
-// TODO: вынести в отдельный файл всё ниже?
-macro_rules! callbacks {
-    (
-        $(
-            $(#[@$self_namespace:ident])?
-            $(#[pre($pre_value:expr)])?
-            pub fn $name:ident(
-                &mut $self:ident
-                $(
-                    , $arg_name:ident : $ArgType:ty
-                )* $(,)?
-            ) $(-> $Return:ty)? $callback_action:block
-        )*
-    ) => {paste::paste! {
-        $(
-            #[derive(Clone)]
-            pub struct [<$name:camel Args>] {
-                $(pub $arg_name: $ArgType,)*
-            }
-
-            pub type [<$name:camel Callback>] = fn(&mut Host, [<$name:camel Args>]) -> Chain<[<$name:camel Args>], $($Return)?>;
-            pub type [<Post $name:camel Callback>] = fn(&mut Host, &[<$name:camel Args>]);
-        )*
-
-        #[derive(Default)]
-        pub struct GameCallbacks {
-            $(
-                pub $name: Option<[<$name:camel Callback>]>,
-                pub [<post_ $name>]: Option<[<Post $name:camel Callback>]>,
-            )*
-        }
-
-        impl Host {
-            $(
-                pub fn [<$name:camel:snake _args>] (&mut $self, #[allow(unused_mut)] mut args: [<$name:camel Args>] ) $(-> $Return)? {
-                    $(
-                        const _: () = assert!($pre_value);
-
-                        while let Some(callback) = $self.callbacks.$name {
-                            match (callback)($self, args) {
-                                Chain::Continue(new_args) => {
-                                    args = new_args;
-                                }
-
-                                Chain::Break(result) => return result,
-                            }
-                        }
-                    )?
-
-                    #[allow(unused)] let id = ($(args.$arg_name,)* 0,).0;
-                    $(
-                        if let Some(callback) = $self.state.$self_namespace.get(id).type_.abilities().$name {
-                            match (callback)($self, args) {
-                                Chain::Continue(new_args) => {
-                                    args = new_args;
-                                }
-
-                                Chain::Break(result) => return result,
-                            }
-                        }
-                    )?
-                    #[allow(unused)] let id = ();
-
-                    #[allow(clippy::redundant_closure_call)]
-                    let res = (|| {
-                        #[allow(unused)]
-                        let [<$name:camel Args>] { $($arg_name,)* } = args.clone();
-
-                        $callback_action
-                    })();
-
-                    $self.[<post_ $name:camel:snake _args>](&args);
-                    res
-                }
-
-                pub fn [<post_ $name:camel:snake _args>] (&mut $self, args: &[<$name:camel Args>] ) {
-                    while let Some(callback) = $self.callbacks.[<post_ $name>] {
-                        (callback)($self, args);
-                    }
-
-                    #[allow(unused)] let id = ($(args.$arg_name,)* 0,).0;
-                    $(
-                        if let Some(callback) = $self.state.$self_namespace.get(id).type_.abilities().[<post_ $name>] {
-                            (callback)($self, args);
-                        }
-                    )?
-                    #[allow(unused)] let id = ();
-                }
-
-                pub fn $name (&mut $self, $($arg_name: $ArgType,)* ) $(-> $Return)? {
-                    $self.[<$name:camel:snake _args>]([<$name:camel Args>] { $($arg_name,)* })
-                }
-            )*
-        }
-    }};
 }
 
 callbacks! {

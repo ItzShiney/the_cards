@@ -1,112 +1,16 @@
+pub mod macro_;
+
 use crate::{
-    cs,
+    chrs, cs,
     custom_string::CustomString,
     dmg,
     game_state::group::Group,
-    host::{Chain, GameCallbacks},
+    host::{chain::Chain, GameCallbacks},
     int, phy,
     stats::{Stat, Stats},
 };
 
 use std::{collections::BTreeSet, iter::repeat_with};
-
-macro_rules! chrs {
-    (
-        $(
-            $CardName:ident {
-                name: $name:expr,
-                groups: $groups:tt,
-
-                stats: $stats:expr,
-
-                $(description: $description:expr,)?
-
-                $(abilities: $abilities:expr)? $(,)?
-            }
-        )*
-    ) => {paste::paste!{
-        #[derive(Clone, Copy)]
-        pub enum CharacterType {
-            $($CardName,)*
-        }
-
-        impl CharacterType {
-            pub fn all() -> Vec<Self> {
-                vec![
-                    $(Self::$CardName,)*
-                ]
-            }
-
-            pub fn name(self) -> &'static CustomString {
-                lazy_static::lazy_static! {
-                    $(
-                        static ref [<$CardName:snake:upper>]: CustomString = $name.into();
-                    )*
-                }
-
-                match self {
-                    $(Self::$CardName => &[<$CardName:snake:upper>],)*
-                }
-            }
-
-            pub fn groups(self) -> &'static BTreeSet<Group> {
-                lazy_static::lazy_static! {
-                    $(
-                        static ref [<$CardName:snake:upper>]: BTreeSet<Group> = BTreeSet::from($groups);
-                    )*
-                }
-
-                match self {
-                    $(Self::$CardName => &[<$CardName:snake:upper>],)*
-                }
-            }
-
-            pub fn description(self) -> &'static Option<CustomString> {
-                lazy_static::lazy_static! {
-                    $(
-                        static ref [<$CardName:snake:upper>]: Option<CustomString> =  {
-                            let x = (
-                                $($description,)?
-                                cs![],
-                            ).0;
-                            if x.slices.is_empty() {
-                                None
-                            } else {
-                                Some(x)
-                            }
-                        };
-                    )*
-                }
-
-                match self {
-                    $(Self::$CardName => &[<$CardName:snake:upper>],)*
-                }
-            }
-
-            pub fn stats(self) -> Stats {
-                match self {
-                    $(Self::$CardName => $stats,)*
-                }
-            }
-
-            pub fn abilities(self) -> &'static $crate::host::GameCallbacks {
-                lazy_static::lazy_static! {
-                    $(
-                        static ref [<$CardName:snake:upper>]: $crate::host::GameCallbacks =
-                            (
-                                $($abilities,)?
-                                $crate::host::GameCallbacks::default(),
-                            ).0;
-                    )*
-                }
-
-                match self {
-                    $(Self::$CardName => &[<$CardName:snake:upper>],)*
-                }
-            }
-        }
-    }};
-}
 
 chrs! {
     // /*
