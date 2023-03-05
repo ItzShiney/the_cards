@@ -11,7 +11,7 @@ use crate::{
 use std::collections::BTreeSet;
 
 acts! {
-    /*
+    // /*
     ПустаяКарта {
         name: cs!["ПУСТАЯ КАРТА"],
         groups: [Group::ByShiney, Group::TBoI],
@@ -174,7 +174,6 @@ acts! {
             ..Default::default()
         },
     }
-    // */
 
     Коммунизм {
         name: cs!["КОММУНИЗМ"],
@@ -205,5 +204,54 @@ acts! {
             Point(cs!["отменяет его эффект"]),
             Point(cs!["эта карта уничтожается"]),
         ],
+    }
+    // */
+
+    УтешительныйПриз {
+        name: cs!["УТЕШИТЕЛЬНЫЙ ПРИЗ"],
+        groups: [Group::ByShiney, Group::TBoI, Group::Moral],
+
+        description: cs![
+            Epitaph(cs![
+                "толстой писал про эту медаль так:\n",
+                "\"всевеликая всероссийская посеребрённая золотистая с платиновым отблеском заточенная\n",
+                "медаль победителя всевеликого всероссийского этапа всевеликой всероссийской олимпиады\n",
+                "всевеликих всероссийских школьников по всевеликому всеросскийскому животворящему программированию\""]),
+            __,
+            Condition(cs!["использован на персонажа"]),
+            Point(cs!["статы, равные минимальному += 1"]),
+        ],
+
+        abilities: GameCallbacks {
+            use_on_character: Some(|_game, _args| {
+                todo!()
+            }),
+
+            ..Default::default()
+        }
+    }
+
+    НеутешительныйПриз {
+        name: cs!["НЕУТЕШИТЕЛЬНЫЙ ПРИЗ"],
+        groups: [Group::ByMaxvog, Group::Dismoral],
+
+        // арт — уголёк
+
+        description: cs![
+            Epitaph(cs![
+                "максим писал про эту медаль так:\n",
+                "\"пепега какая-то\""]),
+            __,
+            Condition(cs!["использован на персонажа"]),
+            Point(cs!["статы, равные максимальному -= 1"]),
+        ],
+
+        abilities: GameCallbacks {
+            use_on_character: Some(|_game, _args| {
+                todo!()
+            }),
+
+            ..Default::default()
+        }
     }
 }
