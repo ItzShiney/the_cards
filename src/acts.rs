@@ -174,7 +174,7 @@ acts! {
 
                 value: |game, args| {
                     let phy = game.state().chr(args.target_id).stats.phy.0.into_value();
-                    game.set_stat(args.target_id, Stat::Vitality, phy);
+                    game.force_set_stat(args.target_id, Stat::Vitality, phy);
 
                     Chain::Continue(args)
                 }
@@ -197,7 +197,7 @@ acts! {
                 },
 
                 value: |game, args| {
-                    game.kill(args.target_id);
+                    let _ = game.kill(args.target_id);
                     Chain::Continue(args)
                 }
             }),

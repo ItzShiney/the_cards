@@ -143,7 +143,7 @@ chrs! {
                     let self_id = args.attacker_id;
 
                     if game.state().chr(self_id).stats.int.0.into_value() >= 3 {
-                        return Chain::Break(());
+                        return Chain::Break(Err(()));
                     }
 
                     Chain::Continue(args)
@@ -225,8 +225,8 @@ chrs! {
                     let phy = stats.phy.0.into_value();
                     let dmg = stats.dmg.0.into_value();
 
-                    game.set_phy_vit(self_id, phy);
-                    game.set_stat(self_id, Stat::Damage, dmg);
+                    game.force_set_phy_vit(self_id, phy);
+                    game.force_set_stat(self_id, Stat::Damage, dmg);
                 }
             }),
 
@@ -448,7 +448,7 @@ chrs! {
                     let value = repeat_with(|| { game.random(0, 1) }).take(9).sum();
 
                     let self_id = args.chr_id;
-                    game.set_stat(self_id, Stat::Damage, value);
+                    game.force_set_stat(self_id, Stat::Damage, value);
                 }
             }),
 
@@ -582,7 +582,7 @@ chrs! {
             post_place: Some(Described {
                 description: AbilityDescription {
                     name: None,
-                    description: cs![Physique, " = ", SumAll { body: cs![Physique, " всех ", Group(Illusion), " в руке"] }],
+                    description: cs!["выставлен впервые ", Implies, "\n", Bullet, Physique, " = ", SumAll { body: cs![Physique, " всех ", Group(Illusion), " в руке"] }],
                 },
 
                 value: |game, args| {
@@ -592,7 +592,6 @@ chrs! {
                     let phy = {
                         game.state().chrs.hand(owner_id).clone().into_iter().filter_map(|chr_id| {
                             let chr = game.state().chr(chr_id);
-                            // TODO: проверять все группы, не только главные (groups())
                             if chr.type_.groups().contains(&Group::Illusion) {
                                 Some(chr.stats.phy.0.into_value())
                             } else {
@@ -601,7 +600,7 @@ chrs! {
                         }).sum()
                     };
 
-                    game.set_phy_vit(self_id, phy);
+                    game.force_set_phy_vit(self_id, phy);
                 }
             }),
 

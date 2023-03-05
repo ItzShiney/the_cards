@@ -40,6 +40,7 @@ macro_rules! groups {
     };
 }
 
+// TODO: переименовать на русский
 groups![
     ByShiney > "\x1b[34m@лёня\x1b[39m";
     ByMaxvog > "\x1b[34m@максим\x1b[39m";
@@ -50,7 +51,8 @@ groups![
     Female > "\x1b[35m♀️\x1b[39m";
 
     Illusion > "иллюзия";
-    Dismoral > "дизморалит";
+    Moral > "моралящё";
+    Dismoral > "дизморалящё";
 
     Anime > "аниме";
         ReZero > "re:zero": [Anime, Shows];

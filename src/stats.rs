@@ -3,39 +3,27 @@ use std::{
     ops::{AddAssign, SubAssign},
 };
 
-use macros::EnumAs;
-
 pub type Stat0 = i32;
 
-// TODO:
-// Убрать Unknown, реализовать как `may_init_change: bool` в Stats (?)
-// Статы обязаны быть инициализированными, а may_init_change будет сигнализировать о том, что стат скорее всего будет изменён. Отображается как VIT 5?
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumAs)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StatValue {
     WillChange(Stat0),
     Var(Stat0),
     Const(Stat0),
 }
 
-#[macro_export]
-macro_rules! stat {
-    ($value:literal?) => {
-        $crate::stats::StatValue::WillChange($value)
-    };
-
-    ($value:literal) => {
-        $crate::stats::StatValue::Var($value)
-    };
-
-    ($value:literal=const) => {
-        $crate::stats::StatValue::Const($value)
-    };
-}
-
 impl StatValue {
     pub fn into_value(self) -> Stat0 {
         match self {
             StatValue::WillChange(x) | StatValue::Var(x) | StatValue::Const(x) => x,
+        }
+    }
+
+    pub fn set(&mut self, value: Stat0) {
+        match self {
+            StatValue::WillChange(_) => *self = StatValue::Var(value),
+            StatValue::Var(_) => *self = StatValue::Var(value),
+            StatValue::Const(_) => panic!("set const stat"),
         }
     }
 }
@@ -81,6 +69,23 @@ impl AddAssign<Stat0> for StatValue {
         }
     }
 }
+
+#[macro_export]
+macro_rules! stat {
+    ($value:literal?) => {
+        $crate::stats::StatValue::WillChange($value)
+    };
+
+    ($value:literal) => {
+        $crate::stats::StatValue::Var($value)
+    };
+
+    ($value:literal=const) => {
+        $crate::stats::StatValue::Const($value)
+    };
+}
+
+////////////////////////////////////////////////////////////
 
 macro_rules! make_stat {
     ($Name:ident) => {
@@ -157,6 +162,10 @@ impl Stats {
         let vit = Vitality(phy.0);
 
         Self { vit, phy, def, dmg, int }
+    }
+
+    pub fn max_vit(&mut self) {
+        self.vit.0.set(self.phy.0.into_value());
     }
 }
 

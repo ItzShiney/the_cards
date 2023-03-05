@@ -23,7 +23,7 @@ fn main() {
             Player { nickname: "maxvog".into() },
         ]));
 
-        let attacker_id = game.state().attacker().player_id;
+        let attacker_id = game.state().attacker.player_id;
         let chr_id = game.state_mut().chrs.add(CharacterInfo::new(chr_type));
         game.state_mut().chrs.add_to_player(chr_id, attacker_id);
 

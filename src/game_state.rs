@@ -11,13 +11,8 @@ pub mod player_id_manager;
 
 use std::collections::{BTreeMap, HashMap};
 use std::fmt::Debug;
-use std::mem::take;
 
-use crate::acts::ActiveType;
-use crate::chrs::CharacterType;
 use itertools::Itertools;
-use rand::seq::IteratorRandom;
-use rand::thread_rng;
 
 use self::act_id::ActiveID;
 use self::act_info::ActiveInfo;
@@ -216,11 +211,11 @@ pub struct GameState {
     pub chrs: GameOfCardType<CharacterID, CharacterInfo>,
     pub acts: GameOfCardType<ActiveID, ActiveInfo>,
 
-    players_map: BTreeMap<PlayerID, Player>,
+    pub players_map: BTreeMap<PlayerID, Player>,
 
-    attacker: SubturnerOnField,
-    defender: SubturnerOnField,
-    current_subturner: Subturner,
+    pub attacker: SubturnerOnField,
+    pub defender: SubturnerOnField,
+    pub current_subturner: Subturner,
 }
 
 impl GameState {
@@ -244,7 +239,7 @@ impl GameState {
                 panic!("not enough players");
             };
 
-        let mut game = Self {
+        Self {
             chrs,
             acts,
 
@@ -253,55 +248,6 @@ impl GameState {
             attacker: SubturnerOnField::new(attacker_id),
             defender: SubturnerOnField::new(defender_id),
             current_subturner: Subturner::Attacker,
-        };
-        game.init_cards();
-        game
-    }
-
-    const INIT_CHARACTERS_PER_HAND: usize = 3;
-    const INIT_ACTIVES_PER_HAND: usize = 6;
-
-    const CHARACTERS_GAINED_AFTER_TURN: usize = 2;
-    const ACTIVES_GAINED_AFTER_TURN: usize = 4;
-
-    const TOTAL_GAINS_PER_PLAYER: usize = 4;
-
-    fn init_cards(&mut self) {
-        self.init_gain_pile();
-
-        for player_id in self.players_map.keys().copied() {
-            self.chrs.pick_n(player_id, Self::INIT_CHARACTERS_PER_HAND);
-            self.acts.pick_n(player_id, Self::INIT_ACTIVES_PER_HAND);
-        }
-    }
-
-    fn init_gain_pile(&mut self) {
-        let players_count = self.players_map.len();
-
-        let total_chrs_count = players_count
-            * (Self::INIT_CHARACTERS_PER_HAND
-                + Self::CHARACTERS_GAINED_AFTER_TURN * Self::TOTAL_GAINS_PER_PLAYER);
-
-        let total_acts_count = players_count
-            * (Self::INIT_ACTIVES_PER_HAND
-                + Self::ACTIVES_GAINED_AFTER_TURN * Self::TOTAL_GAINS_PER_PLAYER);
-
-        for _ in 1..=total_chrs_count {
-            let chr_types = CharacterType::all();
-            let chr_type = chr_types.into_iter().choose(&mut thread_rng()).unwrap();
-            let chr = CharacterInfo::new(chr_type);
-
-            let chr_id = self.add_chr(chr);
-            self.chrs.add_to_drawpile(chr_id);
-        }
-
-        for _ in 1..=total_acts_count {
-            let act_types = ActiveType::all();
-            let act_type = act_types.into_iter().choose(&mut thread_rng()).unwrap();
-            let act = ActiveInfo::new(act_type);
-
-            let act_id = self.add_act(act);
-            self.acts.add_to_drawpile(act_id);
         }
     }
 }
@@ -331,31 +277,8 @@ impl GameState {
         self.acts.add(act)
     }
 
-    pub fn attacker(&self) -> &SubturnerOnField {
-        &self.attacker
-    }
-
-    pub fn attacker_mut(&mut self) -> &mut SubturnerOnField {
-        &mut self.attacker
-    }
-
-    pub fn defender(&self) -> &SubturnerOnField {
-        &self.defender
-    }
-
-    pub fn defender_mut(&mut self) -> &mut SubturnerOnField {
-        &mut self.defender
-    }
-
     pub fn end_subturn(&mut self) {
         self.current_subturner.switch()
-    }
-
-    pub fn end_turn(&mut self) {
-        self.remove_from_field(self.current_subturner);
-        self.remove_from_field(self.current_subturner.other());
-
-        self.change_turner();
     }
 
     pub fn current_subturner(&self) -> Subturner {
@@ -364,15 +287,15 @@ impl GameState {
 
     pub fn subturner_on_field(&self, subturner: Subturner) -> &SubturnerOnField {
         match subturner {
-            Subturner::Attacker => self.attacker(),
-            Subturner::Defender => self.defender(),
+            Subturner::Attacker => &self.attacker,
+            Subturner::Defender => &self.defender,
         }
     }
 
     pub fn subturner_on_field_mut(&mut self, subturner: Subturner) -> &mut SubturnerOnField {
         match subturner {
-            Subturner::Attacker => self.attacker_mut(),
-            Subturner::Defender => self.defender_mut(),
+            Subturner::Attacker => &mut self.attacker,
+            Subturner::Defender => &mut self.defender,
         }
     }
 
@@ -391,53 +314,13 @@ impl GameState {
     pub fn other_subturner_mut(&mut self) -> &mut SubturnerOnField {
         self.subturner_on_field_mut(self.current_subturner.other())
     }
-}
 
-// TODO: переместить в Host
-impl GameState {
-    fn remove_from_field(&mut self, subturner: Subturner) {
-        let subturner_on_field = self.subturner_on_field_mut(subturner);
-        let Some(chr_id) = subturner_on_field.chr_id.take() else { panic!("expected chr to be on field") };
-        let used_act_ids = take(&mut subturner_on_field.used_act_ids);
-
-        if self.is_dead(chr_id) {
-            self.kill(chr_id);
-        } else {
-            self.leave_field(chr_id);
-        }
-
-        for act_id in used_act_ids {
-            self.acts.add_to_wastepile(act_id);
-        }
+    pub fn check_conditions(&self, conditions: &[Condition]) -> bool {
+        conditions.iter().all(|condition| self.check_condition(condition))
     }
 
-    pub fn leave_field(&mut self, chr_id: CharacterID) {
-        if self.is_dead(chr_id) {
-            self.kill(chr_id);
-            return;
-        }
-
-        // TODO: vit = phy
-
-        let owner_id = self.chrs.find_owner(chr_id);
-        self.chrs.add_to_player(chr_id, owner_id);
-    }
-
-    pub fn is_dead(&self, chr_id: CharacterID) -> bool {
-        self.chr(chr_id).stats.vit.0.into_value() == 0
-    }
-
-    // TODO: vit = phy
-    pub fn kill(&mut self, chr_id: CharacterID) {
-        self.chrs.add_to_wastepile(chr_id);
-    }
-
-    fn change_turner(&mut self) {
-        let new_attacker_id = self.defender.player_id;
-        let new_defender_id = self.pick_defender_id(new_attacker_id);
-
-        self.attacker = SubturnerOnField::new(new_attacker_id);
-        self.defender = SubturnerOnField::new(new_defender_id);
+    pub fn check_condition(&self, _condition: &Condition) -> bool {
+        todo!()
     }
 
     pub fn pick_defender_id(&self, attacker_id: PlayerID) -> PlayerID {
@@ -449,14 +332,16 @@ impl GameState {
             .nth(1)
             .unwrap()
     }
-}
 
-impl GameState {
-    pub fn check_conditions(&self, conditions: &[Condition]) -> bool {
-        conditions.iter().all(|condition| self.is_satisfied_condition(condition))
+    pub fn change_turner(&mut self) {
+        let new_attacker_id = self.defender.player_id;
+        let new_defender_id = self.pick_defender_id(new_attacker_id);
+
+        self.attacker = SubturnerOnField::new(new_attacker_id);
+        self.defender = SubturnerOnField::new(new_defender_id);
     }
 
-    pub fn is_satisfied_condition(&self, _condition: &Condition) -> bool {
-        todo!()
+    pub fn is_dead(&self, chr_id: CharacterID) -> bool {
+        self.chr(chr_id).stats.vit.0.into_value() == 0
     }
 }
