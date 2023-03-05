@@ -70,6 +70,9 @@ custom_string_slice![
         Mean(Vec<CustomString>) =>
             |f, (args)| write!(f, "⟨{}⟩", args.into_iter().join(", "));
 
+        Epitaph(CustomString) =>
+            |f, (line)| write!(f, "\x1b[3m{}\x1b[0m", line);
+
         Condition(CustomString) =>
             |f, (condition)| write!(f, "{} {}\n", condition, Self::Implies);
 
