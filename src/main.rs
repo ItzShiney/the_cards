@@ -3,20 +3,20 @@ pub mod acts;
 pub mod chrs;
 pub mod custom_string;
 pub mod default_formatted;
-pub mod described;
 pub mod effect;
 pub mod game_state;
-pub mod gendered;
 pub mod host;
 pub mod stats;
 
+use acts::ActiveType;
 use chrs::CharacterType;
 use game_state::{GameState, Player};
 use host::Host;
 
-use crate::game_state::chr_info::CharacterInfo;
+use crate::game_state::{act_info::ActiveInfo, chr_info::CharacterInfo};
 
 fn main() {
+    /*
     for chr_type in CharacterType::all() {
         let mut game = Host::new(GameState::new(vec![
             Player { nickname: "Shiney".into() },
@@ -29,6 +29,33 @@ fn main() {
 
         game.place(chr_id).unwrap();
         println!("{}", game.state().chr(chr_id));
+    }
+    */
+
+    for chr_type in CharacterType::all() {
+        let mut game = Host::new(GameState::new(vec![
+            Player { nickname: "Shiney".into() },
+            Player { nickname: "maxvog".into() },
+        ]));
+
+        let attacker_id = game.state().attacker.player_id;
+        let chr_id = game.state_mut().chrs.add(CharacterInfo::new(chr_type));
+        game.state_mut().chrs.add_to_player(chr_id, attacker_id);
+
+        println!("{}", game.state().chr(chr_id));
+    }
+
+    for act_type in ActiveType::all() {
+        let mut game = Host::new(GameState::new(vec![
+            Player { nickname: "Shiney".into() },
+            Player { nickname: "maxvog".into() },
+        ]));
+
+        let attacker_id = game.state().attacker.player_id;
+        let act_id = game.state_mut().acts.add(ActiveInfo::new(act_type));
+        game.state_mut().acts.add_to_player(act_id, attacker_id);
+
+        println!("{}", game.state().act(act_id));
     }
 
     /*

@@ -1,11 +1,8 @@
 use crate::{
     cs,
     custom_string::CustomString,
-    described::Described,
     dmg,
-    game_state::ability_description::AbilityDescription,
     game_state::group::Group,
-    gendered::RuGender,
     host::{Chain, GameCallbacks},
     int, phy,
     stats::{Stat, Stats},
@@ -18,14 +15,13 @@ macro_rules! chrs {
         $(
             $CardName:ident {
                 name: $name:expr,
-                ru_gender: $ru_gender:expr,
                 groups: $groups:tt,
-
-                $(epitaph: $epitaph:expr,)?
 
                 stats: $stats:expr,
 
-                $(abilities: $abilities:expr,)?
+                $(description: $description:expr,)?
+
+                $(abilities: $abilities:expr)? $(,)?
             }
         )*
     ) => {paste::paste!{
@@ -53,12 +49,6 @@ macro_rules! chrs {
                 }
             }
 
-            pub fn ru_gender(self) -> RuGender {
-                match self {
-                    $(Self::$CardName => $ru_gender,)*
-                }
-            }
-
             pub fn groups(self) -> &'static BTreeSet<Group> {
                 lazy_static::lazy_static! {
                     $(
@@ -71,12 +61,12 @@ macro_rules! chrs {
                 }
             }
 
-            pub fn epitaph(self) -> &'static Option<CustomString> {
+            pub fn description(self) -> &'static Option<CustomString> {
                 lazy_static::lazy_static! {
                     $(
                         static ref [<$CardName:snake:upper>]: Option<CustomString> =  {
                             let x = (
-                                $($epitaph,)?
+                                $($description,)?
                                 cs![],
                             ).0;
                             if x.slices.is_empty() {
@@ -122,7 +112,6 @@ chrs! {
     // /*
     БанкаСВареньем {
         name: cs!["БАНКА С ВАРЕНЬЕМ"],
-        ru_gender: RuGender::Feminine,
         groups: [Group::ByShiney, Group::Reality],
 
         // 1/3/-0
@@ -132,20 +121,15 @@ chrs! {
             int!(0),
         ),
 
+        description: cs![
+            Point(cs!["не атакует, если ", Intellect, " противника ", GE, " 3"])
+        ],
+
         abilities: GameCallbacks {
-            attack: Some(Described {
-                description: AbilityDescription {
-                    name: None,
-                    description: cs!["не атакует, если ", Intellect, " противника ", GE, " 3"],
-                },
-
-                value: |game, args| {
-                    let self_id = args.attacker_id;
-
-                    if game.state().chr(self_id).stats.int.0.into_value() >= 3 {
-                        return Chain::Break(Err(()));
-                    }
-
+            attack: Some(|game, args| {
+                if game.state().chr(args.attacker_id).stats.int.0.into_value() >= 3 {
+                    Chain::Break(Err(()))
+                } else {
                     Chain::Continue(args)
                 }
             }),
@@ -156,10 +140,7 @@ chrs! {
 
     ДухТвоейКвартиры {
         name: cs!["ДУХ ТВОЕЙ КВАРТИРЫ"],
-        ru_gender: RuGender::Masculine,
         groups: [Group::ByConstantine, Group::Female],
-
-        epitaph: cs!["\"твоё личное бревно\""],
 
         // 4/3/-4
         stats: Stats::new(
@@ -168,14 +149,17 @@ chrs! {
             int!(1),
         ),
 
-        // TODO:
-        // пока персонажей у владельца <= 2 ⟹
-        // • DMG больше на 2
+        // TODO
+        description: cs![
+            Epitaph(cs!["\"твоё личное бревно\""]),
+            __,
+            Condition(cs!["пока у владельца ", LE, " 2 персонажей"]),
+            Point(cs![Damage, " больше на 2"]),
+        ],
     }
 
     Планя {
         name: cs!["ПЛАНЯ"],
-        ru_gender: RuGender::Feminine,
         groups: [Group::ByConstantine, Group::Female, Group::WePlanet],
 
         // 3/3/-4
@@ -185,20 +169,21 @@ chrs! {
             int!(2),
         ),
 
-        // TODO:
-        // выставлена ⟹
-        // • КРИНЖ И ПЕНИЕ: INT случайного персонажа в колоде противника -= 1
-        //
-        // пока на поле ⟹
-        // • МАКСИМАЛЬНАЯ СПЛЮЩЕННОСТЬ: INT всех персонажей на поле меньше на 4
-        //
-        // персонаж из биты вернулся к владельцу ⟹
-        // • "ВЕРНИ САНКИ": PHY всех персонажей в руке += 2
+        // TODO
+        description: cs![
+            Condition(cs!["выставлена"]),
+            NamedPoint(cs!["КРИНЖ И ПЕНИЕ"], cs![Intellect, " случайного персонажа в колоде противника -= 1"]),
+            __,
+            Condition(cs!["пока на поле"]),
+            NamedPoint(cs!["МАКСИМАЛЬНАЯ СПЛЮЩЕННОСТЬ"], cs![Intellect, " всех персонажей на поле меньше на 4"]),
+            __,
+            Condition(cs!["персонаж из биты вернулся к владельцу"]),
+            NamedPoint(cs!["\"ВЕРНИ САНКИ\""], cs![Physique, " всех персонажей в руке += 2"]),
+        ],
     }
 
     Delirium {
         name: cs!["DELIRIUM"],
-        ru_gender: RuGender::Masculine,
         groups: [Group::ByMaxvog, Group::TBoI, Group::Illusion],
 
         // ?/?/0
@@ -208,26 +193,24 @@ chrs! {
             int!(0), // представляет собой безумие
         ),
 
+        description: cs![
+            Condition(cs!["выставлен"]),
+            Point(cs!["выбери персонажа в руке. ", Vitality, " = его ", Vitality, ", ", Damage, " = его ", Damage])
+        ],
+
         abilities: GameCallbacks {
-            post_place: Some(Described {
-                description: AbilityDescription {
-                    name: None,
-                    description: cs!["выбери персонажа в руке. ", Vitality, " = его ", Vitality, ", ", Damage, " = его ", Damage],
-                },
+            post_place: Some(|game, args| {
+                let self_id = args.chr_id;
+                let owner_id = game.state().chrs.find_owner(self_id);
+                let copied_chr_id = game.choose_hand_chr(owner_id);
+                // println!("DELIRIUM копирует:\n{}", game.state().chr(copied_chr_id));
 
-                value: |game, args| {
-                    let self_id = args.chr_id;
-                    let owner_id = game.state().chrs.find_owner(self_id);
-                    let copied_chr_id = game.choose_hand_chr(owner_id);
-                    // println!("DELIRIUM копирует:\n{}", game.state().chr(copied_chr_id));
+                let stats = &game.state().chr(copied_chr_id).stats;
+                let phy = stats.phy.0.into_value();
+                let dmg = stats.dmg.0.into_value();
 
-                    let stats = &game.state().chr(copied_chr_id).stats;
-                    let phy = stats.phy.0.into_value();
-                    let dmg = stats.dmg.0.into_value();
-
-                    game.force_set_phy_vit(self_id, phy);
-                    game.force_set_stat(self_id, Stat::Damage, dmg);
-                }
+                game.force_set_phy_vit(self_id, phy);
+                game.force_set_stat(self_id, Stat::Damage, dmg);
             }),
 
             ..Default::default()
@@ -236,7 +219,6 @@ chrs! {
 
     Беатриче {
         name: cs!["БЕАТРИЧЕ"],
-        ru_gender: RuGender::Feminine,
         groups: [Group::ByMaxvog, Group::Female, Group::Umineko, Group::Illusion],
 
         // 1/4/-3
@@ -246,14 +228,26 @@ chrs! {
             int!(7),
         ),
 
-        // TODO:
-        // умерла ⟹
-        // • с шансом 1/4 вернётся в руку
+        description: cs![
+            Condition(cs!["умерла"]),
+            Point(cs!["с шансом 1/4 возвращается в руку"])
+        ],
+
+        abilities: GameCallbacks {
+            die: Some(|game, args| {
+                if game.random_bool(1./4.) {
+                    Chain::Break(Err(()))
+                } else {
+                    Chain::Continue(args)
+                }
+            }),
+
+            ..Default::default()
+        },
     }
 
     Ненети {
         name: cs!["Н\u{0301}ЕНЕТИ"],
-        ru_gender: RuGender::Feminine,
         groups: [Group::ByShiney, Group::Female, Group::NewGame],
 
         // 5/1/-1
@@ -266,7 +260,6 @@ chrs! {
 
     Коса {
         name: cs!["КОСА"],
-        ru_gender: RuGender::Feminine,
         groups: [Group::ByConstantine, Group::Female, Group::Reality],
 
         // 2/3/-1
@@ -279,7 +272,6 @@ chrs! {
 
     Мирослав {
         name: cs!["МИРОСЛАВ"],
-        ru_gender: RuGender::Masculine,
         groups: [Group::ByShiney, Group::Male, Group::Reality],
 
         // 2/2/-4
@@ -292,7 +284,6 @@ chrs! {
 
     МаксимовБаянЖивотворящий {
         name: cs!["МАКСИМОВ БАЯН ЖИВОТВОРЯЩИЙ"],
-        ru_gender: RuGender::Masculine,
         groups: [Group::ByShiney, Group::Lifemaking],
 
         // 4/1/-0
@@ -305,7 +296,6 @@ chrs! {
 
     Рей {
         name: cs!["РЕЙ"],
-        ru_gender: RuGender::Masculine,
         groups: [Group::ByConstantine, Group::Male],
 
         // 1/3/-2
@@ -318,10 +308,7 @@ chrs! {
 
     Тимми {
         name: cs!["ТИММИ"],
-        ru_gender: RuGender::Masculine,
         groups: [Group::ByConstantine, Group::Male, Group::SouthPark],
-
-        epitaph: cs!["\"тимми тимми тимми\""],
 
         // 1/0/-5
         stats: Stats::new(
@@ -329,11 +316,14 @@ chrs! {
             dmg!(0),
             int!(0),
         ),
+
+        description: cs![
+            Epitaph(cs!["\"тимми тимми тимми\""])
+        ],
     }
 
     НостальгирующийКритик {
         name: cs!["НОСТАЛЬГИРУЮЩИЙ КРИТИК"],
-        ru_gender: RuGender::Masculine,
         groups: [Group::ByConstantine, Group::Male],
 
         // 4/3/-2
@@ -343,14 +333,15 @@ chrs! {
             int!(6),
         ),
 
-        // TODO:
-        // пока INT противника <= 3 ⟹
-        // • VIT этой карты на 1 меньше, DMG на 2 больше
+        // TODO
+        description: cs![
+            Condition(cs!["пока ", Intellect, " противника ", LE, " 3"]),
+            Point(cs![Vitality, " этой карты на 1 меньше, ", Damage, " на 2 больше"]),
+        ],
     }
 
     Марио {
         name: cs!["МАРИО"],
-        ru_gender: RuGender::Masculine,
         groups: [Group::ByShiney, Group::Male],
 
         // 2/2/-3
@@ -360,14 +351,15 @@ chrs! {
             int!(6),
         ),
 
-        // TODO:
-        // активируемая способность & битва ⟹
-        // • ПРЫЖОК НА ЛИЦО: VIT противника /= 2
+        description: cs![
+            Activatable,
+            Condition(cs!["битва"]),
+            NamedPoint(cs!["ПРЫЖОК НА ЛИЦО"], cs![Vitality, " противника /= 2"]),
+        ],
     }
 
     Рена {
         name: cs!["РЕНА"],
-        ru_gender: RuGender::Feminine,
         groups: [Group::ByConstantine, Group::Female, Group::Higurashi],
 
         // 2/3/-3
@@ -380,7 +372,6 @@ chrs! {
 
     Борат {
         name: cs!["БОРАТ"],
-        ru_gender: RuGender::Masculine,
         groups: [Group::ByConstantine, Group::Male, Group::Memes],
 
         // 2/2/-4
@@ -390,14 +381,14 @@ chrs! {
             int!(1),
         ),
 
-        abilities: GameCallbacks {
-            post_place: Some(Described {
-                description: AbilityDescription {
-                    name: Some(cs!["\"Я РЕПОРТЁР ИЗ КАЗАХСТАНА\""]),
-                    description: cs!["возьми активку из стопки добора. если возможно, используй на этого персонажа, иначе положи обратно"],
-                },
+        description: cs![
+            Condition(cs!["выставлен"]),
+            NamedPoint(cs!["\"Я РЕПОРТЁР ИЗ КАЗАХСТАНА\""], cs!["возьми активку из стопки добора. если возможно, используй на этого персонажа, иначе положи обратно"]),
+        ],
 
-                value: |game, args| {
+        abilities: GameCallbacks {
+            post_place: Some(
+                |game, args| {
                     let self_id = args.chr_id;
                     let owner_id = game.state().chrs.find_owner(self_id);
 
@@ -406,7 +397,7 @@ chrs! {
                         game.state_mut().acts.add_to_drawpile(gained_act_id);
                     }
                 }
-            }),
+            ),
 
             ..Default::default()
         },
@@ -414,7 +405,6 @@ chrs! {
 
     ЧёрныйКубик {
         name: cs!["ЧЁРНЫЙ КУБИК"],
-        ru_gender: RuGender::Masculine,
         groups: [Group::ByMaxvog],
 
         // 3/1/-3
@@ -427,7 +417,6 @@ chrs! {
 
     Нож {
         name: cs!["НОЖ"],
-        ru_gender: RuGender::Masculine,
         groups: [Group::ByShiney, Group::TBoI, Group::Undrawable],
 
         // 2/?/-0
@@ -437,20 +426,20 @@ chrs! {
             int!(1),
         ),
 
-        abilities: GameCallbacks {
-            post_place: Some(Described {
-                description: AbilityDescription {
-                    name: None,
-                    description: cs![Damage, " = ", Sum { times: cs!["9"], body: cs![Random(cs!["0"]..=cs!["1"])] }],
-                },
+        description: cs![
+            Condition(cs!["выставлен"]),
+            Point(cs![Damage, " = ", Sum { times: cs!["9"], body: cs![Random(cs!["0"]..=cs!["1"])] }]),
+        ],
 
-                value: |game, args| {
+        abilities: GameCallbacks {
+            post_place: Some(
+                |game, args| {
                     let value = repeat_with(|| { game.random(0, 1) }).take(9).sum();
 
                     let self_id = args.chr_id;
                     game.force_set_stat(self_id, Stat::Damage, value);
                 }
-            }),
+            ),
 
             ..Default::default()
         },
@@ -458,7 +447,6 @@ chrs! {
 
     ГлазКтулху {
         name: cs!["ГЛАЗ КТУЛХУ"],
-        ru_gender: RuGender::Masculine,
         groups: [Group::ByMaxvog, Group::Terraria],
 
         // 4/3/-3
@@ -489,7 +477,6 @@ chrs! {
 
     Магдалина {
         name: cs!["МАГДАЛИНА"],
-        ru_gender: RuGender::Feminine,
         groups: [Group::ByShiney, Group::Female, Group::TBoI],
 
         // 4/1/-2
@@ -499,14 +486,14 @@ chrs! {
             int!(6), // TODO: брать у CharacterType::Айзек
         ),
 
-        // TODO:
-        // активируемая способность ⟹
-        // • НЯМ СЕРДЦЕ: VIT += 2
+        description: cs![
+            Activatable,
+            NamedPoint(cs!["НЯМ СЕРДЦЕ"], cs![Vitality, " += 2"]),
+        ],
     }
 
     Рика {
         name: cs!["РИКА"],
-        ru_gender: RuGender::Feminine,
         groups: [Group::ByConstantine, Group::Female, Group::Higurashi],
 
         // 1/1/-1
@@ -519,7 +506,6 @@ chrs! {
 
     Питон {
         name: cs!["ПИТОН"],
-        ru_gender: RuGender::Masculine,
         groups: [Group::ByShiney, Group::ProgrammingLanguages],
 
         // 2/3/-0
@@ -535,7 +521,6 @@ chrs! {
 
     Сатока {
         name: cs!["САТОКА"],
-        ru_gender: RuGender::Feminine,
         groups: [Group::ByShiney, Group::Female, Group::Higurashi],
 
         // 3/2/-4
@@ -548,10 +533,7 @@ chrs! {
 
     Робеспьер {
         name: cs!["РОБЕСПЬЕР"],
-        ru_gender: RuGender::Masculine,
         groups: [Group::ByConstantine, Group::Male, Group::Reality],
-
-        epitaph: cs!["\"vive la révolution\""],
 
         // 2/5/-3
         stats: Stats::new(
@@ -559,33 +541,34 @@ chrs! {
             dmg!(5),
             int!(5),
         ),
+
+        description: cs![
+            Epitaph(cs!["\"vive la révolution\""]),
+        ],
     }
-    // */
 
     ГВ {
         name: cs!["ГВ"],
-        ru_gender: RuGender::Masculine,
         groups: [Group::ByMaxvog, Group::Male, Group::Female, Group::Umineko],
 
         // 0/5/-3
         stats: Stats::new(
-            phy!(5?),
+            phy!(0?),
             dmg!(7),
             int!(7),
         ),
 
-        // TODO:
-        // активируемая способность:
-        // • выбери [umineko]-персонажа и замени на него
+        description: cs![
+            Activatable,
+            Point(cs!["выбери ", Umineko, "-персонажа в руке и замени этого на него"]),
+            __,
+            Condition(cs!["выставлен"]),
+            Point(cs![Physique, " = ", SumAll { body: cs![Physique, " всех ", Illusion, " в руке"] }])
+        ],
 
         abilities: GameCallbacks {
-            post_place: Some(Described {
-                description: AbilityDescription {
-                    name: None,
-                    description: cs!["выставлен впервые ", Implies, "\n", Bullet, Physique, " = ", SumAll { body: cs![Physique, " всех ", Group(Illusion), " в руке"] }],
-                },
-
-                value: |game, args| {
+            post_place: Some(
+                |game, args| {
                     let self_id = args.chr_id;
                     let owner_id = game.state().chrs.find_owner(self_id);
 
@@ -602,9 +585,10 @@ chrs! {
 
                     game.force_set_phy_vit(self_id, phy);
                 }
-            }),
+            ),
 
             ..Default::default()
         },
     }
+    // */
 }

@@ -17,8 +17,7 @@ impl Display for ActiveInfo {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let name = self.type_.name();
         let groups = self.type_.groups();
-        let epitaph = self.type_.epitaph();
-        let abilities = self.type_.abilities();
+        let description = self.type_.description();
 
         writeln!(f, "──────────────────────────────────────")?;
 
@@ -27,11 +26,9 @@ impl Display for ActiveInfo {
             writeln!(f, "{}", DefaultFormatted(groups))?;
         }
 
-        if let Some(epitaph) = epitaph {
-            writeln!(f, "\n\x1b[3m{}\x1b[0m", epitaph)?;
+        if let Some(description) = description {
+            write!(f, "\n{}", description)?;
         }
-
-        writeln!(f, "{}", abilities)?;
 
         write!(f, "──────────────────────────────────────")
     }

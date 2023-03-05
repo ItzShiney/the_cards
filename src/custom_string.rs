@@ -20,6 +20,7 @@ macro_rules! custom_string_slice {
             )*
         }
     ) => {
+        #[derive(Clone)]
         pub enum CustomStringSlice {
             $($ArgsCase $args,)*
 
@@ -71,20 +72,28 @@ custom_string_slice![
             |f, (args)| write!(f, "⟨{}⟩", args.into_iter().join(", "));
 
         Epitaph(CustomString) =>
-            |f, (line)| write!(f, "\x1b[3m{}\x1b[0m", line);
+            |f, (line)| writeln!(f, "\x1b[3m{}\x1b[0m", line);
 
         Condition(CustomString) =>
-            |f, (condition)| write!(f, "{} {}\n", condition, Self::Implies);
+            |f, (condition)| writeln!(f, "{} {}", condition, Self::Implies);
 
         Point(CustomString) =>
-            |f, (line)| write!(f, "{} {}", Self::Bullet, line);
+            |f, (line)| writeln!(f, "{} {}", Self::Bullet, line);
+
+        NamedPoint(CustomString, CustomString) =>
+            |f, (name, line)| writeln!(f, "{} {}: {}", Self::Bullet, Self::Name(name.clone()), line);
+
+        Name(CustomString) =>
+            |f, (line)| write!(f, "\x1b[1m{}\x1b[22m", line);
     }
 
     {
+        Activatable => |f| writeln!(f, "активируемая способность:");
+
         Implies => |f| write!(f, "⟹");
         Bullet => |f| write!(f, "•");
         Mul => |f| write!(f, "⋅");
-        And => |f| write!(f, "∧");
+        And => |f| write!(f, "&"); // ∧
 
         Vitality => |f| write!(f, "\x1b[31mVIT\x1b[39m");
         Physique => |f| write!(f, "\x1b[35mPHY\x1b[39m");
@@ -94,6 +103,8 @@ custom_string_slice![
 
         LE => |f| write!(f, "≤");
         GE => |f| write!(f, "≥");
+
+        __ => |f| writeln!(f);
     }
 ];
 
@@ -115,7 +126,13 @@ impl From<ActiveType> for CustomStringSlice {
     }
 }
 
-#[derive(Default)]
+impl From<Group> for CustomStringSlice {
+    fn from(group: Group) -> Self {
+        Self::Group(group)
+    }
+}
+
+#[derive(Clone, Default)]
 pub struct CustomString {
     pub slices: Vec<CustomStringSlice>,
 }
@@ -137,7 +154,7 @@ impl Display for CustomString {
 
 #[macro_export]
 macro_rules! cs {
-    ($($args:expr),*) => {{
+    ($($args:expr),* $(,)?) => {{
         #[allow(unused)] use $crate::custom_string::CustomStringSlice::*;
         #[allow(unused)] use $crate::chrs::CharacterType::*;
         #[allow(unused)] use $crate::acts::ActiveType::*;

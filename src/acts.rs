@@ -1,11 +1,7 @@
 #[allow(unused)]
+use crate::{chrs::CharacterType, cs, custom_string::CustomString, game_state::group::Group};
 use crate::{
-    chrs::CharacterType, cs, custom_string::CustomString, game_state::group::Group,
-    gendered::RuGender,
-};
-use crate::{
-    described::Described,
-    game_state::{ability_description::AbilityDescription, chr_info::CharacterInfo},
+    game_state::chr_info::CharacterInfo,
     host::{Chain, GameCallbacks},
     stats::Stat,
 };
@@ -17,10 +13,9 @@ macro_rules! acts {
         $(
             $CardName:ident {
                 name: $name:expr,
-                ru_gender: $ru_gender:expr,
                 groups: $groups:tt,
 
-                $(epitaph: $epitaph:expr,)?
+                $(description: $description:expr,)?
 
                 abilities: $abilities:expr,
             }
@@ -50,18 +45,6 @@ macro_rules! acts {
                 }
             }
 
-            pub fn ru_gender(self) -> $crate::gendered::RuGender {
-                lazy_static::lazy_static! {
-                    $(
-                        static ref [<$CardName:snake:upper>]: $crate::gendered::RuGender = $ru_gender;
-                    )*
-                }
-
-                match self {
-                    $(Self::$CardName => *[<$CardName:snake:upper>],)*
-                }
-            }
-
             pub fn groups(self) -> &'static BTreeSet<Group> {
                 lazy_static::lazy_static! {
                     $(
@@ -74,12 +57,12 @@ macro_rules! acts {
                 }
             }
 
-            pub fn epitaph(self) -> &'static Option<CustomString> {
+            pub fn description(self) -> &'static Option<CustomString> {
                 lazy_static::lazy_static! {
                     $(
                         static ref [<$CardName:snake:upper>]: Option<CustomString> = {
                             let x = (
-                                $($epitaph,)?
+                                $($description,)?
                                 cs![],
                             ).0;
                             if x.slices.is_empty() {
@@ -112,48 +95,41 @@ macro_rules! acts {
 }
 
 acts! {
+    // /*
     ПустаяКарта {
         name: cs!["ПУСТАЯ КАРТА"],
-        ru_gender: RuGender::Feminine,
         groups: [Group::ByShiney, Group::TBoI],
 
+        description: cs![
+            Condition(cs!["использована"]),
+            Point(cs!["выбери активку в руке. эта карта повторит эффект выбранной"]),
+        ],
+
         abilities: GameCallbacks {
-            use_on_field: Some(
-                Described { description: AbilityDescription {
-                    name: None,
-                    description: cs!["выбери активку в руке. эта карта повторит эффект выбранной"],
-                },
+            use_on_field: Some(|game, args| {
+                let owner_id = game.state().acts.find_owner(args.act_id);
+                let imitated_act_id = game.choose_hand_act(owner_id);
 
-                value: |game, args| {
-                    let owner_id = game.state().acts.find_owner(args.act_id);
-                    let imitated_act_id = game.choose_hand_act(owner_id);
-
-                    todo!("mimic {:?}", imitated_act_id)
-                }
+                todo!("повторить эффект {:?}", imitated_act_id)
             }),
 
             ..Default::default()
         },
     }
 
-    // /*
     Баян {
         name: cs!["БАЯН"],
-        ru_gender: RuGender::Masculine,
         groups: [Group::ByMaxvog, Group::Dismoral],
 
+        description: cs![
+            Condition(cs!["использован на персонажа"]),
+            NamedPoint(cs!["\"ЭТОТ АНЕКДОТ ЕЩЁ МОЙ ДЕД МОЕМУ ОТЦУ РАССКАЗЫВАЛ\""], cs![Damage, " -= 3"]),
+        ],
+
         abilities: GameCallbacks {
-            use_on_character: Some(Described {
-                description: AbilityDescription {
-                    name: Some(cs!["\"ЭТОТ АНЕКДОТ ЕЩЁ МОЙ ДЕД МОЕМУ ОТЦУ РАССКАЗЫВАЛ\""]),
-                    description: cs![Damage, " -= 3"],
-                },
-
-                value: |game, args| {
-                    game.modify_stat(args.target_id, Stat::Damage, 3);
-
-                    Chain::Continue(args)
-                }
+            use_on_character: Some(|game, args| {
+                game.modify_stat(args.target_id, Stat::Damage, 3);
+                Chain::Continue(args)
             }),
 
             ..Default::default()
@@ -162,22 +138,19 @@ acts! {
 
     ЖёлтаяИскра {
         name: cs!["ЖЁЛТАЯ ИСКРА"],
-        ru_gender: RuGender::Feminine,
         groups: [Group::ByShiney, Group::Undertale],
 
+        description: cs![
+            Condition(cs!["использована на персонажа"]),
+            Point(cs![Vitality, " = ", Physique]),
+        ],
+
         abilities: GameCallbacks {
-            use_on_character: Some(Described {
-                description: AbilityDescription {
-                    name: None,
-                    description: cs![Vitality, " = ", Physique],
-                },
+            use_on_character: Some(|game, args| {
+                let phy = game.state().chr(args.target_id).stats.phy.0.into_value();
+                game.force_set_stat(args.target_id, Stat::Vitality, phy);
 
-                value: |game, args| {
-                    let phy = game.state().chr(args.target_id).stats.phy.0.into_value();
-                    game.force_set_stat(args.target_id, Stat::Vitality, phy);
-
-                    Chain::Continue(args)
-                }
+                Chain::Continue(args)
             }),
 
             ..Default::default()
@@ -186,20 +159,17 @@ acts! {
 
     ТетрадьСмерти {
         name: cs!["ТЕТРАДЬ СМЕРТИ"],
-        ru_gender: RuGender::Feminine,
         groups: [Group::ByConstantine, Group::DeathNote],
 
-        abilities: GameCallbacks {
-            use_on_character: Some(Described {
-                description: AbilityDescription {
-                    name: None,
-                    description: cs!["мгновенно убивает его"],
-                },
+        description: cs![
+            Condition(cs!["использована на персонажа"]),
+            Point(cs!["мгновенно убивает его"]),
+        ],
 
-                value: |game, args| {
-                    let _ = game.kill(args.target_id);
-                    Chain::Continue(args)
-                }
+        abilities: GameCallbacks {
+            use_on_character: Some(|game, args| {
+                let _ = game.die(args.target_id);
+                Chain::Continue(args)
             }),
 
             ..Default::default()
@@ -208,24 +178,17 @@ acts! {
 
     Коммунизм {
         name: cs!["КОММУНИЗМ"],
-        ru_gender: RuGender::Masculine,
         groups: [Group::ByConstantine, Group::SocialOrder],
 
-        abilities: GameCallbacks {
-            // TODO: использовано в качестве своего хода =>
-            use_on_field: Some(Described {
-                description: AbilityDescription {
-                    name: None,
-                    description: cs![
-                        "каждый игрок передаёт свою колоду следующему по направлению ходов\n",
-                        Bullet, "эта карта уничтожается\n",
-                        Bullet, "ход заканчивается"
-                    ],
-                },
+        description: cs![
+            Condition(cs!["использован в качестве своего хода"]),
+            Point(cs!["каждый игрок передаёт свою колоду следующему по направлению ходов"]),
+            Point(cs!["эта карта уничтожается"]),
+        ],
 
-                value: |_game, _args| {
-                    todo!()
-                }
+        abilities: GameCallbacks {
+            use_on_field: Some(|_game, _args| {
+                todo!()
             }),
 
             ..Default::default()
@@ -234,27 +197,23 @@ acts! {
 
     ОБратка {
         name: cs!["О,БРАТКА"],
-        ru_gender: RuGender::Feminine,
         groups: [Group::ByZoinX],
 
+        description: cs![
+            Condition(cs!["использована на противника ", And, " твой персонаж не выставлен"]),
+            Point(cs!["персонаж противника становится твоим и выставляется от тебя"]),
+        ],
+
         abilities: GameCallbacks {
-            // TODO: использовано на противника & твой персонаж не выставлен =>
-            use_on_character: Some(Described {
-                description: AbilityDescription {
-                    name: None,
-                    description: cs!["персонаж противника становится твоим и выставляется от тебя"],
-                },
+            use_on_character: Some(|game, args| {
+                let owner_id = game.state().acts.try_find_owner(args.act_id);
+                let target_owner_id = game.state().chrs.try_find_owner(args.target_id);
 
-                value: |game, args| {
-                    let owner_id = game.state().acts.try_find_owner(args.act_id);
-                    let target_owner_id = game.state().chrs.try_find_owner(args.target_id);
-
-                    if owner_id == target_owner_id {
-                        return Chain::Break(Err(()));
-                    }
-
-                    todo!()
+                if owner_id == target_owner_id {
+                    return Chain::Break(Err(()));
                 }
+
+                todo!()
             }),
 
             ..Default::default()
@@ -263,32 +222,27 @@ acts! {
 
     ЛезвиеНожа {
         name: cs!["ЛЕЗВИЕ НОЖА"],
-        ru_gender: RuGender::Neuter,
         groups: [Group::ByShiney, Group::TBoI],
 
+        description: cs![
+            Condition(cs!["использовано на персонажа"]),
+            Point(cs![Damage, " += 1"]),
+            Point(cs!["если ранее была использована ", РучкаНожа, ", получи ", Нож]),
+        ],
+
         abilities: GameCallbacks {
-            use_on_character: Some(Described {
-                description: AbilityDescription {
-                    name: None,
-                    description: cs![ // FIXME
-                        Damage, " += 1\n",
-                        Bullet, " если ранее была использована ", РучкаНожа, ", получи ", Нож
-                    ],
-                },
+            use_on_character: Some(|game, args| {
+                game.modify_stat(args.target_id, Stat::Physique, 1);
 
-                value: |game, args| {
-                    game.modify_stat(args.target_id, Stat::Physique, 1);
+                #[allow(unreachable_code)]
+                if todo!("ранее была использована РУЧКА НОЖА") {
+                    let owner_id = game.state().acts.find_owner(args.act_id);
 
-                    #[allow(unreachable_code)]
-                    if todo!("ранее была использована РУЧКА НОЖА") {
-                        let owner_id = game.state().acts.find_owner(args.act_id);
-
-                        let drawn_chr_id = game.state_mut().chrs.add(CharacterInfo::new(CharacterType::Нож));
-                        game.state_mut().chrs.add_to_player(drawn_chr_id, owner_id);
-                    }
-
-                    Chain::Continue(args)
+                    let drawn_chr_id = game.state_mut().chrs.add(CharacterInfo::new(CharacterType::Нож));
+                    game.state_mut().chrs.add_to_player(drawn_chr_id, owner_id);
                 }
+
+                Chain::Continue(args)
             }),
 
             ..Default::default()
@@ -297,32 +251,27 @@ acts! {
 
     РучкаНожа {
         name: cs!["РУЧКА НОЖА"],
-        ru_gender: RuGender::Feminine,
         groups: [Group::ByShiney, Group::TBoI],
 
+        description: cs![
+            Condition(cs!["использовано на персонажа"]),
+            Point(cs![Physique, " += 1"]),
+            Point(cs!["если ранее было использовано ", ЛезвиеНожа, ", получи ", Нож]),
+        ],
+
         abilities: GameCallbacks {
-            use_on_character: Some(Described {
-                description: AbilityDescription {
-                    name: None,
-                    description: cs![ // FIXME
-                        Physique, " += 1\n",
-                        Bullet, " если ранее было использовано ", ЛезвиеНожа, ", получи ", Нож
-                    ],
-                },
+            use_on_character: Some(|game, args| {
+                game.modify_stat(args.target_id, Stat::Physique, 1);
 
-                value: |game, args| {
-                    game.modify_stat(args.target_id, Stat::Physique, 1);
+                #[allow(unreachable_code)]
+                if todo!("ранее было использовано ЛЕЗВИЕ НОЖА") {
+                    let owner_id = game.state().acts.find_owner(args.act_id);
 
-                    #[allow(unreachable_code)]
-                    if todo!("ранее было использовано ЛЕЗВИЕ НОЖА") {
-                        let owner_id = game.state().acts.find_owner(args.act_id);
-
-                        let drawn_chr_id = game.state_mut().chrs.add(CharacterInfo::new(CharacterType::Нож));
-                        game.state_mut().chrs.add_to_player(drawn_chr_id, owner_id);
-                    }
-
-                    Chain::Continue(args)
+                    let drawn_chr_id = game.state_mut().chrs.add(CharacterInfo::new(CharacterType::Нож));
+                    game.state_mut().chrs.add_to_player(drawn_chr_id, owner_id);
                 }
+
+                Chain::Continue(args)
             }),
 
             ..Default::default()

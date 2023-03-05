@@ -1,4 +1,3 @@
-pub mod ability_description;
 pub mod act_id;
 pub mod act_info;
 pub mod chr_id;

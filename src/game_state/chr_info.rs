@@ -19,8 +19,7 @@ impl Display for CharacterInfo {
         let name = self.type_.name();
         let groups = self.type_.groups();
         let stats = &self.stats;
-        let epitaph = self.type_.epitaph();
-        let abilities = self.type_.abilities();
+        let description = self.type_.description();
 
         writeln!(f, "──────────────────────────────────────")?;
 
@@ -31,13 +30,8 @@ impl Display for CharacterInfo {
 
         writeln!(f, "\n{}", stats)?;
 
-        if let Some(epitaph) = epitaph {
-            writeln!(f, "\n\x1b[3m{}\x1b[0m", epitaph)?;
-        }
-
-        let abilities = abilities.to_string();
-        if !abilities.is_empty() {
-            write!(f, "\n{}", abilities)?;
+        if let Some(description) = description {
+            write!(f, "\n{}", description)?;
         }
 
         write!(f, "──────────────────────────────────────")

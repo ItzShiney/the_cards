@@ -51,8 +51,8 @@ groups![
     Female > "\x1b[35m♀️\x1b[39m";
 
     Illusion > "иллюзия";
-    Moral > "моралящё";
-    Dismoral > "дизморалящё";
+    Moral > "моралит";
+    Dismoral > "дизморалит";
 
     Anime > "аниме";
         ReZero > "re:zero": [Anime, Shows];
@@ -74,7 +74,7 @@ groups![
         Quotes > "цитаты": [Memes];
             ConstantineQuotes > "цитаты кости": [Quotes];
             ChubarovQuotes > "цитаты чубарова": [Quotes];
-        Lifemaking > "животворящё": [Memes];
+        Lifemaking > "животворит": [Memes];
 
     Shows > "сериалы";
         SouthPark > "south park": [Shows];

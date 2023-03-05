@@ -5,7 +5,6 @@ use rand::{thread_rng, Rng};
 
 use crate::acts::ActiveType;
 use crate::chrs::CharacterType;
-use crate::described::Described;
 use crate::game_state::act_id::ActiveID;
 use crate::game_state::act_info::ActiveInfo;
 use crate::game_state::chr_id::CharacterID;
@@ -127,21 +126,9 @@ macro_rules! callbacks {
         #[derive(Default)]
         pub struct GameCallbacks {
             $(
-                pub $name: Option<$crate::described::Described<[<$name:camel Callback>]>>,
-                pub [<post_ $name>]: Option<$crate::described::Described<[<Post $name:camel Callback>]>>,
+                pub $name: Option<[<$name:camel Callback>]>,
+                pub [<post_ $name>]: Option<[<Post $name:camel Callback>]>,
             )*
-        }
-
-        impl ::std::fmt::Display for GameCallbacks {
-            fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-                $(
-                    if let Some($crate::described::Described { ref description, .. }) = self.$name {
-                        writeln!(f, "{}", description)?;
-                    }
-                )*
-
-                Ok(())
-            }
         }
 
         impl Host {
@@ -150,7 +137,7 @@ macro_rules! callbacks {
                     $(
                         const _: () = assert!($pre_value);
 
-                        while let Some($crate::described::Described { value: callback, .. }) = $self.callbacks.$name {
+                        while let Some(callback) = $self.callbacks.$name {
                             match (callback)($self, args) {
                                 Chain::Continue(new_args) => {
                                     args = new_args;
@@ -163,7 +150,7 @@ macro_rules! callbacks {
 
                     #[allow(unused)] let id = ($(args.$arg_name,)* 0,).0;
                     $(
-                        if let Some($crate::described::Described { value: callback, .. }) = $self.state.$self_namespace.get(id).type_.abilities().$name {
+                        if let Some(callback) = $self.state.$self_namespace.get(id).type_.abilities().$name {
                             match (callback)($self, args) {
                                 Chain::Continue(new_args) => {
                                     args = new_args;
@@ -188,13 +175,13 @@ macro_rules! callbacks {
                 }
 
                 pub fn [<post_ $name:camel:snake _args>] (&mut $self, args: &[<$name:camel Args>] ) {
-                    while let Some($crate::described::Described { value: callback, .. }) = $self.callbacks.[<post_ $name>] {
+                    while let Some(callback) = $self.callbacks.[<post_ $name>] {
                         (callback)($self, args);
                     }
 
                     #[allow(unused)] let id = ($(args.$arg_name,)* 0,).0;
                     $(
-                        if let Some($crate::described::Described { value: callback, .. }) = $self.state.$self_namespace.get(id).type_.abilities().[<post_ $name>] {
+                        if let Some(callback) = $self.state.$self_namespace.get(id).type_.abilities().[<post_ $name>] {
                             (callback)($self, args);
                         }
                     )?
@@ -226,7 +213,7 @@ callbacks! {
         act_id: ActiveID,
         target_id: CharacterID,
     ) -> Result<(), ()> {
-        let Some(Described { value: callback, .. }) =
+        let Some(callback) =
             self.state.act(act_id).type_.abilities().use_on_character else { return Err(()) };
 
         (callback)(self, UseOnCharacterArgs { act_id, target_id });
@@ -323,11 +310,11 @@ callbacks! {
 
     #[@chrs]
     #[pre(true)]
-    pub fn kill(
+    pub fn die(
         &mut self,
         chr_id: CharacterID,
     ) -> Result<(), ()> {
-        self.force_kill(chr_id);
+        self.force_die(chr_id);
         Ok(())
     }
 
@@ -338,6 +325,14 @@ callbacks! {
         max: Stat0,
     ) -> Stat0 {
         thread_rng().gen_range(min..=max)
+    }
+
+    #[pre(true)]
+    pub fn random_bool(
+        &mut self,
+        true_probability: f64,
+    ) -> bool {
+        thread_rng().gen_bool(true_probability)
     }
 
     pub fn end_subturn(&mut self) {
@@ -351,7 +346,7 @@ callbacks! {
         self.state.change_turner();
     }
 
-    pub fn force_kill(&mut self, chr_id: CharacterID) {
+    pub fn force_die(&mut self, chr_id: CharacterID) {
         self.state.chr_mut(chr_id).stats.max_vit();
         self.state.chrs.add_to_wastepile(chr_id);
     }
@@ -362,7 +357,7 @@ callbacks! {
         let used_act_ids = take(&mut subturner_on_field.used_act_ids);
 
         if self.state.is_dead(chr_id) {
-            self.force_kill(chr_id);
+            self.force_die(chr_id);
             return;
         }
 
