@@ -1,18 +1,20 @@
 use super::ChooseCardArgs;
 use crate::game::state::player_id::PlayerID;
 use crate::game::state::GameState;
+use std::fmt::Display;
 
-pub struct ChooseCardArgsP<'game_state, 'p, ID> {
+pub struct ChooseCardArgsP<'prompt_str, 'game_state, 'p, ID> {
+    pub prompt_str: &'prompt_str dyn Display,
     pub is_cancellable: bool,
     pub player_id: PlayerID,
     pub p: &'p dyn Fn(&'game_state GameState, ID) -> bool,
 }
 
-impl<'p, 'game_state, ID> ChooseCardArgsP<'p, 'game_state, ID> {
+impl<'prompt_str, 'game_state, 'p, ID> ChooseCardArgsP<'prompt_str, 'game_state, 'p, ID> {
     pub fn new(
-        ChooseCardArgs { player_id, is_cancellable }: ChooseCardArgs,
+        ChooseCardArgs { prompt_str, player_id, is_cancellable }: ChooseCardArgs<'prompt_str>,
         p: &'p dyn Fn(&'game_state GameState, ID) -> bool,
     ) -> Self {
-        Self { player_id, is_cancellable, p }
+        Self { prompt_str, player_id, is_cancellable, p }
     }
 }

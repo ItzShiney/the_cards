@@ -9,10 +9,10 @@ use itertools::Itertools;
 pub struct ChooseActiveInHand;
 
 impl ChooseActInHand for ChooseActiveInHand {
-    fn choose_act_in_hand<'game_state>(
+    fn choose_act_in_hand<'prompt_str, 'game_state>(
         &mut self,
         game_state: &'game_state GameState,
-        args: ChooseCardArgsP<'game_state, '_, ActiveID>,
+        args: ChooseCardArgsP<'prompt_str, 'game_state, '_, ActiveID>,
     ) -> Option<ActiveID> {
         let acts = game_state
             .acts
@@ -29,6 +29,6 @@ impl ChooseActInHand for ChooseActiveInHand {
         let displays =
             acts.clone().into_iter().map(|act_id| cs![Active(game_state.act(act_id).type_)]);
         let results = acts.iter().copied();
-        prompt(args.is_cancellable, displays, results)
+        prompt(args.prompt_str, args.is_cancellable, displays, results)
     }
 }

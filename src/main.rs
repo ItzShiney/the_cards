@@ -14,7 +14,7 @@ use crate::game::state::chr_info::CharacterInfo;
 use acts::ActiveType;
 use chrs::CharacterType;
 use console::prompt_idxs;
-use game::input::ChooseCardArgsP;
+use game::input::ChooseCardArgs;
 use game::input::DefaultRandom;
 use game::input::DefaultRandomBool;
 use game::input::GameInputTuple;
@@ -52,13 +52,16 @@ fn main() {
     loop {
         let player_id = game.state().current_subturner_on_field().player_id;
 
-        match prompt_idxs(false, ["выставить персонажа", "использовать активку"].into_iter())
-        {
+        match prompt_idxs(
+            "какое действие совершить?",
+            false,
+            ["выставить персонажа", "использовать активку"].into_iter(),
+        ) {
             Some(0) => {
-                let Some(chr_id) = game.choose_chr_in_hand(ChooseCardArgsP {
+                let Some(chr_id) = game.choose_chr_in_hand_any(ChooseCardArgs {
+                    prompt_str: &"какого персонажа выставить?",
                     is_cancellable: true,
                     player_id,
-                    p: &GameState::is_placeable,
                 }) else { continue };
 
                 match game.place(chr_id) {
@@ -73,33 +76,15 @@ fn main() {
                 }
             }
 
-            Some(1) => loop {
-                match prompt_idxs(true, ["на персонажа", "на поле"].into_iter()) {
-                    None => break,
+            Some(1) => {
+                let Some(act_id) = game.choose_act_in_hand_any(ChooseCardArgs {
+                    prompt_str: &"какую активку использовать?",
+                    is_cancellable: true,
+                    player_id,
+                }) else { continue };
 
-                    Some(0) => {
-                        let Some(act_id) = game.choose_act_in_hand(ChooseCardArgsP {
-                            is_cancellable: true,
-                            player_id,
-                            p: &GameState::is_usable_on_chr,
-                        }) else { continue };
-
-                        todo!("использовать {act_id:?} на персонажа");
-                    }
-
-                    Some(1) => {
-                        let Some(act_id) = game.choose_act_in_hand(ChooseCardArgsP {
-                            is_cancellable: true,
-                            player_id,
-                            p: &GameState::is_usable_on_field,
-                        }) else { continue };
-
-                        todo!("использовать {act_id:?} на поле");
-                    }
-
-                    _ => unreachable!(),
-                }
-            },
+                todo!("{act_id:?}");
+            }
 
             _ => unreachable!(),
         }

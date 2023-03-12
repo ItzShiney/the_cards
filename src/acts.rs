@@ -29,6 +29,7 @@ acts! {
             use_on_field: Some(|game, args| {
                 let owner_id = game.state().acts.find_owner(args.act_id);
                 let Some(imitated_act_id) = game.choose_act_in_hand(ChooseCardArgsP {
+                    prompt_str: &cs![Active(ПустаяКарта), ": чей эффект повторить?"],
                     player_id: owner_id,
                     is_cancellable: true,
                     p: &GameState::is_usable_in_any_way,
@@ -487,6 +488,7 @@ acts! {
                 let target_owner_id = game.state().chrs.find_owner(args.target_id);
 
                 let Some(replacing_chr_id) = game.choose_chr_in_hand(ChooseCardArgsP {
+                    prompt_str: &cs![Active(Берн), ": на кого поменять?"],
                     player_id: target_owner_id,
                     is_cancellable: true,
                     p: &GameState::is_placeable
