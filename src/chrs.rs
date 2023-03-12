@@ -113,7 +113,7 @@ chrs! {
                 let self_id = args.chr_id;
                 let owner_id = game.state().chrs.find_owner(self_id);
                 let Some(copied_chr_id) = game.choose_chr_in_hand_any(ChooseCardArgs {
-                    prompt_str: &cs![Character(Delirium), ": чьи ", Vitality, " и ", Damage, " скопировать?"],
+                    prompt: &cs![Character(Delirium), ": чьи ", Vitality, " и ", Damage, " скопировать?"],
                     player_id: owner_id,
                     is_cancellable: true,
                 }) else { return };

@@ -29,6 +29,6 @@ impl ChooseActInHand for ChooseActiveInHand {
         let displays =
             acts.clone().into_iter().map(|act_id| cs![Active(game_state.act(act_id).type_)]);
         let results = acts.iter().copied();
-        prompt(args.prompt_str, args.is_cancellable, displays, results)
+        prompt(args.prompt, args.is_cancellable, displays, results)
     }
 }

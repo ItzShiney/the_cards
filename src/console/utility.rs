@@ -48,7 +48,7 @@ pub fn read_chr(pred: impl Fn(char) -> bool) -> char {
 }
 
 pub fn prompt<D: Display, R>(
-    title: impl Display,
+    prompt_str: impl Display,
     is_cancellable: bool,
     displays: impl ExactSizeIterator<Item = D>,
     mut results: impl Iterator<Item = R>,
@@ -57,7 +57,7 @@ pub fn prompt<D: Display, R>(
     let last_chr = char::from_u32(first_chr as u32 + (displays.len() - 1) as u32).unwrap();
     let chrs = first_chr..=last_chr;
 
-    println!("  ┌─< {}", title);
+    println!("  ┌─< {}", prompt_str);
     for (chr, option) in chrs.clone().zip(displays) {
         println!("  │ \x1b[1m{}\x1b[0m {}", chr, option);
     }
@@ -77,9 +77,9 @@ pub fn prompt<D: Display, R>(
 }
 
 pub fn prompt_idxs<D: Display>(
-    title: impl Display,
+    prompt_str: impl Display,
     is_cancellable: bool,
     displays: impl ExactSizeIterator<Item = D>,
 ) -> Option<usize> {
-    prompt(title, is_cancellable, displays, 0..)
+    prompt(prompt_str, is_cancellable, displays, 0..)
 }

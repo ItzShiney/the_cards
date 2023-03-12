@@ -29,6 +29,6 @@ impl ChooseChrInHand for ChooseCharacterInHand {
         let displays =
             chrs.clone().into_iter().map(|chr_id| cs![Character(game_state.chr(chr_id).type_)]);
         let results = chrs.iter().copied();
-        prompt(args.prompt_str, args.is_cancellable, displays, results)
+        prompt(args.prompt, args.is_cancellable, displays, results)
     }
 }
