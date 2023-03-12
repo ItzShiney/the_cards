@@ -1,6 +1,5 @@
 mod _macro;
 mod choose_card_args;
-mod choose_card_args_p;
 mod default_random;
 mod default_random_bool;
 
@@ -10,7 +9,6 @@ use crate::game::state::GameState;
 use crate::game_input;
 use crate::stats::Stat0;
 pub use choose_card_args::*;
-pub use choose_card_args_p::*;
 pub use default_random::*;
 pub use default_random_bool::*;
 

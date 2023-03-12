@@ -132,7 +132,7 @@ fn main() {
 
                 ChooseCharacter => {
                     match game.choose_chr_in_hand(ChooseCardArgsP {
-                        prompt: &"какого персонажа выставить?",
+                        prompt: &cs!["какого персонажа выставить?"],
                         is_cancellable: true,
                         player_id,
                         p: &GameState::is_placeable,
@@ -154,7 +154,7 @@ fn main() {
 
                 ChooseActive => {
                     match game.choose_act_in_hand(ChooseCardArgsP {
-                        prompt: &"какую активку использовать?",
+                        prompt: &cs!["какую активку использовать?"],
                         is_cancellable: true,
                         player_id,
                         p: &GameState::is_usable_in_any_way,
