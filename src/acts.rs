@@ -354,7 +354,7 @@ acts! {
 
         abilities: GameCallbacks {
             use_on_chr: Some(|_game, _args| {
-                todo!("int = 0")
+                todo!("{} = 0", cs![Intellect])
             }),
 
             ..Default::default()
