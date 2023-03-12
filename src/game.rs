@@ -349,4 +349,28 @@ impl Game {
         let p = |_, _| true;
         self.input.choose_act_in_hand(&self.state, ChooseCardArgsP::new(args, &p))
     }
+
+    pub fn choose_chr_on_field<'game_state>(
+        &'game_state mut self,
+        args: ChooseCardArgsP<'_, 'game_state, '_, CharacterID>,
+    ) -> Option<CharacterID> {
+        self.input.choose_chr_on_field(&self.state, args)
+    }
+
+    pub fn choose_act_on_field<'game_state>(
+        &'game_state mut self,
+        args: ChooseCardArgsP<'_, 'game_state, '_, ActiveID>,
+    ) -> Option<ActiveID> {
+        self.input.choose_act_on_field(&self.state, args)
+    }
+
+    pub fn choose_chr_on_field_any(&mut self, args: ChooseCardArgs) -> Option<CharacterID> {
+        let p = |_, _| true;
+        self.input.choose_chr_on_field(&self.state, ChooseCardArgsP::new(args, &p))
+    }
+
+    pub fn choose_act_on_field_any(&mut self, args: ChooseCardArgs) -> Option<ActiveID> {
+        let p = |_, _| true;
+        self.input.choose_act_on_field(&self.state, ChooseCardArgsP::new(args, &p))
+    }
 }

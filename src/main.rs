@@ -79,7 +79,7 @@ impl InputState {
             ChooseActive => ChooseAction,
             UseHow { act_id: _ } => ChooseActive,
             UseOnField { act_id } => UseHow { act_id },
-            UseOnWho { act_id: _ } => ChooseActive,
+            UseOnWho { act_id } => UseHow { act_id },
             UseOnCharacter { act_id, target_id: _ } => UseOnWho { act_id },
         }
     }
@@ -104,6 +104,8 @@ fn main() {
         random_bool: DefaultRandomBool,
         choose_chr_in_hand: console::ChooseCharacterInHand,
         choose_act_in_hand: console::ChooseActiveInHand,
+        choose_chr_on_field: console::ChooseCharacterOnField,
+        choose_act_on_field: console::ChooseActiveOnField,
     });
 
     let mut game = Game::new(state, input);
@@ -187,7 +189,7 @@ fn main() {
                 }
 
                 UseOnWho { act_id } => {
-                    match game.choose_chr_in_hand_any(ChooseCardArgs {
+                    match game.choose_chr_on_field_any(ChooseCardArgs {
                         prompt: &cs![
                             Active(game.state().act(act_id).type_),
                             ": на кого использовать?"
@@ -211,6 +213,7 @@ fn main() {
                     );
                 }
             }
+            println!();
         }
     }
 }

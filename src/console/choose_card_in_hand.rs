@@ -1,5 +1,5 @@
-macro_rules! choose_card {
-    ( $namespace:ident, $Namespace:ident ) => {::paste::paste!{
+macro_rules! choose_card_in_hand {
+    ( $Namespace:ident, $namespace:ident ) => {::paste::paste!{
         pub struct [<Choose $Namespace InHand>];
 
         impl $crate::game::input::[<Choose $namespace:camel InHand>] for [<Choose $Namespace InHand>] {
@@ -14,19 +14,10 @@ macro_rules! choose_card {
                 let is_enabled =
                     cards.iter().copied().map(|id| (args.p)(game_state, id)).collect_vec();
 
-                let is_any_enabled = is_enabled
-                    .iter()
-                    .copied()
-                    .zip(cards.iter().copied())
-                    .any(|(is_enabled, _)| is_enabled);
-                if !is_any_enabled {
-                    return None;
-                }
-
                 let displays = cards
                     .clone()
                     .into_iter()
-                    .map(|id| $crate::cs![$Namespace (game_state. $namespace (id).type_)]);
+                    .map(|id| $crate::cs![$Namespace (game_state.$namespace(id).type_)]);
 
                 let idx = $crate::console::prompt(
                     args.prompt,
@@ -39,5 +30,5 @@ macro_rules! choose_card {
     }};
 }
 
-choose_card!(chr, Character);
-choose_card!(act, Active);
+choose_card_in_hand!(Character, chr);
+choose_card_in_hand!(Active, act);
