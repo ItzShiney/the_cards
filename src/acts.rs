@@ -32,7 +32,7 @@ acts! {
                     prompt: &cs![Active(ПустаяКарта), ": чей эффект повторить?"],
                     player_id: owner_id,
                     is_cancellable: true,
-                    p: &GameState::is_usable_in_any_way,
+                    p: &|game_state, act_id| act_id != args.act_id && game_state.is_usable_in_any_way(act_id),
                 }) else { terminate!() };
 
                 todo!("повторить эффект {:?}", imitated_act_id)
