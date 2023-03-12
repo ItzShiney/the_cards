@@ -111,14 +111,12 @@ chrs! {
         abilities: GameCallbacks {
             post_place: Some(|game, args| {
                 let self_id = args.chr_id;
-                let owner_id = game.state().chrs.find_owner(self_id);
+                let owner_id = game.state().find_owner_chr(self_id);
                 let Some(copied_chr_id) = game.choose_chr_in_hand_any(ChooseCardArgs {
                     prompt: &cs![Character(Delirium), ": чьи ", Vitality, " и ", Damage, " скопировать?"],
                     player_id: owner_id,
                     is_cancellable: true,
                 }) else { return };
-
-                // println!("DELIRIUM копирует:\n{}", game.state().chr(copied_chr_id));
 
                 let stats = &game.state().chr(copied_chr_id).stats;
                 let phy = stats.phy.0.into_value();
@@ -324,7 +322,7 @@ chrs! {
             post_place: Some(
                 |game, args| {
                     let self_id = args.chr_id;
-                    let owner_id = game.state().chrs.find_owner(self_id);
+                    let owner_id = game.state().find_owner_chr(self_id);
 
                     let Some(gained_act_id) = game.state_mut().acts.pick(owner_id) else { return };
                     if game.use_on_chr(gained_act_id, self_id).is_err() {
@@ -503,7 +501,7 @@ chrs! {
             post_place: Some(
                 |game, args| {
                     let self_id = args.chr_id;
-                    let owner_id = game.state().chrs.find_owner(self_id);
+                    let owner_id = game.state().find_owner_chr(self_id);
 
                     let phy = {
                         let chrs_sum = game.state().chrs.hand(owner_id).iter().copied().filter_map(|chr_id| {

@@ -27,7 +27,7 @@ acts! {
 
         abilities: GameCallbacks {
             use_on_field: Some(|game, args| {
-                let owner_id = game.state().acts.find_owner(args.act_id);
+                let owner_id = game.state().find_owner_act(args.act_id);
                 let Some(imitated_act_id) = game.choose_act_in_hand(ChooseCardArgsP {
                     prompt: &cs![Active(ПустаяКарта), ": чей эффект повторить?"],
                     player_id: owner_id,
@@ -112,72 +112,14 @@ acts! {
 
         abilities: GameCallbacks {
             use_on_chr: Some(|game, args| {
-                let owner_id = game.state().acts.try_find_owner(args.act_id);
-                let target_owner_id = game.state().chrs.try_find_owner(args.target_id);
+                let owner_id = game.state().try_find_owner_act(args.act_id);
+                let target_owner_id = game.state().try_find_owner_chr(args.target_id);
 
                 if owner_id == target_owner_id {
                     terminate!()
                 }
 
                 todo!()
-            }),
-
-            ..Default::default()
-        },
-    }
-
-    ЛезвиеНожа {
-        name: cs!["ЛЕЗВИЕ НОЖА"],
-        groups: [Group::СделаноЛёней, Group::TBoI],
-
-        description: cs![
-            Condition(cs!["использовано на персонажа"]),
-            Point(cs![Damage, " += 1"]),
-            Point(cs!["если ранее была использована ", РучкаНожа, ", получи ", Нож]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_chr: Some(|game, args| {
-                game.stat_add(args.target_id, StatType::Physique, 1);
-
-                #[allow(unreachable_code)]
-                if todo!("ранее была использована РУЧКА НОЖА") {
-                    let owner_id = game.state().acts.find_owner(args.act_id);
-
-                    let drawn_chr_id = game.state_mut().chrs.add(CharacterInfo::new(CharacterType::Нож));
-                    game.state_mut().chrs.add_to_player(drawn_chr_id, owner_id);
-                }
-
-                Chain::Continue(args)
-            }),
-
-            ..Default::default()
-        },
-    }
-
-    РучкаНожа {
-        name: cs!["РУЧКА НОЖА"],
-        groups: [Group::СделаноЛёней, Group::TBoI],
-
-        description: cs![
-            Condition(cs!["использовано на персонажа"]),
-            Point(cs![Physique, " += 1"]),
-            Point(cs!["если ранее было использовано ", ЛезвиеНожа, ", получи ", Нож]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_chr: Some(|game, args| {
-                game.stat_add(args.target_id, StatType::Physique, 1);
-
-                #[allow(unreachable_code)]
-                if todo!("ранее было использовано ЛЕЗВИЕ НОЖА") {
-                    let owner_id = game.state().acts.find_owner(args.act_id);
-
-                    let drawn_chr_id = game.state_mut().chrs.add(CharacterInfo::new(CharacterType::Нож));
-                    game.state_mut().chrs.add_to_player(drawn_chr_id, owner_id);
-                }
-
-                Chain::Continue(args)
             }),
 
             ..Default::default()
@@ -472,6 +414,64 @@ acts! {
         }
     }
 
+    ЛезвиеНожа {
+        name: cs!["ЛЕЗВИЕ НОЖА"],
+        groups: [Group::СделаноЛёней, Group::TBoI],
+
+        description: cs![
+            Condition(cs!["использовано на персонажа"]),
+            Point(cs![Damage, " += 1"]),
+            Point(cs!["если ранее была использована ", РучкаНожа, ", получи ", Нож]),
+        ],
+
+        abilities: GameCallbacks {
+            use_on_chr: Some(|game, args| {
+                game.stat_add(args.target_id, StatType::Physique, 1);
+
+                #[allow(unreachable_code)]
+                if todo!("ранее была использована РУЧКА НОЖА") {
+                    let owner_id = game.state().find_owner_act(args.act_id);
+
+                    let drawn_chr_id = game.state_mut().chrs.add(CharacterInfo::new(CharacterType::Нож));
+                    game.state_mut().chrs.add_to_player(drawn_chr_id, owner_id);
+                }
+
+                Chain::Continue(args)
+            }),
+
+            ..Default::default()
+        },
+    }
+
+    РучкаНожа {
+        name: cs!["РУЧКА НОЖА"],
+        groups: [Group::СделаноЛёней, Group::TBoI],
+
+        description: cs![
+            Condition(cs!["использовано на персонажа"]),
+            Point(cs![Physique, " += 1"]),
+            Point(cs!["если ранее было использовано ", ЛезвиеНожа, ", получи ", Нож]),
+        ],
+
+        abilities: GameCallbacks {
+            use_on_chr: Some(|game, args| {
+                game.stat_add(args.target_id, StatType::Physique, 1);
+
+                #[allow(unreachable_code)]
+                if todo!("ранее было использовано ЛЕЗВИЕ НОЖА") {
+                    let owner_id = game.state().find_owner_act(args.act_id);
+
+                    let drawn_chr_id = game.state_mut().chrs.add(CharacterInfo::new(CharacterType::Нож));
+                    game.state_mut().chrs.add_to_player(drawn_chr_id, owner_id);
+                }
+
+                Chain::Continue(args)
+            }),
+
+            ..Default::default()
+        },
+    }
+
     Берн {
         name: cs!["БЕРН"],
         groups: [Group::СделаноМаксимом, Group::Umineko],
@@ -485,7 +485,7 @@ acts! {
 
         abilities: GameCallbacks {
             use_on_chr: Some(|game, args| {
-                let target_owner_id = game.state().chrs.find_owner(args.target_id);
+                let target_owner_id = game.state().find_owner_chr(args.target_id);
 
                 let Some(replacing_chr_id) = game.choose_chr_in_hand(ChooseCardArgsP {
                     prompt: &cs![Active(Берн), ": на кого поменять?"],

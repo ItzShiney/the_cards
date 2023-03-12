@@ -189,7 +189,7 @@ callbacks! {
         &mut self,
         chr_id: CharacterID,
     ) -> ChainResult {
-        let Some(player_id) = self.state.chrs.try_find_owner(chr_id) else { return Err(Terminated) };
+        let Some(player_id) = self.state.try_find_owner_chr(chr_id) else { return Err(Terminated) };
 
         if player_id == self.state.attacker.player_id {
             let attacker_chr_id = &mut self.state.attacker.chr_id;
@@ -198,6 +198,7 @@ callbacks! {
                 return Err(Terminated)
             }
 
+            self.state.chrs.remove_from_player(chr_id, player_id);
             *attacker_chr_id = Some(chr_id);
             Ok(Finished)
         } else if player_id == self.state.defender.player_id {
@@ -207,6 +208,7 @@ callbacks! {
                 return Err(Terminated)
             }
 
+            self.state.chrs.remove_from_player(chr_id, player_id);
             *defender_chr_id = Some(chr_id);
             Ok(Finished)
         } else {
@@ -291,7 +293,7 @@ callbacks! {
 
         self.state.chr_mut(chr_id).stats.max_vit();
 
-        let owner_id = self.state.chrs.find_owner(chr_id);
+        let owner_id = self.state.find_owner_chr(chr_id);
         self.state.chrs.add_to_player(chr_id, owner_id);
 
         for act_id in used_act_ids {

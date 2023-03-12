@@ -133,7 +133,7 @@ impl<ID: IDTrait + Debug, CardInfo> GameOfCardType<ID, CardInfo> {
         self.hand_mut(player_id).retain(|&hand_id| hand_id != id);
     }
 
-    pub fn try_find_owner(&self, id: ID) -> Option<PlayerID> {
+    pub fn try_find_owner_in_decks(&self, id: ID) -> Option<PlayerID> {
         for (&player_id, hand) in self.hands.iter() {
             if hand.contains(&id) {
                 return Some(player_id);
@@ -142,13 +142,13 @@ impl<ID: IDTrait + Debug, CardInfo> GameOfCardType<ID, CardInfo> {
         None
     }
 
-    pub fn find_owner(&self, id: ID) -> PlayerID {
-        self.try_find_owner(id).unwrap()
+    pub fn find_owner_in_decks(&self, id: ID) -> PlayerID {
+        self.try_find_owner_in_decks(id).unwrap()
     }
 
     pub fn remove_from_some_player(&mut self, id: ID) -> PlayerID {
         let player_id = self
-            .try_find_owner(id)
+            .try_find_owner_in_decks(id)
             .expect(format!("expected some player to own {:?}", id).as_str());
         self.remove_from_player(id, player_id);
         player_id
@@ -340,10 +340,70 @@ impl GameState {
 
     // TODO поделить на функции?
     pub fn enemy_chr_id(&self, chr_id: CharacterID) -> Option<CharacterID> {
-        let owner_id = self.chrs.find_owner(chr_id);
+        let owner_id = self.find_owner_chr(chr_id);
         let subturner = self.subturner_by_id(owner_id);
         let other_subturner = subturner.other();
         self.subturner_on_field(other_subturner).chr_id
+    }
+}
+
+impl GameState {
+    pub fn try_find_owner_on_field_chr(&self, chr_id: CharacterID) -> Option<PlayerID> {
+        if self.attacker.chr_id == Some(chr_id) {
+            return Some(self.attacker.player_id);
+        }
+
+        if self.defender.chr_id == Some(chr_id) {
+            return Some(self.defender.player_id);
+        }
+
+        None
+    }
+
+    pub fn find_owner_on_field_chr(&self, chr_id: CharacterID) -> PlayerID {
+        self.try_find_owner_on_field_chr(chr_id).unwrap()
+    }
+
+    pub fn try_find_owner_chr(&self, chr_id: CharacterID) -> Option<PlayerID> {
+        if let Some(owner_id) = self.try_find_owner_on_field_chr(chr_id) {
+            return Some(owner_id);
+        }
+
+        self.chrs.try_find_owner_in_decks(chr_id)
+    }
+
+    pub fn find_owner_chr(&self, chr_id: CharacterID) -> PlayerID {
+        self.try_find_owner_chr(chr_id).unwrap()
+    }
+}
+
+impl GameState {
+    pub fn try_find_owner_on_field_act(&self, act_id: ActiveID) -> Option<PlayerID> {
+        if self.attacker.used_act_ids.contains(&act_id) {
+            return Some(self.attacker.player_id);
+        }
+
+        if self.defender.used_act_ids.contains(&act_id) {
+            return Some(self.defender.player_id);
+        }
+
+        None
+    }
+
+    pub fn find_owner_on_field_act(&self, act_id: ActiveID) -> PlayerID {
+        self.try_find_owner_on_field_act(act_id).unwrap()
+    }
+
+    pub fn try_find_owner_act(&self, act_id: ActiveID) -> Option<PlayerID> {
+        if let Some(owner_id) = self.try_find_owner_on_field_act(act_id) {
+            return Some(owner_id);
+        }
+
+        self.acts.try_find_owner_in_decks(act_id)
+    }
+
+    pub fn find_owner_act(&self, act_id: ActiveID) -> PlayerID {
+        self.try_find_owner_act(act_id).unwrap()
     }
 }
 

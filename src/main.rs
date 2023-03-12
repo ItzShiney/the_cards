@@ -14,7 +14,7 @@ use crate::game::state::chr_info::CharacterInfo;
 use acts::ActiveType;
 use chrs::CharacterType;
 use console::prompt_idxs;
-use game::input::ChooseCardArgs;
+use game::input::ChooseCardArgsP;
 use game::input::DefaultRandom;
 use game::input::DefaultRandomBool;
 use game::input::GameInputTuple;
@@ -58,10 +58,11 @@ fn main() {
             ["выставить персонажа", "использовать активку"].into_iter(),
         ) {
             Some(0) => {
-                let Some(chr_id) = game.choose_chr_in_hand_any(ChooseCardArgs {
+                let Some(chr_id) = game.choose_chr_in_hand(ChooseCardArgsP {
                     prompt: &"какого персонажа выставить?",
                     is_cancellable: true,
                     player_id,
+                    p: &GameState::is_placeable,
                 }) else { continue };
 
                 match game.place(chr_id) {
@@ -77,10 +78,11 @@ fn main() {
             }
 
             Some(1) => {
-                let Some(act_id) = game.choose_act_in_hand_any(ChooseCardArgs {
+                let Some(act_id) = game.choose_act_in_hand(ChooseCardArgsP {
                     prompt: &"какую активку использовать?",
                     is_cancellable: true,
                     player_id,
+                    p: &GameState::is_usable_in_any_way,
                 }) else { continue };
 
                 todo!("{act_id:?}");
