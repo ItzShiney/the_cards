@@ -6,11 +6,6 @@ pub mod id_manager;
 pub mod player_id;
 pub mod player_id_manager;
 
-use std::collections::{BTreeMap, HashMap};
-use std::fmt::Debug;
-
-use itertools::Itertools;
-
 use self::act_id::ActiveID;
 use self::act_info::ActiveInfo;
 use self::chr_id::CharacterID;
@@ -18,6 +13,10 @@ use self::chr_info::CharacterInfo;
 use self::id_manager::id_trait::IDTrait;
 use self::id_manager::IDManager;
 use self::player_id::PlayerID;
+use itertools::Itertools;
+use std::collections::BTreeMap;
+use std::collections::HashMap;
+use std::fmt::Debug;
 
 ////////////////////////////////////////////////////////////
 
@@ -345,5 +344,23 @@ impl GameState {
         let subturner = self.subturner_by_id(owner_id);
         let other_subturner = subturner.other();
         self.subturner_on_field(other_subturner).chr_id
+    }
+}
+
+impl GameState {
+    pub fn is_placeable(&self, _chr_id: CharacterID) -> bool {
+        true // TODO
+    }
+
+    pub fn is_usable_in_any_way(&self, act_id: ActiveID) -> bool {
+        self.is_usable_on_chr(act_id) || self.is_usable_on_field(act_id)
+    }
+
+    pub fn is_usable_on_field(&self, act_id: ActiveID) -> bool {
+        self.act(act_id).type_.abilities().use_on_field.is_some()
+    }
+
+    pub fn is_usable_on_chr(&self, act_id: ActiveID) -> bool {
+        self.act(act_id).type_.abilities().use_on_chr.is_some()
     }
 }

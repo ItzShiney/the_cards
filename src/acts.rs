@@ -1,14 +1,17 @@
-pub mod macro_;
+mod _macro;
 
-#[allow(unused)]
-use crate::{
-    acts,
-    group::Group,
-    host::chain::Chain,
-    {chrs::CharacterType, cs, custom_string::CustomString},
-    {game_state::chr_info::CharacterInfo, host::GameCallbacks, stats::StatType},
-};
-
+use crate::acts;
+use crate::chrs::CharacterType;
+use crate::cs;
+use crate::custom_string::CustomString;
+use crate::game::chain::Chain;
+use crate::game::input::ChooseCardArgsP;
+use crate::game::state::chr_info::CharacterInfo;
+use crate::game::state::GameState;
+use crate::game::GameCallbacks;
+use crate::group::Group;
+use crate::stats::StatType;
+use crate::terminate;
 use std::collections::BTreeSet;
 
 acts! {
@@ -25,7 +28,11 @@ acts! {
         abilities: GameCallbacks {
             use_on_field: Some(|game, args| {
                 let owner_id = game.state().acts.find_owner(args.act_id);
-                let imitated_act_id = game.choose_hand_act(owner_id);
+                let Some(imitated_act_id) = game.choose_act_in_hand(ChooseCardArgsP {
+                    player_id: owner_id,
+                    is_cancellable: true,
+                    p: &GameState::is_usable_in_any_way,
+                }) else { terminate!() };
 
                 todo!("повторить эффект {:?}", imitated_act_id)
             }),
@@ -44,7 +51,7 @@ acts! {
         ],
 
         abilities: GameCallbacks {
-            use_on_character: Some(|game, args| {
+            use_on_chr: Some(|game, args| {
                 game.stat_add(args.target_id, StatType::Damage, 3);
                 Chain::Continue(args)
             }),
@@ -63,7 +70,7 @@ acts! {
         ],
 
         abilities: GameCallbacks {
-            use_on_character: Some(|game, args| {
+            use_on_chr: Some(|game, args| {
                 let phy = game.state().chr(args.target_id).stats.phy.0.into_value();
                 game.force_set_stat(args.target_id, StatType::Vitality, phy);
 
@@ -84,7 +91,7 @@ acts! {
         ],
 
         abilities: GameCallbacks {
-            use_on_character: Some(|game, args| {
+            use_on_chr: Some(|game, args| {
                 let _ = game.die(args.target_id);
                 Chain::Continue(args)
             }),
@@ -103,12 +110,12 @@ acts! {
         ],
 
         abilities: GameCallbacks {
-            use_on_character: Some(|game, args| {
+            use_on_chr: Some(|game, args| {
                 let owner_id = game.state().acts.try_find_owner(args.act_id);
                 let target_owner_id = game.state().chrs.try_find_owner(args.target_id);
 
                 if owner_id == target_owner_id {
-                    return Chain::Break(Err(()));
+                    terminate!()
                 }
 
                 todo!()
@@ -129,7 +136,7 @@ acts! {
         ],
 
         abilities: GameCallbacks {
-            use_on_character: Some(|game, args| {
+            use_on_chr: Some(|game, args| {
                 game.stat_add(args.target_id, StatType::Physique, 1);
 
                 #[allow(unreachable_code)]
@@ -158,7 +165,7 @@ acts! {
         ],
 
         abilities: GameCallbacks {
-            use_on_character: Some(|game, args| {
+            use_on_chr: Some(|game, args| {
                 game.stat_add(args.target_id, StatType::Physique, 1);
 
                 #[allow(unreachable_code)]
@@ -218,7 +225,7 @@ acts! {
         ],
 
         abilities: GameCallbacks {
-            use_on_character: Some(|_game, _args| {
+            use_on_chr: Some(|_game, _args| {
                 todo!()
             }),
 
@@ -242,7 +249,7 @@ acts! {
         ],
 
         abilities: GameCallbacks {
-            use_on_character: Some(|_game, _args| {
+            use_on_chr: Some(|_game, _args| {
                 todo!()
             }),
 
@@ -260,7 +267,7 @@ acts! {
         ],
 
         abilities: GameCallbacks {
-            use_on_character: Some(|game, args| {
+            use_on_chr: Some(|game, args| {
                 game.stat_add(args.target_id, StatType::Vitality, -4);
                 game.stat_add(args.target_id, StatType::Intellect, -4);
                 Chain::Continue(args)
@@ -280,7 +287,7 @@ acts! {
         ],
 
         abilities: GameCallbacks {
-            use_on_character: Some(|game, args| {
+            use_on_chr: Some(|game, args| {
                 game.stat_add(args.target_id, StatType::Damage, 3);
                 Chain::Continue(args)
             }),
@@ -299,10 +306,10 @@ acts! {
         ],
 
         abilities: GameCallbacks {
-            use_on_character: Some(|game, args| {
+            use_on_chr: Some(|game, args| {
                 let chr_int = game.state().chr(args.target_id).stats.int.into_value();
                 if !(chr_int <= 3) {
-                    return Chain::Break(Err(()));
+                    terminate!();
                 }
 
                 let _ = game.hurt(args.target_id, 1);
@@ -348,7 +355,7 @@ acts! {
         ],
 
         abilities: GameCallbacks {
-            use_on_character: Some(|game, args| {
+            use_on_chr: Some(|game, args| {
                 game.stat_add(args.target_id, StatType::Intellect, -1);
                 Chain::Continue(args)
             }),
@@ -367,7 +374,7 @@ acts! {
         ],
 
         abilities: GameCallbacks {
-            use_on_character: Some(|_game, _args| {
+            use_on_chr: Some(|_game, _args| {
                 todo!()
             }),
 
@@ -385,7 +392,7 @@ acts! {
         ],
 
         abilities: GameCallbacks {
-            use_on_character: Some(|_game, _args| {
+            use_on_chr: Some(|_game, _args| {
                 todo!("int = 0")
             }),
 
@@ -451,7 +458,7 @@ acts! {
         ],
 
         abilities: GameCallbacks {
-            use_on_character: Some(|game, args| {
+            use_on_chr: Some(|game, args| {
                 game.stat_add(args.target_id, StatType::Physique, 2);
                 game.stat_add(args.target_id, StatType::Vitality, 2);
                 game.stat_add(args.target_id, StatType::Defence, 2);
@@ -476,9 +483,15 @@ acts! {
         ],
 
         abilities: GameCallbacks {
-            use_on_character: Some(|game, args| {
+            use_on_chr: Some(|game, args| {
                 let target_owner_id = game.state().chrs.find_owner(args.target_id);
-                let replacing_chr_id = game.choose_hand_chr(target_owner_id);
+
+                let Some(replacing_chr_id) = game.choose_chr_in_hand(ChooseCardArgsP {
+                    player_id: target_owner_id,
+                    is_cancellable: true,
+                    p: &GameState::is_placeable
+                }) else { terminate!() };
+
                 game.replace(args.target_id, replacing_chr_id);
                 Chain::Continue(args)
             }),
@@ -498,7 +511,7 @@ acts! {
         ],
 
         abilities: GameCallbacks {
-            use_on_character: Some(|game, args| {
+            use_on_chr: Some(|game, args| {
                 game.stat_add(args.target_id, StatType::Intellect, 3);
                 Chain::Continue(args)
             }),
@@ -518,7 +531,7 @@ acts! {
         ],
 
         abilities: GameCallbacks {
-            use_on_character: Some(|game, args| {
+            use_on_chr: Some(|game, args| {
                 game.stat_add(args.target_id, StatType::Physique, 3);
                 game.stat_add(args.target_id, StatType::Vitality, 3);
                 Chain::Continue(args)
@@ -539,7 +552,7 @@ acts! {
         ],
 
         abilities: GameCallbacks {
-            use_on_character: Some(|game, args| {
+            use_on_chr: Some(|game, args| {
                 game.stat_add(args.target_id, StatType::Defence, 3);
                 Chain::Continue(args)
             }),
@@ -558,7 +571,7 @@ acts! {
         ],
 
         abilities: GameCallbacks {
-            use_on_character: Some(|game, args| {
+            use_on_chr: Some(|game, args| {
                 game.stat_add(args.target_id, StatType::Damage, 3);
                 Chain::Continue(args)
             }),

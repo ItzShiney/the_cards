@@ -1,4 +1,4 @@
-use crate::host::GameCallbacks;
+use crate::game::GameCallbacks;
 
 pub enum EffectDuration {
     Battle,

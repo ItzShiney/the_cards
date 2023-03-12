@@ -1,32 +1,37 @@
+pub mod _macro;
 pub mod chain;
-pub mod macro_;
+pub mod input;
+pub mod state;
 
+use self::input::ChooseCardArgs;
+use self::input::ChooseCardArgsP;
+use crate::acts::ActiveType;
+use crate::callbacks;
+use crate::chrs::CharacterType;
+use crate::game::input::GameInput;
+use crate::game::state::act_id::ActiveID;
+use crate::game::state::act_info::ActiveInfo;
+use crate::game::state::chr_id::CharacterID;
+use crate::game::state::chr_info::CharacterInfo;
+use crate::game::state::GameState;
+use crate::game::state::Subturner;
+use crate::group::Group;
+use crate::stats::Stat0;
+use crate::stats::StatType;
+use crate::stats::StatValue;
+use rand::seq::IteratorRandom;
+use rand::thread_rng;
 use std::mem::take;
+use std::result::Result;
 
-use rand::{seq::IteratorRandom, thread_rng, Rng};
-
-use crate::{
-    acts::ActiveType,
-    callbacks,
-    chrs::CharacterType,
-    game_state::act_id::ActiveID,
-    game_state::act_info::ActiveInfo,
-    game_state::chr_id::CharacterID,
-    game_state::chr_info::CharacterInfo,
-    game_state::player_id::PlayerID,
-    game_state::{GameState, Subturner},
-    group::Group,
-    stats::{Stat0, StatType, StatValue},
-};
-
-pub struct Host {
-    pub callbacks: GameCallbacks,
-    state: GameState,
+pub struct Game {
+    pub state: GameState,
+    pub input: Box<dyn GameInput>,
 }
 
-impl Host {
-    pub fn new(state: GameState) -> Self {
-        let mut res = Self { callbacks: Default::default(), state };
+impl Game {
+    pub fn new(state: GameState, input: Box<dyn GameInput>) -> Self {
+        let mut res = Self { state, input };
         res.init_cards();
         res
     }
@@ -39,9 +44,8 @@ impl Host {
     pub fn state_mut(&mut self) -> &mut GameState {
         &mut self.state
     }
-}
 
-impl Host {
+    // TODO сделать конструктор принимающим GameInitInfo или GameConfig со всеми этими параметрами
     const INIT_CHARACTERS_PER_HAND: usize = 3;
     const INIT_ACTIVES_PER_HAND: usize = 6;
 
@@ -71,12 +75,7 @@ impl Host {
                 + Self::ACTIVES_GAINED_AFTER_TURN * Self::TOTAL_GAINS_PER_PLAYER);
 
         for _ in 1..=total_chrs_count {
-            let chr_type = CharacterType::all()
-                .into_iter()
-                .filter(|&chr_type| !chr_type.groups().contains(&Group::Нераздаваемая))
-                .choose(&mut thread_rng())
-                .unwrap();
-
+            let chr_type = self.random_chr_type();
             let chr = CharacterInfo::new(chr_type);
 
             let chr_id = self.state.add_chr(chr);
@@ -84,12 +83,7 @@ impl Host {
         }
 
         for _ in 1..=total_acts_count {
-            let act_type = ActiveType::all()
-                .into_iter()
-                .filter(|&act_type| !act_type.groups().contains(&Group::Нераздаваемая))
-                .choose(&mut thread_rng())
-                .unwrap();
-
+            let act_type = self.random_act_type();
             let act = ActiveInfo::new(act_type);
 
             let act_id = self.state.add_act(act);
@@ -98,33 +92,42 @@ impl Host {
     }
 }
 
+#[derive(Debug)]
+pub struct Finished;
+
+#[derive(Debug)]
+pub struct Terminated;
+
+pub type ChainResult<Ok = Finished> = Result<Ok, Terminated>;
+
+// TODO переместить в state.rs, как-то переделать инпут?
 callbacks! {
-    #[@acts]
+    #[ping(acts)]
     #[pre(true)]
     pub fn use_on_field(
         &mut self,
         act_id: ActiveID,
-    ) {
+    ) -> ChainResult {
         todo!()
     }
 
-    #[@acts]
+    #[ping(acts)]
     #[pre(true)]
-    pub fn use_on_character(
+    pub fn use_on_chr(
         &mut self,
         act_id: ActiveID,
         target_id: CharacterID,
-    ) -> Result<(), ()> {
+    ) -> ChainResult {
         let Some(callback) =
-            self.state.act(act_id).type_.abilities().use_on_character else { return Err(()) };
+            self.state.act(act_id).type_.abilities().use_on_chr else { return Err(Terminated) };
 
-        (callback)(self, UseOnCharacterArgs { act_id, target_id });
+        (callback)(self, UseOnChrArgs { act_id, target_id });
 
         self.state.acts.remove_from_some_player(act_id);
-        Ok(())
+        Ok(Finished)
     }
 
-    #[@chrs]
+    #[ping(chrs)]
     #[pre(true)]
     pub fn stat_map(
         &mut self,
@@ -135,7 +138,7 @@ callbacks! {
         val
     }
 
-    #[@chrs]
+    #[ping(chrs)]
     #[pre(true)]
     pub fn stat_add(
         &mut self,
@@ -149,24 +152,24 @@ callbacks! {
         vit.0 = StatValue::Var(new_vit);
     }
 
-    #[@chrs]
+    #[ping(chrs)]
     #[pre(true)]
     pub fn attack_map(
         &mut self,
         attacker_id: CharacterID,
         target_id: CharacterID,
         dmg: Stat0,
-    ) -> Result<(), ()> {
+    ) -> ChainResult {
         self.hurt(target_id, dmg)
     }
 
-    #[@chrs]
+    #[ping(chrs)]
     #[pre(true)]
     pub fn hurt(
         &mut self,
         target_id: CharacterID,
         dmg: Stat0,
-    ) -> Result<(), ()> {
+    ) -> ChainResult {
         let old_def = self.state.chr(target_id).stats.def.0.into_value();
         self.stat_add(target_id, StatType::Defence, dmg);
         let new_def = self.state.chr(target_id).stats.def.0.into_value();
@@ -177,48 +180,48 @@ callbacks! {
         if vit_dmg_to_take > 0 {
             self.stat_add(target_id, StatType::Vitality, vit_dmg_to_take);
         }
-        Ok(())
+        Ok(Finished)
     }
 
-    #[@chrs]
+    #[ping(chrs)]
     #[pre(true)]
     pub fn place(
         &mut self,
         chr_id: CharacterID,
-    ) -> Result<(), ()> {
-        let Some(player_id) = self.state.chrs.try_find_owner(chr_id) else { return Err(()) };
+    ) -> ChainResult {
+        let Some(player_id) = self.state.chrs.try_find_owner(chr_id) else { return Err(Terminated) };
 
         if player_id == self.state.attacker.player_id {
             let attacker_chr_id = &mut self.state.attacker.chr_id;
 
             if attacker_chr_id.is_some() {
-                return Err(());
+                return Err(Terminated)
             }
 
             *attacker_chr_id = Some(chr_id);
-            Ok(())
+            Ok(Finished)
         } else if player_id == self.state.defender.player_id {
             let defender_chr_id = &mut self.state.defender.chr_id;
 
             if defender_chr_id.is_some() {
-                return Err(());
+                return Err(Terminated)
             }
 
             *defender_chr_id = Some(chr_id);
-            Ok(())
+            Ok(Finished)
         } else {
-            return Err(());
+            Err(Terminated)
         }
     }
 
-    #[@chrs]
+    #[ping(chrs)]
     #[pre(true)]
     pub fn die(
         &mut self,
         chr_id: CharacterID,
-    ) -> Result<(), ()> {
+    ) -> ChainResult {
         self.force_die(chr_id);
-        Ok(())
+        Ok(Finished)
     }
 
     #[pre(true)]
@@ -227,15 +230,37 @@ callbacks! {
         min: Stat0,
         max: Stat0,
     ) -> Stat0 {
-        thread_rng().gen_range(min..=max)
+        self.input.random(min, max)
     }
 
     #[pre(true)]
     pub fn random_bool(
         &mut self,
-        true_probability: f64,
+        true_prob: f64,
     ) -> bool {
-        thread_rng().gen_bool(true_probability)
+        self.input.random_bool(true_prob)
+    }
+
+    #[pre(true)]
+    pub fn random_chr_type(
+        &mut self,
+    ) -> CharacterType {
+        CharacterType::all()
+                .into_iter()
+                .filter(|&chr_type| !chr_type.groups().contains(&Group::Нераздаваемая))
+                .choose(&mut thread_rng())
+                .unwrap()
+    }
+
+    #[pre(true)]
+    pub fn random_act_type(
+        &mut self,
+    ) -> ActiveType {
+        ActiveType::all()
+                .into_iter()
+                .filter(|&chr_type| !chr_type.groups().contains(&Group::Нераздаваемая))
+                .choose(&mut thread_rng())
+                .unwrap()
     }
 
     pub fn end_subturn(&mut self) {
@@ -288,24 +313,38 @@ callbacks! {
     }
 }
 
-impl Host {
+impl Game {
     pub fn stat(&mut self, chr_id: CharacterID, stat_type: StatType) -> Stat0 {
         let val = self.state.chr(chr_id).stats.stat(stat_type).into_value();
         self.stat_map(chr_id, stat_type, val)
     }
 
-    pub fn attack(&mut self, attacker_id: CharacterID, target_id: CharacterID) -> Result<(), ()> {
+    pub fn attack(&mut self, attacker_id: CharacterID, target_id: CharacterID) -> ChainResult {
         let dmg = self.state.chr(attacker_id).stats.dmg.0.into_value();
         self.attack_map(attacker_id, target_id, dmg)
     }
 
-    pub fn choose_hand_act(&mut self, player_id: PlayerID) -> ActiveID {
-        // TODO: просить игрока выбрать
-        self.state.acts.hand(player_id)[0]
+    pub fn choose_chr_in_hand<'game_state>(
+        &'game_state mut self,
+        args: ChooseCardArgsP<'game_state, '_, CharacterID>,
+    ) -> Option<CharacterID> {
+        self.input.choose_chr_in_hand(&self.state, args)
     }
 
-    pub fn choose_hand_chr(&mut self, player_id: PlayerID) -> CharacterID {
-        // TODO: просить игрока выбрать
-        self.state.chrs.hand(player_id)[0]
+    pub fn choose_act_in_hand<'game_state>(
+        &'game_state mut self,
+        args: ChooseCardArgsP<'game_state, '_, ActiveID>,
+    ) -> Option<ActiveID> {
+        self.input.choose_act_in_hand(&self.state, args)
+    }
+
+    pub fn choose_chr_in_hand_any(&mut self, args: ChooseCardArgs) -> Option<CharacterID> {
+        let p = |_, _| true;
+        self.input.choose_chr_in_hand(&self.state, ChooseCardArgsP::new(args, &p))
+    }
+
+    pub fn choose_act_in_hand_any(&mut self, args: ChooseCardArgs) -> Option<ActiveID> {
+        let p = |_, _| true;
+        self.input.choose_act_in_hand(&self.state, ChooseCardArgsP::new(args, &p))
     }
 }

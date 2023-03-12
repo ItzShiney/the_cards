@@ -1,24 +1,24 @@
-use std::fmt::{self, Display, Formatter};
-
-use crate::{chrs::CharacterType, default_formatted::DefaultFormatted, stats::Stats};
+use crate::acts::ActiveType;
+use crate::default_formatted::DefaultFormatted;
+use std::fmt::Display;
+use std::fmt::Formatter;
+use std::fmt::{self};
 
 #[derive(Clone)]
-pub struct CharacterInfo {
-    pub type_: CharacterType,
-    pub stats: Stats,
+pub struct ActiveInfo {
+    pub type_: ActiveType,
 }
 
-impl CharacterInfo {
-    pub fn new(type_: CharacterType) -> Self {
-        Self { type_, stats: type_.stats() }
+impl ActiveInfo {
+    pub fn new(type_: ActiveType) -> Self {
+        Self { type_ }
     }
 }
 
-impl Display for CharacterInfo {
+impl Display for ActiveInfo {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let name = self.type_.name();
         let groups = self.type_.groups();
-        let stats = &self.stats;
         let description = self.type_.description();
 
         writeln!(f, "──────────────────────────────────────")?;
@@ -27,8 +27,6 @@ impl Display for CharacterInfo {
         if !groups.is_empty() {
             writeln!(f, "{}", DefaultFormatted(groups))?;
         }
-
-        writeln!(f, "\n{}", stats)?;
 
         if let Some(description) = description {
             write!(f, "\n{}", description)?;

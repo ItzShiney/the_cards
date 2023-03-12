@@ -1,8 +1,9 @@
-use std::{fmt::Display, ops::RangeInclusive};
-
+use crate::acts::ActiveType;
+use crate::chrs::CharacterType;
+use crate::group::Group;
 use itertools::Itertools;
-
-use crate::{acts::ActiveType, chrs::CharacterType, group::Group};
+use std::fmt::Display;
+use std::ops::RangeInclusive;
 
 macro_rules! custom_string_slice {
     (

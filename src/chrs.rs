@@ -1,18 +1,22 @@
-pub mod macro_;
+mod _macro;
 
-use crate::{acts::ActiveType, stats::Stat0};
-#[allow(unused)]
-use crate::{
-    chrs, cs,
-    custom_string::CustomString,
-    dmg,
-    group::Group,
-    host::{chain::Chain, GameCallbacks},
-    int, phy,
-    stats::{StatType, Stats},
-};
-
-use std::{collections::BTreeSet, iter::repeat_with};
+use crate::acts::ActiveType;
+use crate::chrs;
+use crate::cs;
+use crate::custom_string::CustomString;
+use crate::dmg;
+use crate::game::chain::Chain;
+use crate::game::input::ChooseCardArgs;
+use crate::game::GameCallbacks;
+use crate::group::Group;
+use crate::int;
+use crate::phy;
+use crate::stats::Stat0;
+use crate::stats::StatType;
+use crate::stats::Stats;
+use crate::terminate;
+use std::collections::BTreeSet;
+use std::iter::repeat_with;
 
 chrs! {
     // /*
@@ -34,7 +38,7 @@ chrs! {
         abilities: GameCallbacks {
             attack_map: Some(|game, args| {
                 if game.state().chr(args.attacker_id).stats.int.0.into_value() >= 3 {
-                    Chain::Break(Err(()))
+                    terminate!()
                 } else {
                     Chain::Continue(args)
                 }
@@ -108,7 +112,11 @@ chrs! {
             post_place: Some(|game, args| {
                 let self_id = args.chr_id;
                 let owner_id = game.state().chrs.find_owner(self_id);
-                let copied_chr_id = game.choose_hand_chr(owner_id);
+                let Some(copied_chr_id) = game.choose_chr_in_hand_any(ChooseCardArgs {
+                    player_id: owner_id,
+                    is_cancellable: true,
+                }) else { return };
+
                 // println!("DELIRIUM копирует:\n{}", game.state().chr(copied_chr_id));
 
                 let stats = &game.state().chr(copied_chr_id).stats;
@@ -142,7 +150,7 @@ chrs! {
         abilities: GameCallbacks {
             die: Some(|game, args| {
                 if game.random_bool(1./4.) {
-                    Chain::Break(Err(()))
+                    terminate!()
                 } else {
                     Chain::Continue(args)
                 }
@@ -318,7 +326,7 @@ chrs! {
                     let owner_id = game.state().chrs.find_owner(self_id);
 
                     let Some(gained_act_id) = game.state_mut().acts.pick(owner_id) else { return };
-                    if game.use_on_character(gained_act_id, self_id).is_err() {
+                    if game.use_on_chr(gained_act_id, self_id).is_err() {
                         game.state_mut().acts.add_to_drawpile(gained_act_id);
                     }
                 }

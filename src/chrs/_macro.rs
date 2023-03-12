@@ -78,13 +78,13 @@ macro_rules! chrs {
                 }
             }
 
-            pub fn abilities(self) -> &'static $crate::host::GameCallbacks {
+            pub fn abilities(self) -> &'static $crate::game::GameCallbacks {
                 lazy_static::lazy_static! {
                     $(
-                        static ref [<$CardName:snake:upper>]: $crate::host::GameCallbacks =
+                        static ref [<$CardName:snake:upper>]: $crate::game::GameCallbacks =
                             (
                                 $($abilities,)?
-                                $crate::host::GameCallbacks::default(),
+                                $crate::game::GameCallbacks::default(),
                             ).0;
                     )*
                 }

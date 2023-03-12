@@ -1,7 +1,8 @@
-use std::{
-    fmt::{self, Display, Formatter},
-    ops::{AddAssign, SubAssign},
-};
+use std::fmt::Display;
+use std::fmt::Formatter;
+use std::fmt::{self};
+use std::ops::AddAssign;
+use std::ops::SubAssign;
 
 pub type Stat0 = i32;
 

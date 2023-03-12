@@ -2,7 +2,7 @@
 macro_rules! callbacks {
     (
         $(
-            $(#[@$self_namespace:ident])?
+            $(#[ping($self_namespace:ident)])?
             $(#[pre($pre_value:expr)])?
             pub fn $name:ident(
                 &mut $self:ident
@@ -18,8 +18,8 @@ macro_rules! callbacks {
                 $(pub $arg_name: $ArgType,)*
             }
 
-            pub type [<$name:camel Callback>] = fn(&mut Host, [<$name:camel Args>]) -> $crate::host::chain::Chain<[<$name:camel Args>], $($Return)?>;
-            pub type [<Post $name:camel Callback>] = fn(&mut Host, &[<$name:camel Args>]);
+            pub type [<$name:camel Callback>] = fn(&mut $crate::game::Game, [<$name:camel Args>]) -> $crate::game::chain::Chain<[<$name:camel Args>], $($Return)?>;
+            pub type [<Post $name:camel Callback>] = fn(&mut $crate::game::Game, &[<$name:camel Args>]);
         )*
 
         #[derive(Default)]
@@ -30,32 +30,32 @@ macro_rules! callbacks {
             )*
         }
 
-        impl Host {
+        impl $crate::game::Game {
             $(
                 pub fn [<$name:camel:snake _args>] (&mut $self, #[allow(unused_mut)] mut args: [<$name:camel Args>] ) $(-> $Return)? {
-                    $(
+                    /* $(
                         const _: () = assert!($pre_value);
 
                         while let Some(callback) = $self.callbacks.$name {
                             match (callback)($self, args) {
-                                $crate::host::chain::Chain::Continue(new_args) => {
+                                $crate::game::chain::Chain::Continue(new_args) => {
                                     args = new_args;
                                 }
 
-                                $crate::host::chain::Chain::Break(result) => return result,
+                                $crate::game::chain::Chain::Break(result) => return result,
                             }
                         }
-                    )?
+                    )? */
 
                     #[allow(unused)] let id = ($(args.$arg_name,)* 0,).0;
                     $(
                         if let Some(callback) = $self.state.$self_namespace.get(id).type_.abilities().$name {
                             match (callback)($self, args) {
-                                $crate::host::chain::Chain::Continue(new_args) => {
+                                $crate::game::chain::Chain::Continue(new_args) => {
                                     args = new_args;
                                 }
 
-                                $crate::host::chain::Chain::Break(result) => return result,
+                                $crate::game::chain::Chain::Break(result) => return result,
                             }
                         }
                     )?
@@ -73,10 +73,10 @@ macro_rules! callbacks {
                     res
                 }
 
-                pub fn [<post_ $name:camel:snake _args>] (&mut $self, args: &[<$name:camel Args>] ) {
-                    while let Some(callback) = $self.callbacks.[<post_ $name>] {
+                pub fn [<post_ $name:camel:snake _args>] (&mut $self, #[allow(unused)] args: &[<$name:camel Args>] ) {
+                    /* while let Some(callback) = $self.callbacks.[<post_ $name>] {
                         (callback)($self, args);
-                    }
+                    } */
 
                     #[allow(unused)] let id = ($(args.$arg_name,)* 0,).0;
                     $(
