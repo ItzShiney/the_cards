@@ -70,7 +70,7 @@ custom_string_slice![
             |f, (range)| write!(f, "🎲[{}..{}]", range.start(), range.end());
 
         Mean(Vec<CustomString>) =>
-            |f, (args)| write!(f, "⟨{}⟩", args.into_iter().join(", "));
+            |f, (args)| write!(f, "⟨{}⟩", args.iter().join(", "));
 
         Epitaph(CustomString) =>
             |f, (line)| writeln!(f, "\x1b[3m{}\x1b[0m", line);

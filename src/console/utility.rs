@@ -47,19 +47,28 @@ pub fn read_chr(pred: impl Fn(char) -> bool) -> char {
     chr
 }
 
-pub fn prompt<D: Display, R>(
+pub type IsEnabled = bool;
+
+pub fn prompt<D: Display>(
     prompt_str: impl Display,
     is_cancellable: bool,
-    displays: impl ExactSizeIterator<Item = D>,
-    mut results: impl Iterator<Item = R>,
-) -> Option<R> {
-    let first_chr = 'a';
-    let last_chr = char::from_u32(first_chr as u32 + (displays.len() - 1) as u32).unwrap();
-    let chrs = first_chr..=last_chr;
+    options: impl Iterator<Item = (IsEnabled, D)>,
+) -> Option<usize> {
+    let mut chrs = vec![];
+    let mut next_chr = 'a';
 
     println!("  ┌─< {}", prompt_str);
-    for (chr, option) in chrs.clone().zip(displays) {
-        println!("  │ \x1b[1m{}\x1b[0m {}", chr, option);
+    for (chr, (is_enabled, option)) in ('a'..).clone().zip(options) {
+        let key = DefaultFormatted(KeyCode::Char(chr));
+
+        if is_enabled {
+            println!("  │ {} {}", key, option);
+            chrs.push(next_chr);
+        } else {
+            println!("  │ {} {}", key.to_string().black(), option.to_string().black());
+        }
+
+        next_chr = (next_chr..).nth(1).unwrap();
     }
     if is_cancellable {
         println!("  │ {}", DefaultFormatted(KeyCode::Esc));
@@ -71,15 +80,6 @@ pub fn prompt<D: Display, R>(
         _ => false,
     }) else { return None };
 
-    let picked_idx = picked_chr as usize - first_chr as usize;
-
-    Some(results.nth(picked_idx).unwrap())
-}
-
-pub fn prompt_idxs<D: Display>(
-    prompt_str: impl Display,
-    is_cancellable: bool,
-    displays: impl ExactSizeIterator<Item = D>,
-) -> Option<usize> {
-    prompt(prompt_str, is_cancellable, displays, 0..)
+    let picked_idx = picked_chr as usize - 'a' as usize;
+    Some(picked_idx)
 }

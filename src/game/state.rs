@@ -149,7 +149,7 @@ impl<ID: IDTrait + Debug, CardInfo> GameOfCardType<ID, CardInfo> {
     pub fn remove_from_some_player(&mut self, id: ID) -> PlayerID {
         let player_id = self
             .try_find_owner_in_decks(id)
-            .expect(format!("expected some player to own {:?}", id).as_str());
+            .unwrap_or_else(|| panic!("expected some player to own {:?}", id));
         self.remove_from_player(id, player_id);
         player_id
     }

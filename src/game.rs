@@ -326,16 +326,16 @@ impl Game {
         self.attack_map(attacker_id, target_id, dmg)
     }
 
-    pub fn choose_chr_in_hand<'prompt_str, 'game_state>(
+    pub fn choose_chr_in_hand<'game_state>(
         &'game_state mut self,
-        args: ChooseCardArgsP<'prompt_str, 'game_state, '_, CharacterID>,
+        args: ChooseCardArgsP<'_, 'game_state, '_, CharacterID>,
     ) -> Option<CharacterID> {
         self.input.choose_chr_in_hand(&self.state, args)
     }
 
-    pub fn choose_act_in_hand<'prompt_str, 'game_state>(
+    pub fn choose_act_in_hand<'game_state>(
         &'game_state mut self,
-        args: ChooseCardArgsP<'prompt_str, 'game_state, '_, ActiveID>,
+        args: ChooseCardArgsP<'_, 'game_state, '_, ActiveID>,
     ) -> Option<ActiveID> {
         self.input.choose_act_in_hand(&self.state, args)
     }

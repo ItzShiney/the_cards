@@ -1,4 +1,6 @@
 #![allow(clippy::uninlined_format_args)]
+#![allow(clippy::nonminimal_bool)]
+
 pub mod acts;
 pub mod chrs;
 pub mod console;
@@ -13,7 +15,7 @@ use crate::game::state::act_info::ActiveInfo;
 use crate::game::state::chr_info::CharacterInfo;
 use acts::ActiveType;
 use chrs::CharacterType;
-use console::prompt_idxs;
+use console::prompt;
 use game::input::ChooseCardArgsP;
 use game::input::DefaultRandom;
 use game::input::DefaultRandomBool;
@@ -52,10 +54,10 @@ fn main() {
     loop {
         let player_id = game.state().current_subturner_on_field().player_id;
 
-        match prompt_idxs(
+        match prompt(
             "какое действие совершить?",
             false,
-            ["выставить персонажа", "использовать активку"].into_iter(),
+            [(true, "выставить персонажа"), (true, "использовать активку")].into_iter(),
         ) {
             Some(0) => {
                 let Some(chr_id) = game.choose_chr_in_hand(ChooseCardArgsP {
@@ -77,16 +79,30 @@ fn main() {
                 }
             }
 
-            Some(1) => {
+            Some(1) => loop {
                 let Some(act_id) = game.choose_act_in_hand(ChooseCardArgsP {
                     prompt: &"какую активку использовать?",
                     is_cancellable: true,
                     player_id,
                     p: &GameState::is_usable_in_any_way,
-                }) else { continue };
+                }) else { break };
 
-                todo!("{act_id:?}");
-            }
+                let act_abilities = game.state().act(act_id).type_.abilities();
+
+                match prompt(
+                    "как использовать?",
+                    true,
+                    [
+                        (act_abilities.use_on_chr.is_some(), "на персонажа"),
+                        (act_abilities.use_on_field.is_some(), "на поле"),
+                    ]
+                    .into_iter(),
+                ) {
+                    None => continue,
+
+                    _ => todo!("использовать {act_id:?}"),
+                }
+            },
 
             _ => unreachable!(),
         }

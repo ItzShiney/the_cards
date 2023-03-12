@@ -136,7 +136,13 @@ acts! {
             Point(cs!["эта карта уничтожается"]),
         ],
 
-        // TODO
+        abilities: GameCallbacks {
+            use_on_field: Some(|_game, _args| {
+                todo!();
+            }),
+
+            ..Default::default()
+        }
     }
 
     Монархия {
@@ -149,7 +155,13 @@ acts! {
             Point(cs!["эта карта уничтожается"]),
         ],
 
-        // TODO
+        abilities: GameCallbacks {
+            use_on_field: Some(|_game, _args| {
+                todo!();
+            }),
+
+            ..Default::default()
+        }
     }
 
     УтешительныйПриз {
@@ -272,7 +284,13 @@ acts! {
             Point(cs!["отменяет её эффект"]),
         ],
 
-        // TODO
+        abilities: GameCallbacks {
+            use_on_field: Some(|_game, _args| {
+                todo!();
+            }),
+
+            ..Default::default()
+        }
     }
 
     Зеркало {
@@ -352,7 +370,13 @@ acts! {
             Point(cs!["уничтожает все карты в бите и по одной выбранной каждым игроком у себя в руке"]),
         ],
 
-        // TODO
+        abilities: GameCallbacks {
+            use_on_field: Some(|_game, _args| {
+                todo!();
+            }),
+
+            ..Default::default()
+        }
     }
 
     МойРотРазворот {
@@ -364,7 +388,13 @@ acts! {
             Point(cs!["меняет направление ходов на противоположное"]),
         ],
 
-        // TODO
+        abilities: GameCallbacks {
+            use_on_field: Some(|_game, _args| {
+                todo!();
+            }),
+
+            ..Default::default()
+        }
     }
 
     Чёрт480 {
@@ -376,7 +406,13 @@ acts! {
             Point(cs!["следующая активка, использованная противником, не сработает"]),
         ],
 
-        // TODO
+        abilities: GameCallbacks {
+            use_on_field: Some(|_game, _args| {
+                todo!();
+            }),
+
+            ..Default::default()
+        }
     }
 
     ПионерУжеВКоммунизме {
@@ -388,7 +424,13 @@ acts! {
             Point(cs!["отдай её следующему по направлению ходов игроку"]),
         ],
 
-        // TODO
+        abilities: GameCallbacks {
+            use_on_field: Some(|_game, _args| {
+                todo!();
+            }),
+
+            ..Default::default()
+        }
     }
 
     Козерог {
@@ -429,6 +471,7 @@ acts! {
                 game.stat_add(args.target_id, StatType::Physique, 1);
 
                 #[allow(unreachable_code)]
+                #[allow(clippy::diverging_sub_expression)]
                 if todo!("ранее была использована РУЧКА НОЖА") {
                     let owner_id = game.state().find_owner_act(args.act_id);
 
@@ -458,6 +501,7 @@ acts! {
                 game.stat_add(args.target_id, StatType::Physique, 1);
 
                 #[allow(unreachable_code)]
+                #[allow(clippy::diverging_sub_expression)]
                 if todo!("ранее было использовано ЛЕЗВИЕ НОЖА") {
                     let owner_id = game.state().find_owner_act(args.act_id);
 
