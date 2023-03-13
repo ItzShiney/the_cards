@@ -18,6 +18,7 @@ use crate::game::state::chr_info::CharacterInfo;
 use acts::ActiveType;
 use chrs::CharacterType;
 use console::prompt;
+use crossterm::style::Stylize;
 use game::input::ChooseCardArgsP;
 use game::input::DefaultRandom;
 use game::input::DefaultRandomBool;
@@ -64,6 +65,8 @@ pub enum InputState {
         act_id: ActiveID,
         target_id: CharacterID,
     },
+
+    EndSubturn,
 }
 
 impl InputState {
@@ -81,6 +84,8 @@ impl InputState {
             UseOnField { act_id } => UseHow { act_id },
             UseOnWho { act_id } => UseHow { act_id },
             UseOnCharacter { act_id, target_id: _ } => UseOnWho { act_id },
+
+            EndSubturn => ChooseAction,
         }
     }
 
@@ -109,23 +114,30 @@ fn main() {
     });
 
     let mut game = Game::new(state, input);
-    let player_id = game.state().current_subturner_on_field().player_id;
 
     {
         use InputState::*;
 
         let mut state = ChooseAction;
         loop {
+            let player_id = game.state().current_subturner_on_field().player_id;
+
             match state {
                 ChooseAction => {
                     match prompt(
-                        "",
+                        game.state().players_map[&player_id].nickname.as_str().bold(),
                         false,
-                        [(true, "выставить персонажа"), (true, "использовать активку")].into_iter(),
+                        [
+                            (true, "выставить персонажа"),
+                            (true, "использовать активку"),
+                            (true, "закончить подход"),
+                        ]
+                        .into_iter(),
                     ) {
                         None => state.revert(),
                         Some(0) => state = ChooseCharacter,
                         Some(1) => state = ChooseActive,
+                        Some(2) => state = EndSubturn,
                         _ => unreachable!(),
                     }
                 }
@@ -185,6 +197,7 @@ fn main() {
 
                 UseOnField { act_id } => {
                     game.use_on_field(act_id).unwrap();
+
                     state.reset();
                 }
 
@@ -204,13 +217,25 @@ fn main() {
 
                 UseOnCharacter { act_id, target_id } => {
                     game.use_on_chr(act_id, target_id).unwrap();
-                    state.reset();
 
                     println!(
                         "активка {} использована на {}",
                         cs![Active(game.state().act(act_id).type_)],
                         cs![Character(game.state().chr(target_id).type_)],
                     );
+
+                    state.reset();
+                }
+
+                EndSubturn => {
+                    game.end_subturn();
+
+                    println!(
+                        "подход {} закончен",
+                        game.state().players_map[&player_id].nickname.as_str().bold()
+                    );
+
+                    state.reset();
                 }
             }
             println!();
