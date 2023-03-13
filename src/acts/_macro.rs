@@ -11,7 +11,7 @@ macro_rules! acts {
                 $(abilities: $abilities:expr)? $(,)?
             }
         )*
-    ) => {paste::paste!{
+    ) => {::paste::paste!{
         #[derive(Clone, Copy)]
         pub enum ActiveType {
             $($CardName,)*
@@ -25,7 +25,7 @@ macro_rules! acts {
             }
 
             pub fn name(self) -> &'static $crate::custom_string::CustomString {
-                lazy_static::lazy_static! {
+                ::lazy_static::lazy_static! {
                     $(
                         static ref [<$CardName:snake:upper>]: $crate::custom_string::CustomString = $name;
                     )*
@@ -36,25 +36,42 @@ macro_rules! acts {
                 }
             }
 
-            pub fn groups(self) -> &'static BTreeSet<Group> {
-                lazy_static::lazy_static! {
+            pub fn groups(self) -> &'static ::std::collections::BTreeSet<$crate::group::Group> {
+                #[allow(unused)]
+                use $crate::group::Group::*;
+
+                ::lazy_static::lazy_static! {
                     $(
-                        static ref [<$CardName:snake:upper>]: BTreeSet<Group> = BTreeSet::<Group>::from($groups);
+                        static ref [<$CardName:snake:upper>]: ::std::collections::BTreeSet<$crate::group::Group> = {
+                            const _: () = {
+                                if !matches!($groups[0], $crate::group::Group::S | $crate::group::Group::A | $crate::group::Group::B | $crate::group::Group::C | $crate::group::Group::D) {
+                                    panic!(concat!(stringify!($CardName), ".groups[0] is not a tier"));
+                                }
+                            };
+
+                            const _: () = {
+                                if !matches!($groups[1], $crate::group::Group::ByЛёня | $crate::group::Group::ByМаксим | $crate::group::Group::ByКостя | $crate::group::Group::ByЛёша) {
+                                    panic!(concat!(stringify!($CardName), ".groups[1] is not a creator"));
+                                }
+                            };
+
+                            ::std::collections::BTreeSet::from($groups)
+                        };
                     )*
                 }
 
                 match self {
-                    $(Self::$CardName => &*[<$CardName:snake:upper>],)*
+                    $(Self::$CardName => &[<$CardName:snake:upper>],)*
                 }
             }
 
-            pub fn description(self) -> &'static Option<CustomString> {
-                lazy_static::lazy_static! {
+            pub fn description(self) -> &'static Option<$crate::custom_string::CustomString> {
+                ::lazy_static::lazy_static! {
                     $(
-                        static ref [<$CardName:snake:upper>]: Option<CustomString> = {
+                        static ref [<$CardName:snake:upper>]: Option<$crate::custom_string::CustomString> = {
                             let x = (
                                 $($description,)?
-                                cs![],
+                                $crate::cs![],
                             ).0;
                             if x.slices.is_empty() {
                                 None
@@ -71,7 +88,7 @@ macro_rules! acts {
             }
 
             pub fn abilities(self) -> &'static $crate::game::GameCallbacks {
-                lazy_static::lazy_static! {
+                ::lazy_static::lazy_static! {
                     $(
                         static ref [<$CardName:snake:upper>]: $crate::game::GameCallbacks =
                             (

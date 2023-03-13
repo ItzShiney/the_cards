@@ -3,23 +3,19 @@ mod _macro;
 use crate::acts;
 use crate::chrs::CharacterType;
 use crate::cs;
-use crate::custom_string::CustomString;
 use crate::game::chain::Chain;
 use crate::game::input::ChooseCardArgsP;
 use crate::game::input::PromptArgs;
 use crate::game::state::chr_info::CharacterInfo;
-use crate::game::state::GameState;
 use crate::game::GameCallbacks;
-use crate::group::Group;
 use crate::stats::StatType;
 use crate::terminate;
-use std::collections::BTreeSet;
 
 acts! {
     // /*
     ПустаяКарта {
         name: cs!["ПУСТАЯ КАРТА"],
-        groups: [Group::ByЛёня, Group::TBoI],
+        groups: [B, ByЛёня, TBoI],
 
         description: cs![
             Condition(cs!["использована"]),
@@ -30,7 +26,7 @@ acts! {
             use_on_field: Some(|game, args| {
                 let owner_id = game.state().find_owner_act(args.act_id);
                 let Some(imitated_act_id) = game.choose_act_in_hand(ChooseCardArgsP {
-                    prompt: PromptArgs{
+                    prompt: PromptArgs {
                         str: cs![Active(ПустаяКарта), ": чей эффект повторить?"],
                         is_cancellable: true,
                         autochoose_single_option: false,
@@ -48,7 +44,7 @@ acts! {
 
     Баян {
         name: cs!["БАЯН"],
-        groups: [Group::ByМаксим, Group::Дизморалит],
+        groups: [D, ByМаксим, Дизморалит],
 
         description: cs![
             Condition(cs!["использован на персонажа"]),
@@ -67,7 +63,8 @@ acts! {
 
     ЖёлтаяИскра {
         name: cs!["ЖЁЛТАЯ ИСКРА"],
-        groups: [Group::ByЛёня, Group::Undertale],
+        groups: [D, ByЛёня, Undertale],
+        // D, потому что работает только после активок типа "наносит урон", а таких мало
 
         description: cs![
             Condition(cs!["использована на персонажа"]),
@@ -88,7 +85,7 @@ acts! {
 
     ТетрадьСмерти {
         name: cs!["ТЕТРАДЬ СМЕРТИ"],
-        groups: [Group::ByКостя, Group::DeathNote],
+        groups: [B, ByКостя, DeathNote],
 
         description: cs![
             Condition(cs!["использована на персонажа"]),
@@ -107,7 +104,7 @@ acts! {
 
     ОБратка {
         name: cs!["О,БРАТКА"],
-        groups: [Group::ByЛёша],
+        groups: [A, ByЛёша],
 
         description: cs![
             Condition(cs!["использована на противника, единственного на поле"]),
@@ -132,7 +129,7 @@ acts! {
 
     Коммунизм {
         name: cs!["КОММУНИЗМ"],
-        groups: [Group::ByКостя, Group::ОбщественныйСтрой],
+        groups: [S, ByКостя, ОбщественныйСтрой],
 
         description: cs![
             Condition(cs!["использован в качестве своего хода"]),
@@ -151,7 +148,7 @@ acts! {
 
     Монархия {
         name: cs!["МОНАРХИЯ"],
-        groups: [Group::ByЛёня, Group::ОбщественныйСтрой],
+        groups: [D, ByЛёня, ОбщественныйСтрой],
 
         description: cs![
             Condition(cs!["использована в ответ на ", Коммунизм]),
@@ -170,7 +167,7 @@ acts! {
 
     УтешительныйПриз {
         name: cs!["УТЕШИТЕЛЬНЫЙ ПРИЗ"],
-        groups: [Group::ByЛёня, Group::TBoI, Group::Моралит],
+        groups: [D, ByЛёня, TBoI, Моралит],
 
         description: cs![
             Epitaph(cs![
@@ -194,7 +191,7 @@ acts! {
 
     НеутешительныйПриз {
         name: cs!["НЕУТЕШИТЕЛЬНЫЙ ПРИЗ"],
-        groups: [Group::ByМаксим, Group::Дизморалит],
+        groups: [D, ByМаксим, Дизморалит],
 
         // арт — уголёк
 
@@ -218,7 +215,7 @@ acts! {
 
     Биология {
         name: cs!["НЕДОСЫП"],
-        groups: [Group::ByЛёня, Group::Реальность, Group::Дизморалит],
+        groups: [D, ByЛёня, Реальность, Дизморалит],
 
         description: cs![
             Condition(cs!["использован на персонажа"]),
@@ -238,7 +235,7 @@ acts! {
 
     СатокинаБита {
         name: cs!["САТОКИНА БИТА"],
-        groups: [Group::ByКостя, Group::Higurashi],
+        groups: [C, ByКостя, Higurashi],
 
         description: cs![
             Condition(cs!["использована на персонажа"]),
@@ -257,7 +254,7 @@ acts! {
 
     Охаги {
         name: cs!["ОХАГИ"],
-        groups: [Group::ByКостя, Group::Higurashi],
+        groups: [D, ByКостя, Higurashi],
 
         description: cs![
             Condition(cs!["использованы на персонажа с ", Intellect, " ", LE, " 3"]),
@@ -281,7 +278,7 @@ acts! {
 
     Тупость {
         name: cs!["ТУПОСТЬ"],
-        groups: [Group::ByЛёня, Group::Моралит],
+        groups: [D, ByЛёня, Моралит],
 
         description: cs![
             Condition(cs!["использована в ответ на ", Дизморалит, "-активку"]),
@@ -299,7 +296,7 @@ acts! {
 
     Зеркало {
         name: cs!["ЗЕРКАЛО"],
-        groups: [Group::ByЛёша, Group::Реальность],
+        groups: [D, ByЛёша, Реальность],
 
         description: cs![
             Condition(cs!["использовано на персонажа"]),
@@ -312,7 +309,7 @@ acts! {
 
     Хривна {
         name: cs!["ХРИВНА"],
-        groups: [Group::ByКостя, Group::Реальность],
+        groups: [D, ByКостя, Реальность],
 
         description: cs![
             Condition(cs!["использована на персонажа"]),
@@ -331,7 +328,7 @@ acts! {
 
     CuOH2 {
         name: cs!["CU(OH)₂"],
-        groups: [Group::ByЛёня, Group::Химия],
+        groups: [C, ByЛёня, Химия],
 
         description: cs![
             Condition(cs!["использован на персонажа"]),
@@ -349,7 +346,7 @@ acts! {
 
     МегаовощнойКейти {
         name: cs!["МЕГАОВОЩНОЙ КЕЙТИ"],
-        groups: [Group::ByКостя, Group::Higurashi],
+        groups: [C, ByКостя, Higurashi],
 
         description: cs![
             Condition(cs!["использован на персонажа"]),
@@ -367,7 +364,7 @@ acts! {
 
     Ластик {
         name: cs!["ЛАСТИК"],
-        groups: [Group::ByЛёня, Group::Реальность],
+        groups: [D, ByЛёня, Реальность],
 
         description: cs![
             Condition(cs!["использовано в качестве хода"]),
@@ -385,7 +382,7 @@ acts! {
 
     МойРотРазворот {
         name: cs!["МОЙ РОТ РАЗВОРОТ"],
-        groups: [Group::ByЛёня, Group::Мемы],
+        groups: [D, ByЛёня, Мемы],
 
         description: cs![
             Condition(cs!["использовано в начале своего хода"]),
@@ -403,7 +400,7 @@ acts! {
 
     Чёрт480 {
         name: cs!["ЧЁРТ 480"],
-        groups: [Group::ByЛёня, Group::Скрытая, Group::ПепежноеСущество, Group::ЦитатыКости],
+        groups: [C, ByЛёня, Скрытая, ПепежноеСущество, ЦитатыКости],
 
         description: cs![
             Condition(cs!["использовано в битве"]),
@@ -421,7 +418,7 @@ acts! {
 
     ПионерУжеВКоммунизме {
         name: cs!["\"ЛЕЖИТ ПИОНЕР БЕЗ ПРИЗНАКОВ ЖИЗНИ, ЕМУ ХОРОШО, ОН УЖЕ В КОММУНИЗМЕ\""],
-        groups: [Group::ByКостя, Group::Цитаты],
+        groups: [D, ByКостя, Цитаты],
 
         description: cs![
             Condition(cs!["использовано на карту в руке"]),
@@ -439,7 +436,7 @@ acts! {
 
     Козерог {
         name: cs!["КОЗЕРОГ"],
-        groups: [Group::ByЛёня, Group::TBoI, Group::Зодиак],
+        groups: [B, ByЛёня, TBoI, Зодиак],
 
         description: cs![
             Condition(cs!["использовано на персонажа"]),
@@ -462,7 +459,7 @@ acts! {
 
     ЛезвиеНожа {
         name: cs!["ЛЕЗВИЕ НОЖА"],
-        groups: [Group::ByЛёня, Group::TBoI],
+        groups: [D, ByЛёня, TBoI],
 
         description: cs![
             Condition(cs!["использовано на персонажа"]),
@@ -492,7 +489,7 @@ acts! {
 
     РучкаНожа {
         name: cs!["РУЧКА НОЖА"],
-        groups: [Group::ByЛёня, Group::TBoI],
+        groups: [D, ByЛёня, TBoI],
 
         description: cs![
             Condition(cs!["использовано на персонажа"]),
@@ -522,7 +519,7 @@ acts! {
 
     Берн {
         name: cs!["БЕРН"],
-        groups: [Group::ByМаксим, Group::Umineko],
+        groups: [C, ByМаксим, Umineko],
 
         description: cs![
             Condition(cs!["использована на противника, единственного на поле"]),
@@ -540,7 +537,7 @@ acts! {
                         autochoose_single_option: true,
                     },
                     player_id: target_owner_id,
-                    p: &GameState::is_placeable
+                    p: &|game_state, chr_id| chr_id != args.target_id && game_state.is_placeable(chr_id)
                 }) else { terminate!() };
 
                 game.replace(args.target_id, replacing_chr_id);
@@ -553,7 +550,7 @@ acts! {
 
     Разум {
         name: cs!["РАЗУМ"],
-        groups: [Group::ByЛёня, Group::TBoI],
+        groups: [D, ByЛёня, TBoI],
 
         description: cs![
             Condition(cs!["использован на персонажа"]),
@@ -573,7 +570,7 @@ acts! {
 
     Тело {
         name: cs!["ТЕЛО"],
-        groups: [Group::ByЛёня, Group::TBoI],
+        groups: [C, ByЛёня, TBoI],
 
         description: cs![
             Condition(cs!["использовано на персонажа"]),
@@ -594,7 +591,7 @@ acts! {
 
     Душа {
         name: cs!["ДУША"],
-        groups: [Group::ByЛёня, Group::TBoI],
+        groups: [D, ByЛёня, TBoI],
 
         description: cs![
             Condition(cs!["использована на персонажа"]),
@@ -614,7 +611,7 @@ acts! {
 
     Godhead {
         name: cs!["GODHEAD"],
-        groups: [Group::ByЛёня, Group::TBoI],
+        groups: [C, ByЛёня, TBoI],
 
         description: cs![
             Condition(cs!["использован на персонажа"]),

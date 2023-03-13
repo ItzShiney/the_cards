@@ -1,5 +1,3 @@
-mod _macro;
-
 use crate::acts::ActiveType;
 use crate::chrs;
 use crate::cs;
@@ -14,8 +12,9 @@ use crate::stats::Stat0;
 use crate::stats::StatType;
 use crate::stats::Stats;
 use crate::terminate;
-use std::collections::BTreeSet;
 use std::iter::repeat_with;
+
+mod _macro;
 
 chrs! {
     // /*

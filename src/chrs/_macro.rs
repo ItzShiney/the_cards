@@ -13,7 +13,7 @@ macro_rules! chrs {
                 $(abilities: $abilities:expr)? $(,)?
             }
         )*
-    ) => {paste::paste!{
+    ) => {::paste::paste!{
         #[derive(Clone, Copy)]
         pub enum CharacterType {
             $($CardName,)*
@@ -38,12 +38,13 @@ macro_rules! chrs {
                 }
             }
 
-            pub fn groups(self) -> &'static BTreeSet<$crate::group::Group> {
+            pub fn groups(self) -> &'static ::std::collections::BTreeSet<$crate::group::Group> {
+                #[allow(unused)]
                 use $crate::group::Group::*;
 
-                lazy_static::lazy_static! {
+                ::lazy_static::lazy_static! {
                     $(
-                        static ref [<$CardName:snake:upper>]: BTreeSet<$crate::group::Group> = {
+                        static ref [<$CardName:snake:upper>]: ::std::collections::BTreeSet<$crate::group::Group> = {
                             const _: () = {
                                 if !matches!($groups[0], $crate::group::Group::S | $crate::group::Group::A | $crate::group::Group::B | $crate::group::Group::C | $crate::group::Group::D) {
                                     panic!(concat!(stringify!($CardName), ".groups[0] is not a tier"));
@@ -56,7 +57,7 @@ macro_rules! chrs {
                                 }
                             };
 
-                            BTreeSet::from($groups)
+                            ::std::collections::BTreeSet::from($groups)
                         };
                     )*
                 }
@@ -67,12 +68,12 @@ macro_rules! chrs {
             }
 
             pub fn description(self) -> &'static Option<$crate::custom_string::CustomString> {
-                lazy_static::lazy_static! {
+                ::lazy_static::lazy_static! {
                     $(
                         static ref [<$CardName:snake:upper>]: Option<$crate::custom_string::CustomString> =  {
                             let x = (
                                 $($description,)?
-                                cs![],
+                                $crate::cs![],
                             ).0;
                             if x.slices.is_empty() {
                                 None
@@ -88,7 +89,7 @@ macro_rules! chrs {
                 }
             }
 
-            pub fn stats(self) -> Stats {
+            pub fn stats(self) -> $crate::stats::Stats {
                 match self {
                     $(Self::$CardName => $stats,)*
                 }
@@ -97,7 +98,7 @@ macro_rules! chrs {
             pub fn abilities(self) -> &'static $crate::game::GameCallbacks {
                 use $crate::group::Group::*;
 
-                lazy_static::lazy_static! {
+                ::lazy_static::lazy_static! {
                     $(
                         static ref [<$CardName:snake:upper>]: $crate::game::GameCallbacks =
                             (
