@@ -26,10 +26,10 @@ macro_rules! chrs {
                 ]
             }
 
-            pub fn name(self) -> &'static CustomString {
-                lazy_static::lazy_static! {
+            pub fn name(self) -> &'static $crate::custom_string::CustomString {
+                ::lazy_static::lazy_static! {
                     $(
-                        static ref [<$CardName:snake:upper>]: CustomString = $name.into();
+                        static ref [<$CardName:snake:upper>]: $crate::custom_string::CustomString = $name.into();
                     )*
                 }
 
@@ -38,10 +38,26 @@ macro_rules! chrs {
                 }
             }
 
-            pub fn groups(self) -> &'static BTreeSet<Group> {
+            pub fn groups(self) -> &'static BTreeSet<$crate::group::Group> {
+                use $crate::group::Group::*;
+
                 lazy_static::lazy_static! {
                     $(
-                        static ref [<$CardName:snake:upper>]: BTreeSet<Group> = BTreeSet::from($groups);
+                        static ref [<$CardName:snake:upper>]: BTreeSet<$crate::group::Group> = {
+                            const _: () = {
+                                if !matches!($groups[0], $crate::group::Group::S | $crate::group::Group::A | $crate::group::Group::B | $crate::group::Group::C | $crate::group::Group::D) {
+                                    panic!(concat!(stringify!($CardName), ".groups[0] is not a tier"));
+                                }
+                            };
+
+                            const _: () = {
+                                if !matches!($groups[1], $crate::group::Group::ByЛёня | $crate::group::Group::ByМаксим | $crate::group::Group::ByКостя | $crate::group::Group::ByЛёша) {
+                                    panic!(concat!(stringify!($CardName), ".groups[1] is not a creator"));
+                                }
+                            };
+
+                            BTreeSet::from($groups)
+                        };
                     )*
                 }
 
@@ -50,10 +66,10 @@ macro_rules! chrs {
                 }
             }
 
-            pub fn description(self) -> &'static Option<CustomString> {
+            pub fn description(self) -> &'static Option<$crate::custom_string::CustomString> {
                 lazy_static::lazy_static! {
                     $(
-                        static ref [<$CardName:snake:upper>]: Option<CustomString> =  {
+                        static ref [<$CardName:snake:upper>]: Option<$crate::custom_string::CustomString> =  {
                             let x = (
                                 $($description,)?
                                 cs![],
@@ -79,6 +95,8 @@ macro_rules! chrs {
             }
 
             pub fn abilities(self) -> &'static $crate::game::GameCallbacks {
+                use $crate::group::Group::*;
+
                 lazy_static::lazy_static! {
                     $(
                         static ref [<$CardName:snake:upper>]: $crate::game::GameCallbacks =

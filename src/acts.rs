@@ -19,7 +19,7 @@ acts! {
     // /*
     ПустаяКарта {
         name: cs!["ПУСТАЯ КАРТА"],
-        groups: [Group::СделаноЛёней, Group::TBoI],
+        groups: [Group::ByЛёня, Group::TBoI],
 
         description: cs![
             Condition(cs!["использована"]),
@@ -48,7 +48,7 @@ acts! {
 
     Баян {
         name: cs!["БАЯН"],
-        groups: [Group::СделаноМаксимом, Group::Дизморалит],
+        groups: [Group::ByМаксим, Group::Дизморалит],
 
         description: cs![
             Condition(cs!["использован на персонажа"]),
@@ -67,7 +67,7 @@ acts! {
 
     ЖёлтаяИскра {
         name: cs!["ЖЁЛТАЯ ИСКРА"],
-        groups: [Group::СделаноЛёней, Group::Undertale],
+        groups: [Group::ByЛёня, Group::Undertale],
 
         description: cs![
             Condition(cs!["использована на персонажа"]),
@@ -88,7 +88,7 @@ acts! {
 
     ТетрадьСмерти {
         name: cs!["ТЕТРАДЬ СМЕРТИ"],
-        groups: [Group::СделаноКостей, Group::DeathNote],
+        groups: [Group::ByКостя, Group::DeathNote],
 
         description: cs![
             Condition(cs!["использована на персонажа"]),
@@ -107,7 +107,7 @@ acts! {
 
     ОБратка {
         name: cs!["О,БРАТКА"],
-        groups: [Group::СделаноЛёшей],
+        groups: [Group::ByЛёша],
 
         description: cs![
             Condition(cs!["использована на противника, единственного на поле"]),
@@ -132,7 +132,7 @@ acts! {
 
     Коммунизм {
         name: cs!["КОММУНИЗМ"],
-        groups: [Group::СделаноКостей, Group::ОбщественныйСтрой],
+        groups: [Group::ByКостя, Group::ОбщественныйСтрой],
 
         description: cs![
             Condition(cs!["использован в качестве своего хода"]),
@@ -151,7 +151,7 @@ acts! {
 
     Монархия {
         name: cs!["МОНАРХИЯ"],
-        groups: [Group::СделаноЛёней, Group::ОбщественныйСтрой],
+        groups: [Group::ByЛёня, Group::ОбщественныйСтрой],
 
         description: cs![
             Condition(cs!["использована в ответ на ", Коммунизм]),
@@ -170,7 +170,7 @@ acts! {
 
     УтешительныйПриз {
         name: cs!["УТЕШИТЕЛЬНЫЙ ПРИЗ"],
-        groups: [Group::СделаноЛёней, Group::TBoI, Group::Моралит],
+        groups: [Group::ByЛёня, Group::TBoI, Group::Моралит],
 
         description: cs![
             Epitaph(cs![
@@ -194,7 +194,7 @@ acts! {
 
     НеутешительныйПриз {
         name: cs!["НЕУТЕШИТЕЛЬНЫЙ ПРИЗ"],
-        groups: [Group::СделаноМаксимом, Group::Дизморалит],
+        groups: [Group::ByМаксим, Group::Дизморалит],
 
         // арт — уголёк
 
@@ -218,7 +218,7 @@ acts! {
 
     Биология {
         name: cs!["НЕДОСЫП"],
-        groups: [Group::СделаноЛёней, Group::Реальность, Group::Дизморалит],
+        groups: [Group::ByЛёня, Group::Реальность, Group::Дизморалит],
 
         description: cs![
             Condition(cs!["использован на персонажа"]),
@@ -238,7 +238,7 @@ acts! {
 
     СатокинаБита {
         name: cs!["САТОКИНА БИТА"],
-        groups: [Group::СделаноКостей, Group::Higurashi],
+        groups: [Group::ByКостя, Group::Higurashi],
 
         description: cs![
             Condition(cs!["использована на персонажа"]),
@@ -257,7 +257,7 @@ acts! {
 
     Охаги {
         name: cs!["ОХАГИ"],
-        groups: [Group::СделаноКостей, Group::Higurashi],
+        groups: [Group::ByКостя, Group::Higurashi],
 
         description: cs![
             Condition(cs!["использованы на персонажа с ", Intellect, " ", LE, " 3"]),
@@ -281,7 +281,7 @@ acts! {
 
     Тупость {
         name: cs!["ТУПОСТЬ"],
-        groups: [Group::СделаноЛёней, Group::Моралит],
+        groups: [Group::ByЛёня, Group::Моралит],
 
         description: cs![
             Condition(cs!["использована в ответ на ", Дизморалит, "-активку"]),
@@ -299,7 +299,7 @@ acts! {
 
     Зеркало {
         name: cs!["ЗЕРКАЛО"],
-        groups: [Group::СделаноЛёшей, Group::Реальность],
+        groups: [Group::ByЛёша, Group::Реальность],
 
         description: cs![
             Condition(cs!["использовано на персонажа"]),
@@ -312,7 +312,7 @@ acts! {
 
     Хривна {
         name: cs!["ХРИВНА"],
-        groups: [Group::СделаноКостей, Group::Реальность],
+        groups: [Group::ByКостя, Group::Реальность],
 
         description: cs![
             Condition(cs!["использована на персонажа"]),
@@ -331,7 +331,7 @@ acts! {
 
     CuOH2 {
         name: cs!["CU(OH)₂"],
-        groups: [Group::СделаноЛёней, Group::Химия],
+        groups: [Group::ByЛёня, Group::Химия],
 
         description: cs![
             Condition(cs!["использован на персонажа"]),
@@ -349,7 +349,7 @@ acts! {
 
     МегаовощнойКейти {
         name: cs!["МЕГАОВОЩНОЙ КЕЙТИ"],
-        groups: [Group::СделаноКостей, Group::Higurashi],
+        groups: [Group::ByКостя, Group::Higurashi],
 
         description: cs![
             Condition(cs!["использован на персонажа"]),
@@ -367,7 +367,7 @@ acts! {
 
     Ластик {
         name: cs!["ЛАСТИК"],
-        groups: [Group::СделаноЛёней, Group::Реальность],
+        groups: [Group::ByЛёня, Group::Реальность],
 
         description: cs![
             Condition(cs!["использовано в качестве хода"]),
@@ -385,7 +385,7 @@ acts! {
 
     МойРотРазворот {
         name: cs!["МОЙ РОТ РАЗВОРОТ"],
-        groups: [Group::СделаноЛёней, Group::Мемы],
+        groups: [Group::ByЛёня, Group::Мемы],
 
         description: cs![
             Condition(cs!["использовано в начале своего хода"]),
@@ -403,7 +403,7 @@ acts! {
 
     Чёрт480 {
         name: cs!["ЧЁРТ 480"],
-        groups: [Group::СделаноЛёней, Group::Скрытая, Group::ПепежноеСущество, Group::ЦитатыКости],
+        groups: [Group::ByЛёня, Group::Скрытая, Group::ПепежноеСущество, Group::ЦитатыКости],
 
         description: cs![
             Condition(cs!["использовано в битве"]),
@@ -421,7 +421,7 @@ acts! {
 
     ПионерУжеВКоммунизме {
         name: cs!["\"ЛЕЖИТ ПИОНЕР БЕЗ ПРИЗНАКОВ ЖИЗНИ, ЕМУ ХОРОШО, ОН УЖЕ В КОММУНИЗМЕ\""],
-        groups: [Group::СделаноКостей, Group::Цитаты],
+        groups: [Group::ByКостя, Group::Цитаты],
 
         description: cs![
             Condition(cs!["использовано на карту в руке"]),
@@ -439,7 +439,7 @@ acts! {
 
     Козерог {
         name: cs!["КОЗЕРОГ"],
-        groups: [Group::СделаноЛёней, Group::TBoI, Group::Зодиак],
+        groups: [Group::ByЛёня, Group::TBoI, Group::Зодиак],
 
         description: cs![
             Condition(cs!["использовано на персонажа"]),
@@ -462,7 +462,7 @@ acts! {
 
     ЛезвиеНожа {
         name: cs!["ЛЕЗВИЕ НОЖА"],
-        groups: [Group::СделаноЛёней, Group::TBoI],
+        groups: [Group::ByЛёня, Group::TBoI],
 
         description: cs![
             Condition(cs!["использовано на персонажа"]),
@@ -492,7 +492,7 @@ acts! {
 
     РучкаНожа {
         name: cs!["РУЧКА НОЖА"],
-        groups: [Group::СделаноЛёней, Group::TBoI],
+        groups: [Group::ByЛёня, Group::TBoI],
 
         description: cs![
             Condition(cs!["использовано на персонажа"]),
@@ -522,7 +522,7 @@ acts! {
 
     Берн {
         name: cs!["БЕРН"],
-        groups: [Group::СделаноМаксимом, Group::Umineko],
+        groups: [Group::ByМаксим, Group::Umineko],
 
         description: cs![
             Condition(cs!["использована на противника, единственного на поле"]),
@@ -553,7 +553,7 @@ acts! {
 
     Разум {
         name: cs!["РАЗУМ"],
-        groups: [Group::СделаноЛёней, Group::TBoI],
+        groups: [Group::ByЛёня, Group::TBoI],
 
         description: cs![
             Condition(cs!["использован на персонажа"]),
@@ -573,7 +573,7 @@ acts! {
 
     Тело {
         name: cs!["ТЕЛО"],
-        groups: [Group::СделаноЛёней, Group::TBoI],
+        groups: [Group::ByЛёня, Group::TBoI],
 
         description: cs![
             Condition(cs!["использовано на персонажа"]),
@@ -594,7 +594,7 @@ acts! {
 
     Душа {
         name: cs!["ДУША"],
-        groups: [Group::СделаноЛёней, Group::TBoI],
+        groups: [Group::ByЛёня, Group::TBoI],
 
         description: cs![
             Condition(cs!["использована на персонажа"]),
@@ -614,7 +614,7 @@ acts! {
 
     Godhead {
         name: cs!["GODHEAD"],
-        groups: [Group::СделаноЛёней, Group::TBoI],
+        groups: [Group::ByЛёня, Group::TBoI],
 
         description: cs![
             Condition(cs!["использован на персонажа"]),

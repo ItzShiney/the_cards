@@ -3,13 +3,11 @@ mod _macro;
 use crate::acts::ActiveType;
 use crate::chrs;
 use crate::cs;
-use crate::custom_string::CustomString;
 use crate::dmg;
 use crate::game::chain::Chain;
 use crate::game::input::ChooseCardArgs;
 use crate::game::input::PromptArgs;
 use crate::game::GameCallbacks;
-use crate::group::Group;
 use crate::int;
 use crate::phy;
 use crate::stats::Stat0;
@@ -23,7 +21,7 @@ chrs! {
     // /*
     БанкаСВареньем {
         name: cs!["БАНКА С ВАРЕНЬЕМ"],
-        groups: [Group::СделаноЛёней, Group::Реальность],
+        groups: [D, ByЛёня, Реальность],
 
         // 1/3/-0
         stats: Stats::new(
@@ -51,7 +49,7 @@ chrs! {
 
     ДухТвоейКвартиры {
         name: cs!["ДУХ ТВОЕЙ КВАРТИРЫ"],
-        groups: [Group::СделаноКостей, Group::Женщина],
+        groups: [B, ByКостя, Женщина],
 
         // 4/3/-4
         stats: Stats::new(
@@ -71,7 +69,7 @@ chrs! {
 
     Планя {
         name: cs!["ПЛАНЯ"],
-        groups: [Group::СделаноКостей, Group::Женщина, Group::WePlanet],
+        groups: [C, ByКостя, Женщина, WePlanet],
 
         // 3/3/-4
         stats: Stats::new(
@@ -95,7 +93,7 @@ chrs! {
 
     Delirium {
         name: cs!["DELIRIUM"],
-        groups: [Group::СделаноМаксимом, Group::TBoI, Group::Иллюзия],
+        groups: [C, ByМаксим, TBoI, Иллюзия],
 
         // ?/?/0
         stats: Stats::new(
@@ -136,7 +134,7 @@ chrs! {
 
     Беатриче {
         name: cs!["БЕАТРИЧЕ"],
-        groups: [Group::СделаноМаксимом, Group::Женщина, Group::Umineko, Group::Иллюзия],
+        groups: [B, ByМаксим, Женщина, Umineko, Иллюзия],
 
         // 1/4/-3
         stats: Stats::new(
@@ -165,7 +163,7 @@ chrs! {
 
     Ненети {
         name: cs!["Н\u{0301}ЕНЕТИ"],
-        groups: [Group::СделаноЛёней, Group::Женщина, Group::NewGame],
+        groups: [C, ByЛёня, Женщина, NewGame],
 
         // 5/1/-1
         stats: Stats::new(
@@ -177,7 +175,7 @@ chrs! {
 
     Коса {
         name: cs!["КОСА"],
-        groups: [Group::СделаноКостей, Group::Женщина, Group::Реальность],
+        groups: [D, ByКостя, Женщина, Реальность],
 
         // 2/3/-1
         stats: Stats::new(
@@ -189,7 +187,7 @@ chrs! {
 
     Мирослав {
         name: cs!["МИРОСЛАВ"],
-        groups: [Group::СделаноЛёней, Group::Мужчина, Group::Реальность],
+        groups: [D, ByЛёня, Мужчина, Реальность],
 
         // 2/2/-4
         stats: Stats::new(
@@ -201,7 +199,7 @@ chrs! {
 
     МаксимовБаянЖивотворящий {
         name: cs!["МАКСИМОВ БАЯН ЖИВОТВОРЯЩИЙ"],
-        groups: [Group::СделаноЛёней, Group::Животворит],
+        groups: [C, ByЛёня, Животворит],
 
         // 4/1/-0
         stats: Stats::new(
@@ -213,7 +211,7 @@ chrs! {
 
     Рей {
         name: cs!["РЕЙ"],
-        groups: [Group::СделаноКостей, Group::Мужчина],
+        groups: [D, ByКостя, Мужчина],
 
         // 1/3/-2
         stats: Stats::new(
@@ -225,7 +223,7 @@ chrs! {
 
     Тимми {
         name: cs!["ТИММИ"],
-        groups: [Group::СделаноКостей, Group::Мужчина, Group::SouthPark],
+        groups: [D, ByКостя, Мужчина, SouthPark],
 
         // 1/0/-5
         stats: Stats::new(
@@ -241,7 +239,7 @@ chrs! {
 
     НостальгирующийКритик {
         name: cs!["НОСТАЛЬГИРУЮЩИЙ КРИТИК"],
-        groups: [Group::СделаноКостей, Group::Мужчина],
+        groups: [B, ByКостя, Мужчина],
 
         // 4/3/-2
         stats: Stats::new(
@@ -279,7 +277,7 @@ chrs! {
 
     Марио {
         name: cs!["МАРИО"],
-        groups: [Group::СделаноЛёней, Group::Мужчина],
+        groups: [C, ByЛёня, Мужчина],
 
         // 2/2/-3
         stats: Stats::new(
@@ -297,7 +295,7 @@ chrs! {
 
     Рена {
         name: cs!["РЕНА"],
-        groups: [Group::СделаноКостей, Group::Женщина, Group::Higurashi],
+        groups: [B, ByКостя, Женщина, Higurashi],
 
         // 2/3/-3
         stats: Stats::new(
@@ -309,7 +307,7 @@ chrs! {
 
     Борат {
         name: cs!["БОРАТ"],
-        groups: [Group::СделаноКостей, Group::Мужчина, Group::Мемы],
+        groups: [C, ByКостя, Мужчина, Мемы],
 
         // 2/2/-4
         stats: Stats::new(
@@ -342,7 +340,7 @@ chrs! {
 
     ЧёрныйКубик {
         name: cs!["ЧЁРНЫЙ КУБИК"],
-        groups: [Group::СделаноМаксимом],
+        groups: [D, ByМаксим],
 
         // 3/1/-3
         stats: Stats::new(
@@ -354,7 +352,7 @@ chrs! {
 
     Нож {
         name: cs!["НОЖ"],
-        groups: [Group::СделаноЛёней, Group::TBoI, Group::Нераздаваемая],
+        groups: [D, ByЛёня, TBoI, Нераздаваемая],
 
         // 2/?/-0
         stats: Stats::new(
@@ -384,7 +382,7 @@ chrs! {
 
     ГлазКтулху {
         name: cs!["ГЛАЗ КТУЛХУ"],
-        groups: [Group::СделаноМаксимом, Group::Terraria],
+        groups: [B, ByМаксим, Terraria],
 
         // 4/3/-3
         stats: Stats::new(
@@ -412,7 +410,7 @@ chrs! {
 
     Магдалина {
         name: cs!["МАГДАЛИНА"],
-        groups: [Group::СделаноЛёней, Group::Женщина, Group::TBoI],
+        groups: [C, ByЛёня, Женщина, TBoI],
 
         // 4/1/-2
         stats: Stats::new(
@@ -429,7 +427,7 @@ chrs! {
 
     Рика {
         name: cs!["РИКА"],
-        groups: [Group::СделаноКостей, Group::Женщина, Group::Higurashi],
+        groups: [D, ByКостя, Женщина, Higurashi],
 
         // 1/1/-1
         stats: Stats::new(
@@ -441,7 +439,7 @@ chrs! {
 
     Питон {
         name: cs!["ПИТОН"],
-        groups: [Group::СделаноЛёней, Group::ЯзыкиПрограммирования],
+        groups: [B, ByЛёня, ЯзыкиПрограммирования],
 
         // 2/3/-0
         stats: Stats::new(
@@ -456,7 +454,7 @@ chrs! {
 
     Сатока {
         name: cs!["САТОКА"],
-        groups: [Group::СделаноЛёней, Group::Женщина, Group::Higurashi],
+        groups: [D, ByЛёня, Женщина, Higurashi],
 
         // 3/2/-4
         stats: Stats::new(
@@ -468,7 +466,7 @@ chrs! {
 
     Робеспьер {
         name: cs!["РОБЕСПЬЕР"],
-        groups: [Group::СделаноКостей, Group::Мужчина, Group::Реальность],
+        groups: [C, ByКостя, Мужчина, Реальность],
 
         // 2/5/-3
         stats: Stats::new(
@@ -484,7 +482,7 @@ chrs! {
 
     ГВ {
         name: cs!["ГВ"],
-        groups: [Group::СделаноМаксимом, Group::Мужчина, Group::Женщина, Group::Umineko],
+        groups: [C, ByМаксим, Мужчина, Женщина, Umineko],
 
         // 0/5/-3
         stats: Stats::new(
@@ -496,7 +494,7 @@ chrs! {
         description: cs![
             // TODO
             Activatable,
-            Point(cs!["выбери ", Umineko, "-персонажа в руке и замени этого на него"]),
+            Point(cs!["этот персонаж превращается в выбранного из трёх случайных ", Umineko, "-персонажей"]),
             __,
             Condition(cs!["выставлен"]),
             Point(cs![Physique, " = ", SumAll { body: cs![Physique, " всех ", Иллюзия, " в руке"] }]),
@@ -512,7 +510,7 @@ chrs! {
                     let phy = {
                         let chrs_sum = game.state().chrs.hand(owner_id).iter().copied().filter_map(|chr_id| {
                             let chr = game.state().chr(chr_id);
-                            if chr.type_.groups().contains(&Group::Иллюзия) {
+                            if chr.type_.groups().contains(&Иллюзия) {
                                 Some(chr.stats.phy.0.into_value())
                             } else {
                                 None
