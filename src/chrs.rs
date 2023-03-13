@@ -499,7 +499,8 @@ chrs! {
             Point(cs!["выбери ", Umineko, "-персонажа в руке и замени этого на него"]),
             __,
             Condition(cs!["выставлен"]),
-            Point(cs![Physique, " = ", SumAll { body: cs![Physique, " всех ", Иллюзия, " в руке"] }])
+            Point(cs![Physique, " = ", SumAll { body: cs![Physique, " всех ", Иллюзия, " в руке"] }]),
+            Point(cs!["считает ", Берн, " за персонажа с ", Physique, " 3"]),
         ],
 
         abilities: GameCallbacks {

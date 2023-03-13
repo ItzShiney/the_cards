@@ -52,12 +52,12 @@ acts! {
 
         description: cs![
             Condition(cs!["использован на персонажа"]),
-            NamedPoint(cs!["\"ЭТОТ АНЕКДОТ ЕЩЁ МОЙ ДЕД МОЕМУ ОТЦУ РАССКАЗЫВАЛ\""], cs![Damage, " -= 3"]),
+            NamedPoint(cs!["\"ЭТОТ АНЕКДОТ ЕЩЁ МОЙ ДЕД МОЕМУ ОТЦУ РАССКАЗЫВАЛ\""], cs![Damage, " -= 1"]),
         ],
 
         abilities: GameCallbacks {
             use_on_chr: Some(|game, args| {
-                game.stat_add(args.target_id, StatType::Damage, 3);
+                game.stat_add(args.target_id, StatType::Damage, 1);
                 Chain::Continue(args)
             }),
 
@@ -222,13 +222,13 @@ acts! {
 
         description: cs![
             Condition(cs!["использован на персонажа"]),
-            Point(cs![Vitality, " & ", Intellect, " -= 4"]),
+            Point(cs![Vitality, " & ", Intellect, " -= 2"]),
         ],
 
         abilities: GameCallbacks {
             use_on_chr: Some(|game, args| {
-                game.stat_add(args.target_id, StatType::Vitality, -4);
-                game.stat_add(args.target_id, StatType::Intellect, -4);
+                game.stat_add(args.target_id, StatType::Vitality, -2);
+                game.stat_add(args.target_id, StatType::Intellect, -2);
                 Chain::Continue(args)
             }),
 
@@ -242,12 +242,12 @@ acts! {
 
         description: cs![
             Condition(cs!["использована на персонажа"]),
-            Point(cs![Damage, " += 3"]),
+            Point(cs![Damage, " += 2"]),
         ],
 
         abilities: GameCallbacks {
             use_on_chr: Some(|game, args| {
-                game.stat_add(args.target_id, StatType::Damage, 3);
+                game.stat_add(args.target_id, StatType::Damage, 2);
                 Chain::Continue(args)
             }),
 
@@ -525,8 +525,6 @@ acts! {
         groups: [Group::СделаноМаксимом, Group::Umineko],
 
         description: cs![
-            Point(cs!["для ", ГВ, " ", Physique, " = 3"]),
-            __,
             Condition(cs!["использована на противника, единственного на поле"]),
             Point(cs!["противник обязан поменять персонажа"]),
         ],
@@ -559,13 +557,13 @@ acts! {
 
         description: cs![
             Condition(cs!["использован на персонажа"]),
-            NamedPoint(cs!["\"I KNOW ALL\""], cs![Intellect, " += 3"]),
+            NamedPoint(cs!["\"I KNOW ALL\""], cs![Intellect, " += 2"]),
             Point(cs!["уже были использованы ", Тело, " и ", Душа, " ", Implies, " получи ", Godhead]),
         ],
 
         abilities: GameCallbacks {
             use_on_chr: Some(|game, args| {
-                game.stat_add(args.target_id, StatType::Intellect, 3);
+                game.stat_add(args.target_id, StatType::Intellect, 2);
                 Chain::Continue(args)
             }),
 
@@ -579,14 +577,14 @@ acts! {
 
         description: cs![
             Condition(cs!["использовано на персонажа"]),
-            NamedPoint(cs!["\"I FEEL ALL\""], cs![Physique, " & ", Vitality, " += 3"]),
+            NamedPoint(cs!["\"I FEEL ALL\""], cs![Physique, " & ", Vitality, " += 2"]),
             Point(cs!["уже были использованы ", Разум, " и ", Душа, " ", Implies, " получи ", Godhead]),
         ],
 
         abilities: GameCallbacks {
             use_on_chr: Some(|game, args| {
-                game.stat_add(args.target_id, StatType::Physique, 3);
-                game.stat_add(args.target_id, StatType::Vitality, 3);
+                game.stat_add(args.target_id, StatType::Physique, 2);
+                game.stat_add(args.target_id, StatType::Vitality, 2);
                 Chain::Continue(args)
             }),
 
@@ -600,13 +598,13 @@ acts! {
 
         description: cs![
             Condition(cs!["использована на персонажа"]),
-            NamedPoint(cs!["\"I AM ALL\""], cs![Defence, " += 3"]),
+            NamedPoint(cs!["\"I AM ALL\""], cs![Defence, " += 2"]),
             Point(cs!["уже были использованы ", Разум, " и ", Тело, " ", Implies, " получи ", Godhead]),
         ],
 
         abilities: GameCallbacks {
             use_on_chr: Some(|game, args| {
-                game.stat_add(args.target_id, StatType::Defence, 3);
+                game.stat_add(args.target_id, StatType::Defence, 2);
                 Chain::Continue(args)
             }),
 
@@ -620,12 +618,12 @@ acts! {
 
         description: cs![
             Condition(cs!["использован на персонажа"]),
-            NamedPoint(cs!["\"GOD TEARS\""], cs![Damage, " += 3"]),
+            NamedPoint(cs!["\"GOD TEARS\""], cs![Damage, " += 2"]),
         ],
 
         abilities: GameCallbacks {
             use_on_chr: Some(|game, args| {
-                game.stat_add(args.target_id, StatType::Damage, 3);
+                game.stat_add(args.target_id, StatType::Damage, 2);
                 Chain::Continue(args)
             }),
 
