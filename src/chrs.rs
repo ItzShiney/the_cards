@@ -7,6 +7,7 @@ use crate::custom_string::CustomString;
 use crate::dmg;
 use crate::game::chain::Chain;
 use crate::game::input::ChooseCardArgs;
+use crate::game::input::PromptArgs;
 use crate::game::GameCallbacks;
 use crate::group::Group;
 use crate::int;
@@ -113,9 +114,12 @@ chrs! {
                 let self_id = args.chr_id;
                 let owner_id = game.state().find_owner_chr(self_id);
                 let Some(copied_chr_id) = game.choose_chr_in_hand_any(ChooseCardArgs {
-                    prompt: &cs![Character(Delirium), ": чьи ", Vitality, " и ", Damage, " скопировать?"],
+                    prompt: PromptArgs {
+                        str: cs![Character(Delirium), ": чьи ", Vitality, " и ", Damage, " скопировать?"],
+                        is_cancellable: true,
+                        autochoose_single_option: false,
+                    },
                     player_id: owner_id,
-                    is_cancellable: true,
                 }) else { return };
 
                 let stats = &game.state().chr(copied_chr_id).stats;
@@ -254,7 +258,8 @@ chrs! {
 
         abilities: GameCallbacks {
             stat_map: Some(|game, mut args| {
-                let Some(enemy_id) = game.state().enemy_chr_id(args.chr_id) else { return Chain::Continue(args) };
+                let owner_id = game.state().find_owner_chr(args.chr_id);
+                let Some(enemy_id) = game.state().try_enemy_chr_id(owner_id) else { return Chain::Continue(args) };
                 let enemy_int = game.state().chr(enemy_id).stats.int.0.into_value();
 
                 if enemy_int <= 3 {

@@ -1,4 +1,6 @@
+use crate::custom_string::CustomString;
 use crate::default_formatted::DefaultFormatted;
+use crate::game::input::PromptArgs;
 use crossterm::event;
 use crossterm::event::Event;
 use crossterm::event::KeyCode;
@@ -49,37 +51,51 @@ pub fn read_chr(pred: impl Fn(char) -> bool) -> char {
 
 pub type IsEnabled = bool;
 
-pub fn prompt<D: Display>(
-    prompt_str: impl Display,
-    is_cancellable: bool,
-    options: impl Iterator<Item = (IsEnabled, D)>,
+pub fn prompt(
+    args: PromptArgs,
+    options: impl Iterator<Item = (IsEnabled, CustomString)>,
 ) -> Option<usize> {
+    fn to_idx(chr: char) -> usize {
+        chr as usize - 'a' as usize
+    }
+
     let mut chrs = vec![];
     let mut next_chr = 'a';
+    let mut output = String::default();
 
-    println!("  ┌─< {}", prompt_str);
+    output += format!("  ┌─< {}\n", args.str).as_str();
     for (chr, (is_enabled, option)) in ('a'..).clone().zip(options) {
         let key = DefaultFormatted(KeyCode::Char(chr));
 
         if is_enabled {
-            println!("  │ {} {}", key, option);
+            output += format!("  │ {} {}\n", key, option).as_str();
             chrs.push(next_chr);
         } else {
-            println!("  │ {} {}", key.to_string().black(), option.to_string().black());
+            output += format!("  │ {} {}\n", key.to_string().black(), option.to_string().black())
+                .as_str();
         }
 
         next_chr = (next_chr..).nth(1).unwrap();
     }
-    if is_cancellable {
-        println!("  │ {}", DefaultFormatted(KeyCode::Esc));
+    if args.is_cancellable {
+        output += format!("  │ {}\n", DefaultFormatted(KeyCode::Esc)).as_str();
     }
 
+    if args.autochoose_single_option {
+        match chrs.len() {
+            0 => return None,
+            1 => return Some(to_idx(chrs[0])),
+            _ => {}
+        }
+    }
+
+    print!("{}", output);
+
     let KeyCode::Char(picked_chr) = read_keycode(|x| match x {
-        KeyCode::Esc => is_cancellable,
+        KeyCode::Esc => args.is_cancellable,
         KeyCode::Char(x) => chrs.contains(&x),
         _ => false,
     }) else { return None };
 
-    let picked_idx = picked_chr as usize - 'a' as usize;
-    Some(picked_idx)
+    Some(to_idx(picked_chr))
 }

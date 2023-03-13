@@ -19,8 +19,8 @@ game_input! {
     fn random(&mut self, min: Stat0, max: Stat0) -> Stat0;
     fn random_bool(&mut self, true_prob: f64) -> bool;
 
-    fn choose_chr_in_hand<'prompt_str, 'game_state>(&mut self, game_state: &'game_state GameState, args: ChooseCardArgsP<'prompt_str, 'game_state, '_, CharacterID>) -> Option<CharacterID>;
-    fn choose_act_in_hand<'prompt_str, 'game_state>(&mut self, game_state: &'game_state GameState, args: ChooseCardArgsP<'prompt_str, 'game_state, '_, ActiveID>) -> Option<ActiveID>;
-    fn choose_chr_on_field<'prompt_str, 'game_state>(&mut self, game_state: &'game_state GameState, args: ChooseCardArgsP<'prompt_str, 'game_state, '_, CharacterID>) -> Option<CharacterID>;
-    fn choose_act_on_field<'prompt_str, 'game_state>(&mut self, game_state: &'game_state GameState, args: ChooseCardArgsP<'prompt_str, 'game_state, '_, ActiveID>) -> Option<ActiveID>;
+    fn choose_chr_in_hand<'game_state>(&mut self, game_state: &'game_state GameState, args: ChooseCardArgsP<'game_state, '_, CharacterID>) -> Option<CharacterID>;
+    fn choose_act_in_hand<'game_state>(&mut self, game_state: &'game_state GameState, args: ChooseCardArgsP<'game_state, '_, ActiveID>) -> Option<ActiveID>;
+    fn choose_chr_on_field<'game_state>(&mut self, game_state: &'game_state GameState, args: ChooseCardArgsP<'game_state, '_, CharacterID>) -> Option<CharacterID>;
+    fn choose_act_on_field<'game_state>(&mut self, game_state: &'game_state GameState, args: ChooseCardArgsP<'game_state, '_, ActiveID>) -> Option<ActiveID>;
 }

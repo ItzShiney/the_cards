@@ -114,6 +114,12 @@ impl From<&str> for CustomStringSlice {
     }
 }
 
+impl From<String> for CustomStringSlice {
+    fn from(raw: String) -> Self {
+        Self::Raw(raw)
+    }
+}
+
 impl From<CharacterType> for CustomStringSlice {
     fn from(type_: CharacterType) -> Self {
         Self::Character(type_)

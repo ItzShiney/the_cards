@@ -6,7 +6,7 @@ macro_rules! choose_card_in_hand {
             fn [<choose_ $namespace _in_hand>] <'game_state>(
                 &mut self,
                 game_state: &'game_state $crate::game::state::GameState,
-                args: $crate::game::input::ChooseCardArgsP<'_, 'game_state, '_, $crate::game::state::[<$namespace _id>]::[<$Namespace ID>]>,
+                args: $crate::game::input::ChooseCardArgsP<'game_state, '_, $crate::game::state::[<$namespace _id>]::[<$Namespace ID>]>,
             ) -> Option<$crate::game::state::[<$namespace _id>]::[<$Namespace ID>]> {
                 use itertools::Itertools;
 
@@ -21,7 +21,6 @@ macro_rules! choose_card_in_hand {
 
                 let idx = $crate::console::prompt(
                     args.prompt,
-                    args.is_cancellable,
                     is_enabled.iter().copied().zip(displays),
                 )?;
                 Some(cards[idx])

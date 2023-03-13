@@ -18,7 +18,6 @@ use crate::game::state::Subturner;
 use crate::group::Group;
 use crate::stats::Stat0;
 use crate::stats::StatType;
-use crate::stats::StatValue;
 use rand::seq::IteratorRandom;
 use rand::thread_rng;
 use std::mem::take;
@@ -108,7 +107,12 @@ callbacks! {
         &mut self,
         act_id: ActiveID,
     ) -> ChainResult {
-        todo!()
+        if self.state.act(act_id).type_.abilities().use_on_field.is_none() {
+            return Err(Terminated);
+        }
+
+        self.state.acts.remove_from_some_player(act_id);
+        Ok(Finished)
     }
 
     #[ping(acts)]
@@ -118,10 +122,9 @@ callbacks! {
         act_id: ActiveID,
         target_id: CharacterID,
     ) -> ChainResult {
-        let Some(callback) =
-            self.state.act(act_id).type_.abilities().use_on_chr else { return Err(Terminated) };
-
-        (callback)(self, UseOnChrArgs { act_id, target_id });
+        if self.state.act(act_id).type_.abilities().use_on_chr.is_none() {
+            return Err(Terminated);
+        }
 
         self.state.acts.remove_from_some_player(act_id);
         Ok(Finished)
@@ -146,10 +149,16 @@ callbacks! {
         stat_type: StatType,
         val: Stat0,
     ) {
-        let phy = self.state.chr_mut(chr_id).stats.phy.0.into_value();
-        let vit = &mut self.state.chr_mut(chr_id).stats.vit;
-        let new_vit = (vit.0.into_value() + val).max(0).min(phy);
-        vit.0 = StatValue::Var(new_vit);
+        let mut res = self.state.chr(chr_id).stats.stat(stat_type).into_value();
+        res += val;
+        res = res.max(0);
+
+        if stat_type == StatType::Vitality {
+            let phy = self.state.chr(chr_id).stats.phy.0.into_value();
+            res = res.min(phy);
+        }
+
+        self.state.chr_mut(chr_id).stats.stat_mut(stat_type).set(res);
     }
 
     #[ping(chrs)]
@@ -279,6 +288,8 @@ callbacks! {
     pub fn force_die(&mut self, chr_id: CharacterID) {
         self.state.chr_mut(chr_id).stats.max_vit();
         self.state.chrs.add_to_wastepile(chr_id);
+
+        todo!("закончить ход");
     }
 
     pub fn force_remove_from_field(&mut self, subturner: Subturner) {
@@ -328,14 +339,14 @@ impl Game {
 
     pub fn choose_chr_in_hand<'game_state>(
         &'game_state mut self,
-        args: ChooseCardArgsP<'_, 'game_state, '_, CharacterID>,
+        args: ChooseCardArgsP<'game_state, '_, CharacterID>,
     ) -> Option<CharacterID> {
         self.input.choose_chr_in_hand(&self.state, args)
     }
 
     pub fn choose_act_in_hand<'game_state>(
         &'game_state mut self,
-        args: ChooseCardArgsP<'_, 'game_state, '_, ActiveID>,
+        args: ChooseCardArgsP<'game_state, '_, ActiveID>,
     ) -> Option<ActiveID> {
         self.input.choose_act_in_hand(&self.state, args)
     }
@@ -352,14 +363,14 @@ impl Game {
 
     pub fn choose_chr_on_field<'game_state>(
         &'game_state mut self,
-        args: ChooseCardArgsP<'_, 'game_state, '_, CharacterID>,
+        args: ChooseCardArgsP<'game_state, '_, CharacterID>,
     ) -> Option<CharacterID> {
         self.input.choose_chr_on_field(&self.state, args)
     }
 
     pub fn choose_act_on_field<'game_state>(
         &'game_state mut self,
-        args: ChooseCardArgsP<'_, 'game_state, '_, ActiveID>,
+        args: ChooseCardArgsP<'game_state, '_, ActiveID>,
     ) -> Option<ActiveID> {
         self.input.choose_act_on_field(&self.state, args)
     }

@@ -286,6 +286,17 @@ impl GameState {
         }
     }
 
+    pub fn try_subturner_on_field_by_id(&self, player_id: PlayerID) -> Option<&SubturnerOnField> {
+        Some(self.subturner_on_field(self.try_subturner_by_id(player_id)?))
+    }
+
+    pub fn try_other_subturner_on_field_by_id(
+        &self,
+        player_id: PlayerID,
+    ) -> Option<&SubturnerOnField> {
+        Some(self.subturner_on_field(self.try_subturner_by_id(player_id)?.other()))
+    }
+
     pub fn subturner_on_field(&self, subturner: Subturner) -> &SubturnerOnField {
         match subturner {
             Subturner::Attacker => &self.attacker,
@@ -338,12 +349,20 @@ impl GameState {
         self.chr(chr_id).stats.vit.0.into_value() == 0
     }
 
-    // TODO поделить на функции?
-    pub fn enemy_chr_id(&self, chr_id: CharacterID) -> Option<CharacterID> {
-        let owner_id = self.find_owner_chr(chr_id);
-        let subturner = self.subturner_by_id(owner_id);
-        let other_subturner = subturner.other();
-        self.subturner_on_field(other_subturner).chr_id
+    pub fn try_own_chr_id(&self, player_id: PlayerID) -> Option<CharacterID> {
+        self.try_subturner_on_field_by_id(player_id)?.chr_id
+    }
+
+    pub fn own_chr_id(&self, player_id: PlayerID) -> CharacterID {
+        self.try_own_chr_id(player_id).unwrap()
+    }
+
+    pub fn try_enemy_chr_id(&self, player_id: PlayerID) -> Option<CharacterID> {
+        self.try_other_subturner_on_field_by_id(player_id)?.chr_id
+    }
+
+    pub fn enemy_chr_id(&self, player_id: PlayerID) -> CharacterID {
+        self.try_enemy_chr_id(player_id).unwrap()
     }
 }
 
@@ -408,19 +427,30 @@ impl GameState {
 }
 
 impl GameState {
-    pub fn is_placeable(&self, _chr_id: CharacterID) -> bool {
-        true // TODO
+    pub fn is_placeable(&self, chr_id: CharacterID) -> bool {
+        let Some(owner_id) = self.try_find_owner_chr(chr_id) else {
+            return true
+        };
+
+        (owner_id == self.attacker.player_id && self.attacker.chr_id.is_none())
+            || (owner_id == self.defender.player_id && self.defender.chr_id.is_none())
     }
 
     pub fn is_usable_in_any_way(&self, act_id: ActiveID) -> bool {
-        self.is_usable_on_chr(act_id) || self.is_usable_on_field(act_id)
+        self.is_usable_on_own_chr(act_id)
+            || self.is_usable_on_enemy_chr(act_id)
+            || self.is_usable_on_field(act_id)
     }
 
     pub fn is_usable_on_field(&self, act_id: ActiveID) -> bool {
         self.act(act_id).type_.abilities().use_on_field.is_some()
     }
 
-    pub fn is_usable_on_chr(&self, act_id: ActiveID) -> bool {
-        self.act(act_id).type_.abilities().use_on_chr.is_some()
+    pub fn is_usable_on_own_chr(&self, act_id: ActiveID) -> bool {
+        self.act(act_id).type_.abilities().use_on_chr.is_some() // FIXME use_on_own_chr
+    }
+
+    pub fn is_usable_on_enemy_chr(&self, act_id: ActiveID) -> bool {
+        self.act(act_id).type_.abilities().use_on_chr.is_some() // FIXME use_on_enemy_chr
     }
 }

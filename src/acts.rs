@@ -6,6 +6,7 @@ use crate::cs;
 use crate::custom_string::CustomString;
 use crate::game::chain::Chain;
 use crate::game::input::ChooseCardArgsP;
+use crate::game::input::PromptArgs;
 use crate::game::state::chr_info::CharacterInfo;
 use crate::game::state::GameState;
 use crate::game::GameCallbacks;
@@ -29,9 +30,12 @@ acts! {
             use_on_field: Some(|game, args| {
                 let owner_id = game.state().find_owner_act(args.act_id);
                 let Some(imitated_act_id) = game.choose_act_in_hand(ChooseCardArgsP {
-                    prompt: &cs![Active(ПустаяКарта), ": чей эффект повторить?"],
+                    prompt: PromptArgs{
+                        str: cs![Active(ПустаяКарта), ": чей эффект повторить?"],
+                        is_cancellable: true,
+                        autochoose_single_option: false,
+                    },
                     player_id: owner_id,
-                    is_cancellable: true,
                     p: &|game_state, act_id| act_id != args.act_id && game_state.is_usable_in_any_way(act_id),
                 }) else { terminate!() };
 
@@ -532,9 +536,12 @@ acts! {
                 let target_owner_id = game.state().find_owner_chr(args.target_id);
 
                 let Some(replacing_chr_id) = game.choose_chr_in_hand(ChooseCardArgsP {
-                    prompt: &cs![Active(Берн), ": на кого поменять?"],
+                    prompt: PromptArgs {
+                        str: cs![Active(Берн), ": на кого поменять?"],
+                        is_cancellable: false,
+                        autochoose_single_option: true,
+                    },
                     player_id: target_owner_id,
-                    is_cancellable: true,
                     p: &GameState::is_placeable
                 }) else { terminate!() };
 

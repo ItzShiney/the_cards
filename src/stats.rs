@@ -195,7 +195,7 @@ impl Display for Stats {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum StatType {
     Vitality,
     Physique,

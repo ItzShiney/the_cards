@@ -11,23 +11,21 @@ pub mod game;
 pub mod group;
 pub mod stats;
 
-use crate::game::input::ChooseCardArgs;
-use crate::game::state::act_id::ActiveID;
+use crate::game::input::PromptArgs;
 use crate::game::state::act_info::ActiveInfo;
 use crate::game::state::chr_info::CharacterInfo;
 use acts::ActiveType;
 use chrs::CharacterType;
 use console::prompt;
-use crossterm::style::Stylize;
-use game::input::ChooseCardArgsP;
 use game::input::DefaultRandom;
 use game::input::DefaultRandomBool;
 use game::input::GameInputTuple;
+use game::state::act_id::ActiveID;
 use game::state::chr_id::CharacterID;
 use game::state::GameState;
 use game::state::Player;
 use game::Game;
-use std::mem::take;
+use std::iter::repeat;
 
 pub fn print_chrs() {
     for chr_type in CharacterType::all() {
@@ -46,24 +44,41 @@ pub enum InputState {
     #[default]
     ChooseAction,
 
-    ChooseCharacter,
+    CheckField,
+    CheckOwnCharacter,
+    CheckEnemyCharacter,
+
+    CardsList,
+
+    CharactersList,
+    CharacterOptions {
+        chr_id: CharacterID,
+    },
+    CheckCharacter {
+        chr_id: CharacterID,
+    },
     PlaceCharacter {
         chr_id: CharacterID,
     },
 
-    ChooseActive,
-    UseHow {
+    ActivesList,
+    ActiveOptions {
         act_id: ActiveID,
     },
-    UseOnField {
+    CheckActive {
         act_id: ActiveID,
     },
-    UseOnWho {
+    UseActive {
         act_id: ActiveID,
     },
-    UseOnCharacter {
+    UseActiveOnField {
         act_id: ActiveID,
-        target_id: CharacterID,
+    },
+    UseActiveOnOwnCharacter {
+        act_id: ActiveID,
+    },
+    UseActiveOnEnemyCharacter {
+        act_id: ActiveID,
     },
 
     EndSubturn,
@@ -76,25 +91,27 @@ impl InputState {
         match self {
             ChooseAction => self,
 
-            ChooseCharacter => ChooseAction,
-            PlaceCharacter { chr_id: _ } => ChooseCharacter,
+            CheckField => ChooseAction,
+            CheckOwnCharacter => CheckField,
+            CheckEnemyCharacter => CheckField,
 
-            ChooseActive => ChooseAction,
-            UseHow { act_id: _ } => ChooseActive,
-            UseOnField { act_id } => UseHow { act_id },
-            UseOnWho { act_id } => UseHow { act_id },
-            UseOnCharacter { act_id, target_id: _ } => UseOnWho { act_id },
+            CardsList => ChooseAction,
+
+            CharactersList => CardsList,
+            CharacterOptions { chr_id: _ } => CharactersList,
+            CheckCharacter { chr_id } => CharacterOptions { chr_id },
+            PlaceCharacter { chr_id } => CharacterOptions { chr_id },
+
+            ActivesList => CardsList,
+            ActiveOptions { act_id: _ } => ActivesList,
+            CheckActive { act_id } => ActiveOptions { act_id },
+            UseActive { act_id } => ActiveOptions { act_id },
+            UseActiveOnField { act_id } => UseActive { act_id },
+            UseActiveOnOwnCharacter { act_id } => UseActive { act_id },
+            UseActiveOnEnemyCharacter { act_id } => UseActive { act_id },
 
             EndSubturn => ChooseAction,
         }
-    }
-
-    pub fn revert(&mut self) {
-        *self = take(self).previous();
-    }
-
-    pub fn reset(&mut self) {
-        *self = Self::default();
     }
 }
 
@@ -118,126 +135,283 @@ fn main() {
     {
         use InputState::*;
 
-        let mut state = ChooseAction;
+        let mut state = InputState::default();
         loop {
             let player_id = game.state().current_subturner_on_field().player_id;
 
-            match state {
+            state = match state {
                 ChooseAction => {
+                    let player_nickname = game.state().players_map[&player_id].nickname.clone();
+                    let can_end_subturn = game.state().attacker.player_id != player_id
+                        || game.state().attacker.chr_id.is_some();
+
                     match prompt(
-                        game.state().players_map[&player_id].nickname.as_str().bold(),
-                        false,
+                        PromptArgs {
+                            str: cs![Name(cs![player_nickname])],
+                            is_cancellable: false,
+                            autochoose_single_option: false,
+                        },
                         [
-                            (true, "выставить персонажа"),
-                            (true, "использовать активку"),
-                            (true, "закончить подход"),
+                            (true, cs!["поле"]),
+                            (true, cs!["рука"]),
+                            (can_end_subturn, cs!["закончить подход"]),
                         ]
                         .into_iter(),
                     ) {
-                        None => state.revert(),
-                        Some(0) => state = ChooseCharacter,
-                        Some(1) => state = ChooseActive,
-                        Some(2) => state = EndSubturn,
+                        Some(0) => CheckField,
+                        Some(1) => CardsList,
+                        Some(2) => EndSubturn,
                         _ => unreachable!(),
                     }
                 }
 
-                ChooseCharacter => {
-                    match game.choose_chr_in_hand(ChooseCardArgsP {
-                        prompt: &cs!["какого персонажа выставить?"],
-                        is_cancellable: true,
-                        player_id,
-                        p: &GameState::is_placeable,
-                    }) {
-                        None => state.revert(),
-                        Some(chr_id) => state = PlaceCharacter { chr_id },
-                    };
+                CheckField => {
+                    let is_own_chr_placed = game.state().try_own_chr_id(player_id).is_some();
+                    let is_enemy_chr_placed = game.state().try_enemy_chr_id(player_id).is_some();
+
+                    match prompt(
+                        PromptArgs {
+                            str: cs!["поле"],
+                            is_cancellable: true,
+                            autochoose_single_option: false,
+                        },
+                        [
+                            (is_own_chr_placed, cs!["свой персонаж"]),
+                            (is_enemy_chr_placed, cs!["персонаж противника"]),
+                        ]
+                        .into_iter(),
+                    ) {
+                        None => state.previous(),
+                        Some(0) => CheckOwnCharacter,
+                        Some(1) => CheckEnemyCharacter,
+                        _ => unreachable!(),
+                    }
+                }
+
+                CheckOwnCharacter => {
+                    let chr_id = game.state().own_chr_id(player_id);
+                    println!("{}", game.state().chr(chr_id));
+
+                    state.previous()
+                }
+
+                CheckEnemyCharacter => {
+                    let chr_id = game.state().enemy_chr_id(player_id);
+                    println!("{}", game.state().chr(chr_id));
+
+                    state.previous()
+                }
+
+                CardsList => {
+                    let has_chrs = !game.state().chrs.hand(player_id).is_empty();
+                    let has_acts = !game.state().acts.hand(player_id).is_empty();
+
+                    match prompt(
+                        PromptArgs {
+                            str: cs!["рука: тип карт"],
+                            is_cancellable: true,
+                            autochoose_single_option: true,
+                        },
+                        [(has_chrs, cs!["персонажи"]), (has_acts, cs!["активки"])].into_iter(),
+                    ) {
+                        None => state.previous(),
+                        Some(0) => CharactersList,
+                        Some(1) => ActivesList,
+                        _ => unreachable!(),
+                    }
+                }
+
+                CharactersList => {
+                    let chr_ids = game.state().chrs.hand(player_id);
+                    let chr_names = chr_ids
+                        .iter()
+                        .copied()
+                        .map(|chr_id| cs![Character(game.state().chr(chr_id).type_)]);
+                    let options = repeat(true).zip(chr_names);
+
+                    match prompt(
+                        PromptArgs {
+                            str: cs!["персонажи"],
+                            is_cancellable: true,
+                            autochoose_single_option: false,
+                        },
+                        options,
+                    ) {
+                        None => state.previous(),
+
+                        Some(chr_id_idx) => {
+                            let chr_id = chr_ids[chr_id_idx];
+
+                            CharacterOptions { chr_id }
+                        }
+                    }
+                }
+
+                CharacterOptions { chr_id } => {
+                    match prompt(
+                        PromptArgs {
+                            str: cs![Character(game.state().chr(chr_id).type_)],
+                            is_cancellable: true,
+                            autochoose_single_option: false,
+                        },
+                        [
+                            (true, cs!["просмотреть"]),
+                            (game.state().is_placeable(chr_id), cs!["выставить"]),
+                        ]
+                        .into_iter(),
+                    ) {
+                        None => state.previous(),
+                        Some(0) => CheckCharacter { chr_id },
+                        Some(1) => PlaceCharacter { chr_id },
+                        _ => unreachable!(),
+                    }
+                }
+
+                CheckCharacter { chr_id } => {
+                    println!("{}", game.state().chr(chr_id));
+
+                    state.previous()
                 }
 
                 PlaceCharacter { chr_id } => {
                     game.place(chr_id).unwrap();
+
                     println!(
                         "персонаж {} выставлен",
                         cs![Character(game.state().chr(chr_id).type_)]
                     );
 
-                    state.reset();
+                    InputState::default()
                 }
 
-                ChooseActive => {
-                    match game.choose_act_in_hand(ChooseCardArgsP {
-                        prompt: &cs!["какую активку использовать?"],
-                        is_cancellable: true,
-                        player_id,
-                        p: &GameState::is_usable_in_any_way,
-                    }) {
-                        None => state.revert(),
-                        Some(act_id) => state = UseHow { act_id },
+                ActivesList => {
+                    let act_ids = game.state().acts.hand(player_id);
+                    let act_names = act_ids
+                        .iter()
+                        .copied()
+                        .map(|act_id| cs![Active(game.state().act(act_id).type_)]);
+                    let options = repeat(true).zip(act_names);
+
+                    match prompt(
+                        PromptArgs {
+                            str: cs!["активки"],
+                            is_cancellable: true,
+                            autochoose_single_option: false,
+                        },
+                        options,
+                    ) {
+                        None => state.previous(),
+
+                        Some(act_id_idx) => {
+                            let act_id = act_ids[act_id_idx];
+
+                            ActiveOptions { act_id }
+                        }
                     }
                 }
 
-                UseHow { act_id } => {
-                    let act_abilities = game.state().act(act_id).type_.abilities();
-
+                ActiveOptions { act_id } => {
                     match prompt(
-                        "как использовать?",
-                        true,
+                        PromptArgs {
+                            str: cs![Active(game.state().act(act_id).type_)],
+                            is_cancellable: true,
+                            autochoose_single_option: false,
+                        },
                         [
-                            (act_abilities.use_on_field.is_some(), "на поле"),
-                            (act_abilities.use_on_chr.is_some(), "на персонажа"),
+                            (true, cs!["просмотреть"]),
+                            (game.state().is_usable_in_any_way(act_id), cs!["использовать"]),
                         ]
                         .into_iter(),
                     ) {
-                        None => state.revert(),
-                        Some(0) => state = UseOnField { act_id },
-                        Some(1) => state = UseOnWho { act_id },
+                        None => state.previous(),
+                        Some(0) => CheckActive { act_id },
+                        Some(1) => UseActive { act_id },
                         _ => unreachable!(),
                     }
                 }
 
-                UseOnField { act_id } => {
-                    game.use_on_field(act_id).unwrap();
+                CheckActive { act_id } => {
+                    println!("{}", game.state().act(act_id));
 
-                    state.reset();
+                    state.previous()
                 }
 
-                UseOnWho { act_id } => {
-                    match game.choose_chr_on_field_any(ChooseCardArgs {
-                        prompt: &cs![
-                            Active(game.state().act(act_id).type_),
-                            ": на кого использовать?"
-                        ],
-                        is_cancellable: true,
-                        player_id,
-                    }) {
-                        None => state.revert(),
-                        Some(target_id) => state = UseOnCharacter { act_id, target_id },
+                UseActive { act_id } => {
+                    let is_usable_on_field = game.state().is_usable_on_field(act_id);
+
+                    let is_usable_on_own_chr = game.state().try_own_chr_id(player_id).is_some()
+                        && game.state().is_usable_on_own_chr(act_id);
+
+                    let is_usable_on_enemy_chr = game.state().try_enemy_chr_id(player_id).is_some()
+                        && game.state().is_usable_on_enemy_chr(act_id);
+
+                    match prompt(
+                        PromptArgs {
+                            str: cs!["использовать активку"],
+                            is_cancellable: true,
+                            autochoose_single_option: false,
+                        },
+                        [
+                            (is_usable_on_field, cs!["на поле"]),
+                            (is_usable_on_own_chr, cs!["на своего персонажа"]),
+                            (is_usable_on_enemy_chr, cs!["на противника"]),
+                        ]
+                        .into_iter(),
+                    ) {
+                        None => state.previous(),
+                        Some(0) => UseActiveOnField { act_id },
+                        Some(1) => UseActiveOnOwnCharacter { act_id },
+                        Some(2) => UseActiveOnEnemyCharacter { act_id },
+                        _ => unreachable!(),
                     }
                 }
 
-                UseOnCharacter { act_id, target_id } => {
+                UseActiveOnField { act_id } => {
+                    game.use_on_field(act_id).unwrap();
+
+                    println!(
+                        "активка {} использована на поле",
+                        cs![Active(game.state().act(act_id).type_)]
+                    );
+
+                    InputState::default()
+                }
+
+                UseActiveOnOwnCharacter { act_id } => {
+                    let target_id = game.state().own_chr_id(player_id);
                     game.use_on_chr(act_id, target_id).unwrap();
 
                     println!(
-                        "активка {} использована на {}",
+                        "активка {} использована на персонажа {}",
                         cs![Active(game.state().act(act_id).type_)],
                         cs![Character(game.state().chr(target_id).type_)],
                     );
 
-                    state.reset();
+                    InputState::default()
+                }
+
+                UseActiveOnEnemyCharacter { act_id } => {
+                    let target_id = game.state().enemy_chr_id(player_id);
+                    game.use_on_chr(act_id, target_id).unwrap();
+
+                    println!(
+                        "активка {} использована на персонажа {}",
+                        cs![Active(game.state().act(act_id).type_)],
+                        cs![Character(game.state().chr(target_id).type_)],
+                    );
+
+                    InputState::default()
                 }
 
                 EndSubturn => {
                     game.end_subturn();
 
-                    println!(
-                        "подход {} закончен",
-                        game.state().players_map[&player_id].nickname.as_str().bold()
-                    );
+                    println!("подход завершён");
 
-                    state.reset();
+                    InputState::default()
                 }
-            }
+            };
+
             println!();
         }
     }
