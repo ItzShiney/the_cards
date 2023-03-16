@@ -1,538 +1,344 @@
-use crate::acts::ActiveType;
-use crate::chrs;
-use crate::cs;
-use crate::dmg;
-use crate::game::chain::Chain;
-use crate::game::input::ChooseCardArgs;
-use crate::game::input::PromptArgs;
-use crate::game::GameCallbacks;
-use crate::int;
-use crate::phy;
-use crate::stats::Stat0;
-use crate::stats::StatType;
-use crate::stats::Stats;
-use crate::terminate;
-use std::iter::repeat_with;
+use lazy_static::lazy_static;
+use crate::card_uses::*;
 
-mod _macro;
+#[path = "chrs/delirium.rs"] mod delirium;
+#[path = "chrs/банка_с_вареньем.rs"] mod банка_с_вареньем;
+#[path = "chrs/беатриче.rs"] mod беатриче;
+#[path = "chrs/борат.rs"] mod борат;
+#[path = "chrs/гв.rs"] mod гв;
+#[path = "chrs/глаз_ктулху.rs"] mod глаз_ктулху;
+#[path = "chrs/дух_твоей_квартиры.rs"] mod дух_твоей_квартиры;
+#[path = "chrs/коса.rs"] mod коса;
+#[path = "chrs/магдалина.rs"] mod магдалина;
+#[path = "chrs/максимов_баян_животворящий.rs"] mod максимов_баян_животворящий;
+#[path = "chrs/марио.rs"] mod марио;
+#[path = "chrs/мирослав.rs"] mod мирослав;
+#[path = "chrs/ненети.rs"] mod ненети;
+#[path = "chrs/нож.rs"] mod нож;
+#[path = "chrs/ностальгирующий_критик.rs"] mod ностальгирующий_критик;
+#[path = "chrs/питон.rs"] mod питон;
+#[path = "chrs/планя.rs"] mod планя;
+#[path = "chrs/рей.rs"] mod рей;
+#[path = "chrs/рена.rs"] mod рена;
+#[path = "chrs/рика.rs"] mod рика;
+#[path = "chrs/робеспьер.rs"] mod робеспьер;
+#[path = "chrs/сатока.rs"] mod сатока;
+#[path = "chrs/тимми.rs"] mod тимми;
+#[path = "chrs/чёрный_кубик.rs"] mod чёрный_кубик;
 
-chrs! {
-    // /*
-    БанкаСВареньем {
-        name: cs!["БАНКА С ВАРЕНЬЕМ"],
-        groups: [D, ByЛёня, Реальность],
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum CharacterType {
+    Delirium,
+    БанкаСВареньем,
+    Беатриче,
+    Борат,
+    Гв,
+    ГлазКтулху,
+    ДухТвоейКвартиры,
+    Коса,
+    Магдалина,
+    МаксимовБаянЖивотворящий,
+    Марио,
+    Мирослав,
+    Ненети,
+    Нож,
+    НостальгирующийКритик,
+    Питон,
+    Планя,
+    Рей,
+    Рена,
+    Рика,
+    Робеспьер,
+    Сатока,
+    Тимми,
+    ЧёрныйКубик,
+}
 
-        // 1/3/-0
-        stats: Stats::new(
-            phy!(1), // легко разбивается
-            dmg!(2), // бьёт осколками
-            int!(0),
-        ),
-
-        description: cs![
-            Point(cs!["не атакует, если ", Intellect, " противника ", GE, " 3"])
-        ],
-
-        abilities: GameCallbacks {
-            attack_map: Some(|game, args| {
-                if game.state().chr(args.attacker_id).stats.int.0.into_value() >= 3 {
-                    terminate!()
-                } else {
-                    Chain::Continue(args)
-                }
-            }),
-
-            ..Default::default()
-        },
+impl CharacterType {
+    pub fn all() -> Vec<Self> {
+        vec![
+            Self::Delirium,
+            Self::БанкаСВареньем,
+            Self::Беатриче,
+            Self::Борат,
+            Self::Гв,
+            Self::ГлазКтулху,
+            Self::ДухТвоейКвартиры,
+            Self::Коса,
+            Self::Магдалина,
+            Self::МаксимовБаянЖивотворящий,
+            Self::Марио,
+            Self::Мирослав,
+            Self::Ненети,
+            Self::Нож,
+            Self::НостальгирующийКритик,
+            Self::Питон,
+            Self::Планя,
+            Self::Рей,
+            Self::Рена,
+            Self::Рика,
+            Self::Робеспьер,
+            Self::Сатока,
+            Self::Тимми,
+            Self::ЧёрныйКубик,
+        ]
     }
 
-    ДухТвоейКвартиры {
-        name: cs!["ДУХ ТВОЕЙ КВАРТИРЫ"],
-        groups: [B, ByКостя, Женщина],
+    #[allow(non_upper_case_globals)]
+    pub fn name(self) -> &'static CustomString {
+        lazy_static! {
+            static ref Delirium: CustomString = delirium::name();
+            static ref БанкаСВареньем: CustomString = банка_с_вареньем::name();
+            static ref Беатриче: CustomString = беатриче::name();
+            static ref Борат: CustomString = борат::name();
+            static ref Гв: CustomString = гв::name();
+            static ref ГлазКтулху: CustomString = глаз_ктулху::name();
+            static ref ДухТвоейКвартиры: CustomString = дух_твоей_квартиры::name();
+            static ref Коса: CustomString = коса::name();
+            static ref Магдалина: CustomString = магдалина::name();
+            static ref МаксимовБаянЖивотворящий: CustomString = максимов_баян_животворящий::name();
+            static ref Марио: CustomString = марио::name();
+            static ref Мирослав: CustomString = мирослав::name();
+            static ref Ненети: CustomString = ненети::name();
+            static ref Нож: CustomString = нож::name();
+            static ref НостальгирующийКритик: CustomString = ностальгирующий_критик::name();
+            static ref Питон: CustomString = питон::name();
+            static ref Планя: CustomString = планя::name();
+            static ref Рей: CustomString = рей::name();
+            static ref Рена: CustomString = рена::name();
+            static ref Рика: CustomString = рика::name();
+            static ref Робеспьер: CustomString = робеспьер::name();
+            static ref Сатока: CustomString = сатока::name();
+            static ref Тимми: CustomString = тимми::name();
+            static ref ЧёрныйКубик: CustomString = чёрный_кубик::name();
+        };
 
-        // 4/3/-4
-        stats: Stats::new(
-            phy!(8),
-            dmg!(5),
-            int!(1),
-        ),
-
-        // TODO
-        description: cs![
-            Epitaph(cs!["\"твоё личное бревно\""]),
-            __,
-            Condition(cs!["пока у владельца ", LE, " 2 персонажей"]),
-            Point(cs![Damage, " больше на 2"]),
-        ],
-    }
-
-    Планя {
-        name: cs!["ПЛАНЯ"],
-        groups: [C, ByКостя, Женщина, WePlanet],
-
-        // 3/3/-4
-        stats: Stats::new(
-            phy!(4),
-            dmg!(4),
-            int!(2),
-        ),
-
-        // TODO
-        description: cs![
-            Condition(cs!["выставлена"]),
-            NamedPoint(cs!["КРИНЖ И ПЕНИЕ"], cs![Intellect, " случайного персонажа в колоде противника -= 1"]),
-            __,
-            Condition(cs!["пока на поле"]),
-            NamedPoint(cs!["МАКСИМАЛЬНАЯ СПЛЮЩЕННОСТЬ"], cs![Intellect, " всех персонажей на поле меньше на 4"]),
-            __,
-            Condition(cs!["персонаж из биты вернулся к владельцу"]),
-            NamedPoint(cs!["\"ВЕРНИ САНКИ\""], cs![Physique, " всех персонажей в руке += 2"]),
-        ],
-    }
-
-    Delirium {
-        name: cs!["DELIRIUM"],
-        groups: [C, ByМаксим, TBoI, Иллюзия],
-
-        // ?/?/0
-        stats: Stats::new(
-            phy!(5?),
-            dmg!(5?),
-            int!(0), // представляет собой безумие
-        ),
-
-        description: cs![
-            Condition(cs!["выставлен"]),
-            Point(cs!["выбери персонажа в руке. ", Vitality, " = его ", Vitality, ", ", Damage, " = его ", Damage])
-        ],
-
-        abilities: GameCallbacks {
-            post_place: Some(|game, args| {
-                let self_id = args.chr_id;
-                let owner_id = game.state().find_owner_chr(self_id);
-                let Some(copied_chr_id) = game.choose_chr_in_hand_any(ChooseCardArgs {
-                    prompt: PromptArgs {
-                        str: cs![Character(Delirium), ": чьи ", Vitality, " и ", Damage, " скопировать?"],
-                        is_cancellable: true,
-                        autochoose_single_option: false,
-                    },
-                    player_id: owner_id,
-                }) else { return };
-
-                let stats = &game.state().chr(copied_chr_id).stats;
-                let phy = stats.phy.0.into_value();
-                let dmg = stats.dmg.0.into_value();
-
-                game.force_set_phy_vit(self_id, phy);
-                game.force_set_stat(self_id, StatType::Damage, dmg);
-            }),
-
-            ..Default::default()
-        },
-    }
-
-    Беатриче {
-        name: cs!["БЕАТРИЧЕ"],
-        groups: [B, ByМаксим, Женщина, Umineko, Иллюзия],
-
-        // 1/4/-3
-        stats: Stats::new(
-            phy!(5),
-            dmg!(8),
-            int!(7),
-        ),
-
-        description: cs![
-            Condition(cs!["умерла"]),
-            Point(cs!["с шансом 1/4 возвращается в руку"])
-        ],
-
-        abilities: GameCallbacks {
-            die: Some(|game, args| {
-                if game.random_bool(1./4.) {
-                    terminate!()
-                } else {
-                    Chain::Continue(args)
-                }
-            }),
-
-            ..Default::default()
-        },
-    }
-
-    Ненети {
-        name: cs!["Н\u{0301}ЕНЕТИ"],
-        groups: [C, ByЛёня, Женщина, NewGame],
-
-        // 5/1/-1
-        stats: Stats::new(
-            phy!(7),
-            dmg!(1),
-            int!(4),
-        ),
-    }
-
-    Коса {
-        name: cs!["КОСА"],
-        groups: [D, ByКостя, Женщина, Реальность],
-
-        // 2/3/-1
-        stats: Stats::new(
-            phy!(3),
-            dmg!(0),
-            int!(8),
-        ),
-    }
-
-    Мирослав {
-        name: cs!["МИРОСЛАВ"],
-        groups: [D, ByЛёня, Мужчина, Реальность],
-
-        // 2/2/-4
-        stats: Stats::new(
-            phy!(3),
-            dmg!(4),
-            int!(0),
-        ),
-    }
-
-    МаксимовБаянЖивотворящий {
-        name: cs!["МАКСИМОВ БАЯН ЖИВОТВОРЯЩИЙ"],
-        groups: [C, ByЛёня, Животворит],
-
-        // 4/1/-0
-        stats: Stats::new(
-            phy!(6),
-            dmg!(3),
-            int!(8),
-        ),
-    }
-
-    Рей {
-        name: cs!["РЕЙ"],
-        groups: [D, ByКостя, Мужчина],
-
-        // 1/3/-2
-        stats: Stats::new(
-            phy!(2),
-            dmg!(5),
-            int!(6),
-        ),
-    }
-
-    Тимми {
-        name: cs!["ТИММИ"],
-        groups: [D, ByКостя, Мужчина, SouthPark],
-
-        // 1/0/-5
-        stats: Stats::new(
-            phy!(1),
-            dmg!(0),
-            int!(0),
-        ),
-
-        description: cs![
-            Epitaph(cs!["\"тимми тимми тимми\""])
-        ],
-    }
-
-    НостальгирующийКритик {
-        name: cs!["НОСТАЛЬГИРУЮЩИЙ КРИТИК"],
-        groups: [B, ByКостя, Мужчина],
-
-        // 4/3/-2
-        stats: Stats::new(
-            phy!(7),
-            dmg!(6),
-            int!(6),
-        ),
-
-        // TODO
-        description: cs![
-            Condition(cs!["пока ", Intellect, " противника ", LE, " 3"]),
-            Point(cs![Vitality, " этой карты на 1 меньше, ", Damage, " на 2 больше"]),
-        ],
-
-        abilities: GameCallbacks {
-            stat_map: Some(|game, mut args| {
-                let owner_id = game.state().find_owner_chr(args.chr_id);
-                let Some(enemy_id) = game.state().try_enemy_chr_id(owner_id) else { return Chain::Continue(args) };
-                let enemy_int = game.state().chr(enemy_id).stats.int.0.into_value();
-
-                if enemy_int <= 3 {
-                    match args.stat_type {
-                        StatType::Vitality => args.val -= 1,
-                        StatType::Damage => args.val += 2,
-                        _ => {}
-                    }
-                }
-
-                Chain::Continue(args)
-            }),
-
-            ..Default::default()
+        match self {
+            Self::Delirium => &*Delirium,
+            Self::БанкаСВареньем => &*БанкаСВареньем,
+            Self::Беатриче => &*Беатриче,
+            Self::Борат => &*Борат,
+            Self::Гв => &*Гв,
+            Self::ГлазКтулху => &*ГлазКтулху,
+            Self::ДухТвоейКвартиры => &*ДухТвоейКвартиры,
+            Self::Коса => &*Коса,
+            Self::Магдалина => &*Магдалина,
+            Self::МаксимовБаянЖивотворящий => &*МаксимовБаянЖивотворящий,
+            Self::Марио => &*Марио,
+            Self::Мирослав => &*Мирослав,
+            Self::Ненети => &*Ненети,
+            Self::Нож => &*Нож,
+            Self::НостальгирующийКритик => &*НостальгирующийКритик,
+            Self::Питон => &*Питон,
+            Self::Планя => &*Планя,
+            Self::Рей => &*Рей,
+            Self::Рена => &*Рена,
+            Self::Рика => &*Рика,
+            Self::Робеспьер => &*Робеспьер,
+            Self::Сатока => &*Сатока,
+            Self::Тимми => &*Тимми,
+            Self::ЧёрныйКубик => &*ЧёрныйКубик,
         }
     }
 
-    Марио {
-        name: cs!["МАРИО"],
-        groups: [C, ByЛёня, Мужчина],
+    #[allow(non_upper_case_globals)]
+    pub fn groups(self) -> &'static Groups {
+        lazy_static! {
+            static ref Delirium: Groups = delirium::groups();
+            static ref БанкаСВареньем: Groups = банка_с_вареньем::groups();
+            static ref Беатриче: Groups = беатриче::groups();
+            static ref Борат: Groups = борат::groups();
+            static ref Гв: Groups = гв::groups();
+            static ref ГлазКтулху: Groups = глаз_ктулху::groups();
+            static ref ДухТвоейКвартиры: Groups = дух_твоей_квартиры::groups();
+            static ref Коса: Groups = коса::groups();
+            static ref Магдалина: Groups = магдалина::groups();
+            static ref МаксимовБаянЖивотворящий: Groups = максимов_баян_животворящий::groups();
+            static ref Марио: Groups = марио::groups();
+            static ref Мирослав: Groups = мирослав::groups();
+            static ref Ненети: Groups = ненети::groups();
+            static ref Нож: Groups = нож::groups();
+            static ref НостальгирующийКритик: Groups = ностальгирующий_критик::groups();
+            static ref Питон: Groups = питон::groups();
+            static ref Планя: Groups = планя::groups();
+            static ref Рей: Groups = рей::groups();
+            static ref Рена: Groups = рена::groups();
+            static ref Рика: Groups = рика::groups();
+            static ref Робеспьер: Groups = робеспьер::groups();
+            static ref Сатока: Groups = сатока::groups();
+            static ref Тимми: Groups = тимми::groups();
+            static ref ЧёрныйКубик: Groups = чёрный_кубик::groups();
+        };
 
-        // 2/2/-3
-        stats: Stats::new(
-            phy!(5),
-            dmg!(5),
-            int!(6),
-        ),
-
-        description: cs![
-            Activatable,
-            Condition(cs!["битва"]),
-            NamedPoint(cs!["ПРЫЖОК НА ЛИЦО"], cs![Vitality, " противника /= 2"]),
-        ],
-    }
-
-    Рена {
-        name: cs!["РЕНА"],
-        groups: [B, ByКостя, Женщина, Higurashi],
-
-        // 2/3/-3
-        stats: Stats::new(
-            phy!(4),
-            dmg!(7),
-            int!(6),
-        ),
-    }
-
-    Борат {
-        name: cs!["БОРАТ"],
-        groups: [C, ByКостя, Мужчина, Мемы],
-
-        // 2/2/-4
-        stats: Stats::new(
-            phy!(4),
-            dmg!(3),
-            int!(1),
-        ),
-
-        description: cs![
-            Condition(cs!["выставлен"]),
-            NamedPoint(cs!["\"Я РЕПОРТЁР ИЗ КАЗАХСТАНА\""], cs!["возьми активку из стопки добора. если возможно, используй на этого персонажа, иначе положи обратно"]),
-        ],
-
-        abilities: GameCallbacks {
-            post_place: Some(
-                |game, args| {
-                    let self_id = args.chr_id;
-                    let owner_id = game.state().find_owner_chr(self_id);
-
-                    let Some(gained_act_id) = game.state_mut().acts.pick(owner_id) else { return };
-                    if game.use_on_chr(gained_act_id, self_id).is_err() {
-                        game.state_mut().acts.add_to_drawpile(gained_act_id);
-                    }
-                }
-            ),
-
-            ..Default::default()
-        },
-    }
-
-    ЧёрныйКубик {
-        name: cs!["ЧЁРНЫЙ КУБИК"],
-        groups: [D, ByМаксим],
-
-        // 3/1/-3
-        stats: Stats::new(
-            phy!(3),
-            dmg!(1),
-            int!(5),
-        ),
-    }
-
-    Нож {
-        name: cs!["НОЖ"],
-        groups: [D, ByЛёня, TBoI, Нераздаваемая],
-
-        // 2/?/-0
-        stats: Stats::new(
-            phy!(3),
-            dmg!(5?),
-            int!(1),
-        ),
-
-        description: cs![
-            Condition(cs!["выставлен"]),
-            Point(cs![Damage, " = ", Sum { times: cs!["9"], body: cs![Random(cs!["0"]..=cs!["1"])] }]),
-        ],
-
-        abilities: GameCallbacks {
-            post_place: Some(
-                |game, args| {
-                    let value = repeat_with(|| { game.random(0, 1) }).take(9).sum();
-
-                    let self_id = args.chr_id;
-                    game.force_set_stat(self_id, StatType::Damage, value);
-                }
-            ),
-
-            ..Default::default()
-        },
-    }
-
-    ГлазКтулху {
-        name: cs!["ГЛАЗ КТУЛХУ"],
-        groups: [B, ByМаксим, Terraria],
-
-        // 4/3/-3
-        stats: Stats::new(
-            phy!(8),
-            dmg!(6),
-            int!(2),
-        ),
-
-        description: cs![
-            NamedPoint(cs!["\"ТАРАНИТ... ИНОГДА\""], cs!["с шансом 1/2 наносит на 1 ", Damage, " больше"]),
-        ],
-
-        abilities: GameCallbacks {
-            attack_map: Some(|game, mut args| {
-                if game.random_bool(1./2.) {
-                    args.dmg += 1;
-                }
-
-                Chain::Continue(args)
-            }),
-
-            ..Default::default()
+        match self {
+            Self::Delirium => &*Delirium,
+            Self::БанкаСВареньем => &*БанкаСВареньем,
+            Self::Беатриче => &*Беатриче,
+            Self::Борат => &*Борат,
+            Self::Гв => &*Гв,
+            Self::ГлазКтулху => &*ГлазКтулху,
+            Self::ДухТвоейКвартиры => &*ДухТвоейКвартиры,
+            Self::Коса => &*Коса,
+            Self::Магдалина => &*Магдалина,
+            Self::МаксимовБаянЖивотворящий => &*МаксимовБаянЖивотворящий,
+            Self::Марио => &*Марио,
+            Self::Мирослав => &*Мирослав,
+            Self::Ненети => &*Ненети,
+            Self::Нож => &*Нож,
+            Self::НостальгирующийКритик => &*НостальгирующийКритик,
+            Self::Питон => &*Питон,
+            Self::Планя => &*Планя,
+            Self::Рей => &*Рей,
+            Self::Рена => &*Рена,
+            Self::Рика => &*Рика,
+            Self::Робеспьер => &*Робеспьер,
+            Self::Сатока => &*Сатока,
+            Self::Тимми => &*Тимми,
+            Self::ЧёрныйКубик => &*ЧёрныйКубик,
         }
     }
 
-    Магдалина {
-        name: cs!["МАГДАЛИНА"],
-        groups: [C, ByЛёня, Женщина, TBoI],
+    #[allow(non_upper_case_globals)]
+    pub fn description(self) -> &'static CustomString {
+        lazy_static! {
+            static ref Delirium: CustomString = delirium::description();
+            static ref БанкаСВареньем: CustomString = банка_с_вареньем::description();
+            static ref Беатриче: CustomString = беатриче::description();
+            static ref Борат: CustomString = борат::description();
+            static ref Гв: CustomString = гв::description();
+            static ref ГлазКтулху: CustomString = глаз_ктулху::description();
+            static ref ДухТвоейКвартиры: CustomString = дух_твоей_квартиры::description();
+            static ref Коса: CustomString = коса::description();
+            static ref Магдалина: CustomString = магдалина::description();
+            static ref МаксимовБаянЖивотворящий: CustomString = максимов_баян_животворящий::description();
+            static ref Марио: CustomString = марио::description();
+            static ref Мирослав: CustomString = мирослав::description();
+            static ref Ненети: CustomString = ненети::description();
+            static ref Нож: CustomString = нож::description();
+            static ref НостальгирующийКритик: CustomString = ностальгирующий_критик::description();
+            static ref Питон: CustomString = питон::description();
+            static ref Планя: CustomString = планя::description();
+            static ref Рей: CustomString = рей::description();
+            static ref Рена: CustomString = рена::description();
+            static ref Рика: CustomString = рика::description();
+            static ref Робеспьер: CustomString = робеспьер::description();
+            static ref Сатока: CustomString = сатока::description();
+            static ref Тимми: CustomString = тимми::description();
+            static ref ЧёрныйКубик: CustomString = чёрный_кубик::description();
+        };
 
-        // 4/1/-2
-        stats: Stats::new(
-            phy!(7),
-            dmg!(2),
-            int!(6), // TODO брать у CharacterType::Айзек
-        ),
-
-        description: cs![
-            Activatable,
-            NamedPoint(cs!["НЯМ СЕРДЦЕ"], cs![Vitality, " += 2"]),
-        ],
+        match self {
+            Self::Delirium => &*Delirium,
+            Self::БанкаСВареньем => &*БанкаСВареньем,
+            Self::Беатриче => &*Беатриче,
+            Self::Борат => &*Борат,
+            Self::Гв => &*Гв,
+            Self::ГлазКтулху => &*ГлазКтулху,
+            Self::ДухТвоейКвартиры => &*ДухТвоейКвартиры,
+            Self::Коса => &*Коса,
+            Self::Магдалина => &*Магдалина,
+            Self::МаксимовБаянЖивотворящий => &*МаксимовБаянЖивотворящий,
+            Self::Марио => &*Марио,
+            Self::Мирослав => &*Мирослав,
+            Self::Ненети => &*Ненети,
+            Self::Нож => &*Нож,
+            Self::НостальгирующийКритик => &*НостальгирующийКритик,
+            Self::Питон => &*Питон,
+            Self::Планя => &*Планя,
+            Self::Рей => &*Рей,
+            Self::Рена => &*Рена,
+            Self::Рика => &*Рика,
+            Self::Робеспьер => &*Робеспьер,
+            Self::Сатока => &*Сатока,
+            Self::Тимми => &*Тимми,
+            Self::ЧёрныйКубик => &*ЧёрныйКубик,
+        }
     }
 
-    Рика {
-        name: cs!["РИКА"],
-        groups: [D, ByКостя, Женщина, Higurashi],
+    #[allow(non_upper_case_globals)]
+    pub fn abilities(self) -> &'static GameCallbacks {
+        lazy_static! {
+            static ref Delirium: GameCallbacks = delirium::abilities();
+            static ref БанкаСВареньем: GameCallbacks = банка_с_вареньем::abilities();
+            static ref Беатриче: GameCallbacks = беатриче::abilities();
+            static ref Борат: GameCallbacks = борат::abilities();
+            static ref Гв: GameCallbacks = гв::abilities();
+            static ref ГлазКтулху: GameCallbacks = глаз_ктулху::abilities();
+            static ref ДухТвоейКвартиры: GameCallbacks = дух_твоей_квартиры::abilities();
+            static ref Коса: GameCallbacks = коса::abilities();
+            static ref Магдалина: GameCallbacks = магдалина::abilities();
+            static ref МаксимовБаянЖивотворящий: GameCallbacks = максимов_баян_животворящий::abilities();
+            static ref Марио: GameCallbacks = марио::abilities();
+            static ref Мирослав: GameCallbacks = мирослав::abilities();
+            static ref Ненети: GameCallbacks = ненети::abilities();
+            static ref Нож: GameCallbacks = нож::abilities();
+            static ref НостальгирующийКритик: GameCallbacks = ностальгирующий_критик::abilities();
+            static ref Питон: GameCallbacks = питон::abilities();
+            static ref Планя: GameCallbacks = планя::abilities();
+            static ref Рей: GameCallbacks = рей::abilities();
+            static ref Рена: GameCallbacks = рена::abilities();
+            static ref Рика: GameCallbacks = рика::abilities();
+            static ref Робеспьер: GameCallbacks = робеспьер::abilities();
+            static ref Сатока: GameCallbacks = сатока::abilities();
+            static ref Тимми: GameCallbacks = тимми::abilities();
+            static ref ЧёрныйКубик: GameCallbacks = чёрный_кубик::abilities();
+        };
 
-        // 1/1/-1
-        stats: Stats::new(
-            phy!(2),
-            dmg!(2),
-            int!(6),
-        ),
+        match self {
+            Self::Delirium => &*Delirium,
+            Self::БанкаСВареньем => &*БанкаСВареньем,
+            Self::Беатриче => &*Беатриче,
+            Self::Борат => &*Борат,
+            Self::Гв => &*Гв,
+            Self::ГлазКтулху => &*ГлазКтулху,
+            Self::ДухТвоейКвартиры => &*ДухТвоейКвартиры,
+            Self::Коса => &*Коса,
+            Self::Магдалина => &*Магдалина,
+            Self::МаксимовБаянЖивотворящий => &*МаксимовБаянЖивотворящий,
+            Self::Марио => &*Марио,
+            Self::Мирослав => &*Мирослав,
+            Self::Ненети => &*Ненети,
+            Self::Нож => &*Нож,
+            Self::НостальгирующийКритик => &*НостальгирующийКритик,
+            Self::Питон => &*Питон,
+            Self::Планя => &*Планя,
+            Self::Рей => &*Рей,
+            Self::Рена => &*Рена,
+            Self::Рика => &*Рика,
+            Self::Робеспьер => &*Робеспьер,
+            Self::Сатока => &*Сатока,
+            Self::Тимми => &*Тимми,
+            Self::ЧёрныйКубик => &*ЧёрныйКубик,
+        }
     }
 
-    Питон {
-        name: cs!["ПИТОН"],
-        groups: [B, ByЛёня, ЯзыкиПрограммирования],
-
-        // 2/3/-0
-        stats: Stats::new(
-            phy!(5), // народная любовь
-            dmg!(9), // больно от того, насколько он плох местами
-            int!(3),
-        ),
-
-        // TODO
-        // • удары дизморалят
+    pub fn stats(self) -> Stats {
+        match self {
+            Self::Delirium => delirium::stats(),
+            Self::БанкаСВареньем => банка_с_вареньем::stats(),
+            Self::Беатриче => беатриче::stats(),
+            Self::Борат => борат::stats(),
+            Self::Гв => гв::stats(),
+            Self::ГлазКтулху => глаз_ктулху::stats(),
+            Self::ДухТвоейКвартиры => дух_твоей_квартиры::stats(),
+            Self::Коса => коса::stats(),
+            Self::Магдалина => магдалина::stats(),
+            Self::МаксимовБаянЖивотворящий => максимов_баян_животворящий::stats(),
+            Self::Марио => марио::stats(),
+            Self::Мирослав => мирослав::stats(),
+            Self::Ненети => ненети::stats(),
+            Self::Нож => нож::stats(),
+            Self::НостальгирующийКритик => ностальгирующий_критик::stats(),
+            Self::Питон => питон::stats(),
+            Self::Планя => планя::stats(),
+            Self::Рей => рей::stats(),
+            Self::Рена => рена::stats(),
+            Self::Рика => рика::stats(),
+            Self::Робеспьер => робеспьер::stats(),
+            Self::Сатока => сатока::stats(),
+            Self::Тимми => тимми::stats(),
+            Self::ЧёрныйКубик => чёрный_кубик::stats(),
+        }
     }
 
-    Сатока {
-        name: cs!["САТОКА"],
-        groups: [D, ByЛёня, Женщина, Higurashi],
-
-        // 3/2/-4
-        stats: Stats::new(
-            phy!(5), // терпит много лещей
-            dmg!(3),
-            int!(7), // ловушками перебивает спецотряд
-        ),
-    }
-
-    Робеспьер {
-        name: cs!["РОБЕСПЬЕР"],
-        groups: [C, ByКостя, Мужчина, Реальность],
-
-        // 2/5/-3
-        stats: Stats::new(
-            phy!(5),
-            dmg!(5),
-            int!(5),
-        ),
-
-        description: cs![
-            Epitaph(cs!["\"vive la révolution\""]),
-        ],
-    }
-
-    ГВ {
-        name: cs!["ГВ"],
-        groups: [C, ByМаксим, Мужчина, Женщина, Umineko],
-
-        // 0/5/-3
-        stats: Stats::new(
-            phy!(0?),
-            dmg!(7),
-            int!(7),
-        ),
-
-        description: cs![
-            // TODO
-            Activatable,
-            Point(cs!["этот персонаж превращается в выбранного из трёх случайных ", Umineko, "-персонажей"]),
-            __,
-            Condition(cs!["выставлен"]),
-            Point(cs![Physique, " = ", SumAll { body: cs![Physique, " всех ", Иллюзия, " в руке"] }]),
-            Point(cs!["считает ", Берн, " за персонажа с ", Physique, " 3"]),
-        ],
-
-        abilities: GameCallbacks {
-            post_place: Some(
-                |game, args| {
-                    let self_id = args.chr_id;
-                    let owner_id = game.state().find_owner_chr(self_id);
-
-                    let phy = {
-                        let chrs_sum = game.state().chrs.hand(owner_id).iter().copied().filter_map(|chr_id| {
-                            let chr = game.state().chr(chr_id);
-                            if chr.type_.groups().contains(&Иллюзия) {
-                                Some(chr.stats.phy.0.into_value())
-                            } else {
-                                None
-                            }
-                        }).sum::<Stat0>();
-
-                        let acts_sum = game.state().acts.hand(owner_id).iter().copied().filter_map(|act_id| {
-                            let act = game.state().act(act_id);
-                            match act.type_ {
-                                ActiveType::Берн => Some(3),
-                                _ => None,
-                            }
-                        }).sum::<Stat0>();
-
-                        chrs_sum + acts_sum
-                    };
-
-                    game.force_set_phy_vit(self_id, phy);
-                }
-            ),
-
-            ..Default::default()
-        },
-    }
-    // */
 }

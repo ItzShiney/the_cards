@@ -33,7 +33,7 @@ impl Display for CharacterInfo {
 
         writeln!(f, "\n{}", stats)?;
 
-        if let Some(description) = description {
+        if !description.slices.is_empty() {
             write!(f, "\n{}", description)?;
         }
 

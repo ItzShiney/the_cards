@@ -1,631 +1,370 @@
-mod _macro;
+use lazy_static::lazy_static;
+use crate::card_uses::*;
 
-use crate::acts;
-use crate::chrs::CharacterType;
-use crate::cs;
-use crate::game::chain::Chain;
-use crate::game::input::ChooseCardArgsP;
-use crate::game::input::PromptArgs;
-use crate::game::state::chr_info::CharacterInfo;
-use crate::game::GameCallbacks;
-use crate::stats::StatType;
-use crate::terminate;
+#[path = "acts/cu_oh2.rs"] mod cu_oh2;
+#[path = "acts/godhead.rs"] mod godhead;
+#[path = "acts/баян.rs"] mod баян;
+#[path = "acts/берн.rs"] mod берн;
+#[path = "acts/биология.rs"] mod биология;
+#[path = "acts/душа.rs"] mod душа;
+#[path = "acts/жёлтая_искра.rs"] mod жёлтая_искра;
+#[path = "acts/зеркало.rs"] mod зеркало;
+#[path = "acts/козерог.rs"] mod козерог;
+#[path = "acts/коммунизм.rs"] mod коммунизм;
+#[path = "acts/ластик.rs"] mod ластик;
+#[path = "acts/лезвие_ножа.rs"] mod лезвие_ножа;
+#[path = "acts/мегаовощной_кейти.rs"] mod мегаовощной_кейти;
+#[path = "acts/мой_рот_разворот.rs"] mod мой_рот_разворот;
+#[path = "acts/монархия.rs"] mod монархия;
+#[path = "acts/неутешительный_приз.rs"] mod неутешительный_приз;
+#[path = "acts/обратка.rs"] mod обратка;
+#[path = "acts/охаги.rs"] mod охаги;
+#[path = "acts/пионер_уже_в_коммунизме.rs"] mod пионер_уже_в_коммунизме;
+#[path = "acts/пустая_карта.rs"] mod пустая_карта;
+#[path = "acts/разум.rs"] mod разум;
+#[path = "acts/ручка_ножа.rs"] mod ручка_ножа;
+#[path = "acts/сатокина_бита.rs"] mod сатокина_бита;
+#[path = "acts/тело.rs"] mod тело;
+#[path = "acts/тетрадь_смерти.rs"] mod тетрадь_смерти;
+#[path = "acts/тупость.rs"] mod тупость;
+#[path = "acts/утешительный_приз.rs"] mod утешительный_приз;
+#[path = "acts/хривна.rs"] mod хривна;
+#[path = "acts/чёрт480.rs"] mod чёрт480;
 
-acts! {
-    // /*
-    ПустаяКарта {
-        name: cs!["ПУСТАЯ КАРТА"],
-        groups: [B, ByЛёня, TBoI],
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum ActiveType {
+    CuOh2,
+    Godhead,
+    Баян,
+    Берн,
+    Биология,
+    Душа,
+    ЖёлтаяИскра,
+    Зеркало,
+    Козерог,
+    Коммунизм,
+    Ластик,
+    ЛезвиеНожа,
+    МегаовощнойКейти,
+    МойРотРазворот,
+    Монархия,
+    НеутешительныйПриз,
+    Обратка,
+    Охаги,
+    ПионерУжеВКоммунизме,
+    ПустаяКарта,
+    Разум,
+    РучкаНожа,
+    СатокинаБита,
+    Тело,
+    ТетрадьСмерти,
+    Тупость,
+    УтешительныйПриз,
+    Хривна,
+    Чёрт480,
+}
 
-        description: cs![
-            Condition(cs!["использована"]),
-            Point(cs!["выбери активку в руке. эта карта повторит эффект выбранной"]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_field: Some(|game, args| {
-                let owner_id = game.state().find_owner_act(args.act_id);
-                let Some(imitated_act_id) = game.choose_act_in_hand(ChooseCardArgsP {
-                    prompt: PromptArgs {
-                        str: cs![Active(ПустаяКарта), ": чей эффект повторить?"],
-                        is_cancellable: true,
-                        autochoose_single_option: false,
-                    },
-                    player_id: owner_id,
-                    p: &|game_state, act_id| act_id != args.act_id && game_state.is_usable_in_any_way(act_id),
-                }) else { terminate!() };
-
-                todo!("повторить эффект {:?}", imitated_act_id)
-            }),
-
-            ..Default::default()
-        },
+impl ActiveType {
+    pub fn all() -> Vec<Self> {
+        vec![
+            Self::CuOh2,
+            Self::Godhead,
+            Self::Баян,
+            Self::Берн,
+            Self::Биология,
+            Self::Душа,
+            Self::ЖёлтаяИскра,
+            Self::Зеркало,
+            Self::Козерог,
+            Self::Коммунизм,
+            Self::Ластик,
+            Self::ЛезвиеНожа,
+            Self::МегаовощнойКейти,
+            Self::МойРотРазворот,
+            Self::Монархия,
+            Self::НеутешительныйПриз,
+            Self::Обратка,
+            Self::Охаги,
+            Self::ПионерУжеВКоммунизме,
+            Self::ПустаяКарта,
+            Self::Разум,
+            Self::РучкаНожа,
+            Self::СатокинаБита,
+            Self::Тело,
+            Self::ТетрадьСмерти,
+            Self::Тупость,
+            Self::УтешительныйПриз,
+            Self::Хривна,
+            Self::Чёрт480,
+        ]
     }
 
-    Баян {
-        name: cs!["БАЯН"],
-        groups: [D, ByМаксим, Дизморалит],
+    #[allow(non_upper_case_globals)]
+    pub fn name(self) -> &'static CustomString {
+        lazy_static! {
+            static ref CuOh2: CustomString = cu_oh2::name();
+            static ref Godhead: CustomString = godhead::name();
+            static ref Баян: CustomString = баян::name();
+            static ref Берн: CustomString = берн::name();
+            static ref Биология: CustomString = биология::name();
+            static ref Душа: CustomString = душа::name();
+            static ref ЖёлтаяИскра: CustomString = жёлтая_искра::name();
+            static ref Зеркало: CustomString = зеркало::name();
+            static ref Козерог: CustomString = козерог::name();
+            static ref Коммунизм: CustomString = коммунизм::name();
+            static ref Ластик: CustomString = ластик::name();
+            static ref ЛезвиеНожа: CustomString = лезвие_ножа::name();
+            static ref МегаовощнойКейти: CustomString = мегаовощной_кейти::name();
+            static ref МойРотРазворот: CustomString = мой_рот_разворот::name();
+            static ref Монархия: CustomString = монархия::name();
+            static ref НеутешительныйПриз: CustomString = неутешительный_приз::name();
+            static ref Обратка: CustomString = обратка::name();
+            static ref Охаги: CustomString = охаги::name();
+            static ref ПионерУжеВКоммунизме: CustomString = пионер_уже_в_коммунизме::name();
+            static ref ПустаяКарта: CustomString = пустая_карта::name();
+            static ref Разум: CustomString = разум::name();
+            static ref РучкаНожа: CustomString = ручка_ножа::name();
+            static ref СатокинаБита: CustomString = сатокина_бита::name();
+            static ref Тело: CustomString = тело::name();
+            static ref ТетрадьСмерти: CustomString = тетрадь_смерти::name();
+            static ref Тупость: CustomString = тупость::name();
+            static ref УтешительныйПриз: CustomString = утешительный_приз::name();
+            static ref Хривна: CustomString = хривна::name();
+            static ref Чёрт480: CustomString = чёрт480::name();
+        };
 
-        description: cs![
-            Condition(cs!["использован на персонажа"]),
-            NamedPoint(cs!["\"ЭТОТ АНЕКДОТ ЕЩЁ МОЙ ДЕД МОЕМУ ОТЦУ РАССКАЗЫВАЛ\""], cs![Damage, " -= 1"]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_chr: Some(|game, args| {
-                game.stat_add(args.target_id, StatType::Damage, 1);
-                Chain::Continue(args)
-            }),
-
-            ..Default::default()
-        },
-    }
-
-    ЖёлтаяИскра {
-        name: cs!["ЖЁЛТАЯ ИСКРА"],
-        groups: [D, ByЛёня, Undertale],
-        // D, потому что работает только после активок типа "наносит урон", а таких мало
-
-        description: cs![
-            Condition(cs!["использована на персонажа"]),
-            Point(cs![Vitality, " = ", Physique]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_chr: Some(|game, args| {
-                let phy = game.state().chr(args.target_id).stats.phy.0.into_value();
-                game.force_set_stat(args.target_id, StatType::Vitality, phy);
-
-                Chain::Continue(args)
-            }),
-
-            ..Default::default()
-        },
-    }
-
-    ТетрадьСмерти {
-        name: cs!["ТЕТРАДЬ СМЕРТИ"],
-        groups: [B, ByКостя, DeathNote],
-
-        description: cs![
-            Condition(cs!["использована на персонажа"]),
-            Point(cs!["мгновенно убивает его"]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_chr: Some(|game, args| {
-                let _ = game.die(args.target_id);
-                Chain::Continue(args)
-            }),
-
-            ..Default::default()
-        },
-    }
-
-    ОБратка {
-        name: cs!["О,БРАТКА"],
-        groups: [A, ByЛёша],
-
-        description: cs![
-            Condition(cs!["использована на противника, единственного на поле"]),
-            Point(cs!["персонаж противника становится твоим и выставляется от тебя"]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_chr: Some(|game, args| {
-                let owner_id = game.state().try_find_owner_act(args.act_id);
-                let target_owner_id = game.state().try_find_owner_chr(args.target_id);
-
-                if owner_id == target_owner_id {
-                    terminate!()
-                }
-
-                todo!()
-            }),
-
-            ..Default::default()
-        },
-    }
-
-    Коммунизм {
-        name: cs!["КОММУНИЗМ"],
-        groups: [S, ByКостя, ОбщественныйСтрой],
-
-        description: cs![
-            Condition(cs!["использован в качестве своего хода"]),
-            Point(cs!["каждый игрок передаёт свою колоду следующему по направлению ходов"]),
-            Point(cs!["эта карта уничтожается"]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_field: Some(|_game, _args| {
-                todo!();
-            }),
-
-            ..Default::default()
+        match self {
+            Self::CuOh2 => &*CuOh2,
+            Self::Godhead => &*Godhead,
+            Self::Баян => &*Баян,
+            Self::Берн => &*Берн,
+            Self::Биология => &*Биология,
+            Self::Душа => &*Душа,
+            Self::ЖёлтаяИскра => &*ЖёлтаяИскра,
+            Self::Зеркало => &*Зеркало,
+            Self::Козерог => &*Козерог,
+            Self::Коммунизм => &*Коммунизм,
+            Self::Ластик => &*Ластик,
+            Self::ЛезвиеНожа => &*ЛезвиеНожа,
+            Self::МегаовощнойКейти => &*МегаовощнойКейти,
+            Self::МойРотРазворот => &*МойРотРазворот,
+            Self::Монархия => &*Монархия,
+            Self::НеутешительныйПриз => &*НеутешительныйПриз,
+            Self::Обратка => &*Обратка,
+            Self::Охаги => &*Охаги,
+            Self::ПионерУжеВКоммунизме => &*ПионерУжеВКоммунизме,
+            Self::ПустаяКарта => &*ПустаяКарта,
+            Self::Разум => &*Разум,
+            Self::РучкаНожа => &*РучкаНожа,
+            Self::СатокинаБита => &*СатокинаБита,
+            Self::Тело => &*Тело,
+            Self::ТетрадьСмерти => &*ТетрадьСмерти,
+            Self::Тупость => &*Тупость,
+            Self::УтешительныйПриз => &*УтешительныйПриз,
+            Self::Хривна => &*Хривна,
+            Self::Чёрт480 => &*Чёрт480,
         }
     }
 
-    Монархия {
-        name: cs!["МОНАРХИЯ"],
-        groups: [D, ByЛёня, ОбщественныйСтрой],
+    #[allow(non_upper_case_globals)]
+    pub fn groups(self) -> &'static Groups {
+        lazy_static! {
+            static ref CuOh2: Groups = cu_oh2::groups();
+            static ref Godhead: Groups = godhead::groups();
+            static ref Баян: Groups = баян::groups();
+            static ref Берн: Groups = берн::groups();
+            static ref Биология: Groups = биология::groups();
+            static ref Душа: Groups = душа::groups();
+            static ref ЖёлтаяИскра: Groups = жёлтая_искра::groups();
+            static ref Зеркало: Groups = зеркало::groups();
+            static ref Козерог: Groups = козерог::groups();
+            static ref Коммунизм: Groups = коммунизм::groups();
+            static ref Ластик: Groups = ластик::groups();
+            static ref ЛезвиеНожа: Groups = лезвие_ножа::groups();
+            static ref МегаовощнойКейти: Groups = мегаовощной_кейти::groups();
+            static ref МойРотРазворот: Groups = мой_рот_разворот::groups();
+            static ref Монархия: Groups = монархия::groups();
+            static ref НеутешительныйПриз: Groups = неутешительный_приз::groups();
+            static ref Обратка: Groups = обратка::groups();
+            static ref Охаги: Groups = охаги::groups();
+            static ref ПионерУжеВКоммунизме: Groups = пионер_уже_в_коммунизме::groups();
+            static ref ПустаяКарта: Groups = пустая_карта::groups();
+            static ref Разум: Groups = разум::groups();
+            static ref РучкаНожа: Groups = ручка_ножа::groups();
+            static ref СатокинаБита: Groups = сатокина_бита::groups();
+            static ref Тело: Groups = тело::groups();
+            static ref ТетрадьСмерти: Groups = тетрадь_смерти::groups();
+            static ref Тупость: Groups = тупость::groups();
+            static ref УтешительныйПриз: Groups = утешительный_приз::groups();
+            static ref Хривна: Groups = хривна::groups();
+            static ref Чёрт480: Groups = чёрт480::groups();
+        };
 
-        description: cs![
-            Condition(cs!["использована в ответ на ", Коммунизм]),
-            Point(cs!["отменяет его эффект"]),
-            Point(cs!["эта карта уничтожается"]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_field: Some(|_game, _args| {
-                todo!();
-            }),
-
-            ..Default::default()
+        match self {
+            Self::CuOh2 => &*CuOh2,
+            Self::Godhead => &*Godhead,
+            Self::Баян => &*Баян,
+            Self::Берн => &*Берн,
+            Self::Биология => &*Биология,
+            Self::Душа => &*Душа,
+            Self::ЖёлтаяИскра => &*ЖёлтаяИскра,
+            Self::Зеркало => &*Зеркало,
+            Self::Козерог => &*Козерог,
+            Self::Коммунизм => &*Коммунизм,
+            Self::Ластик => &*Ластик,
+            Self::ЛезвиеНожа => &*ЛезвиеНожа,
+            Self::МегаовощнойКейти => &*МегаовощнойКейти,
+            Self::МойРотРазворот => &*МойРотРазворот,
+            Self::Монархия => &*Монархия,
+            Self::НеутешительныйПриз => &*НеутешительныйПриз,
+            Self::Обратка => &*Обратка,
+            Self::Охаги => &*Охаги,
+            Self::ПионерУжеВКоммунизме => &*ПионерУжеВКоммунизме,
+            Self::ПустаяКарта => &*ПустаяКарта,
+            Self::Разум => &*Разум,
+            Self::РучкаНожа => &*РучкаНожа,
+            Self::СатокинаБита => &*СатокинаБита,
+            Self::Тело => &*Тело,
+            Self::ТетрадьСмерти => &*ТетрадьСмерти,
+            Self::Тупость => &*Тупость,
+            Self::УтешительныйПриз => &*УтешительныйПриз,
+            Self::Хривна => &*Хривна,
+            Self::Чёрт480 => &*Чёрт480,
         }
     }
 
-    УтешительныйПриз {
-        name: cs!["УТЕШИТЕЛЬНЫЙ ПРИЗ"],
-        groups: [D, ByЛёня, TBoI, Моралит],
+    #[allow(non_upper_case_globals)]
+    pub fn description(self) -> &'static CustomString {
+        lazy_static! {
+            static ref CuOh2: CustomString = cu_oh2::description();
+            static ref Godhead: CustomString = godhead::description();
+            static ref Баян: CustomString = баян::description();
+            static ref Берн: CustomString = берн::description();
+            static ref Биология: CustomString = биология::description();
+            static ref Душа: CustomString = душа::description();
+            static ref ЖёлтаяИскра: CustomString = жёлтая_искра::description();
+            static ref Зеркало: CustomString = зеркало::description();
+            static ref Козерог: CustomString = козерог::description();
+            static ref Коммунизм: CustomString = коммунизм::description();
+            static ref Ластик: CustomString = ластик::description();
+            static ref ЛезвиеНожа: CustomString = лезвие_ножа::description();
+            static ref МегаовощнойКейти: CustomString = мегаовощной_кейти::description();
+            static ref МойРотРазворот: CustomString = мой_рот_разворот::description();
+            static ref Монархия: CustomString = монархия::description();
+            static ref НеутешительныйПриз: CustomString = неутешительный_приз::description();
+            static ref Обратка: CustomString = обратка::description();
+            static ref Охаги: CustomString = охаги::description();
+            static ref ПионерУжеВКоммунизме: CustomString = пионер_уже_в_коммунизме::description();
+            static ref ПустаяКарта: CustomString = пустая_карта::description();
+            static ref Разум: CustomString = разум::description();
+            static ref РучкаНожа: CustomString = ручка_ножа::description();
+            static ref СатокинаБита: CustomString = сатокина_бита::description();
+            static ref Тело: CustomString = тело::description();
+            static ref ТетрадьСмерти: CustomString = тетрадь_смерти::description();
+            static ref Тупость: CustomString = тупость::description();
+            static ref УтешительныйПриз: CustomString = утешительный_приз::description();
+            static ref Хривна: CustomString = хривна::description();
+            static ref Чёрт480: CustomString = чёрт480::description();
+        };
 
-        description: cs![
-            Epitaph(cs![
-                "толстой писал про эту медаль так:\n",
-                "\"всевеликая всероссийская посеребрённая золотистая с платиновым отблеском заточенная\n",
-                "медаль победителя всевеликого всероссийского этапа всевеликой всероссийской олимпиады\n",
-                "всевеликих всероссийских школьников по всевеликому всеросскийскому животворящему программированию\""]),
-            __,
-            Condition(cs!["использован на персонажа"]),
-            Point(cs!["статы, равные минимальному += 1"]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_chr: Some(|_game, _args| {
-                todo!()
-            }),
-
-            ..Default::default()
+        match self {
+            Self::CuOh2 => &*CuOh2,
+            Self::Godhead => &*Godhead,
+            Self::Баян => &*Баян,
+            Self::Берн => &*Берн,
+            Self::Биология => &*Биология,
+            Self::Душа => &*Душа,
+            Self::ЖёлтаяИскра => &*ЖёлтаяИскра,
+            Self::Зеркало => &*Зеркало,
+            Self::Козерог => &*Козерог,
+            Self::Коммунизм => &*Коммунизм,
+            Self::Ластик => &*Ластик,
+            Self::ЛезвиеНожа => &*ЛезвиеНожа,
+            Self::МегаовощнойКейти => &*МегаовощнойКейти,
+            Self::МойРотРазворот => &*МойРотРазворот,
+            Self::Монархия => &*Монархия,
+            Self::НеутешительныйПриз => &*НеутешительныйПриз,
+            Self::Обратка => &*Обратка,
+            Self::Охаги => &*Охаги,
+            Self::ПионерУжеВКоммунизме => &*ПионерУжеВКоммунизме,
+            Self::ПустаяКарта => &*ПустаяКарта,
+            Self::Разум => &*Разум,
+            Self::РучкаНожа => &*РучкаНожа,
+            Self::СатокинаБита => &*СатокинаБита,
+            Self::Тело => &*Тело,
+            Self::ТетрадьСмерти => &*ТетрадьСмерти,
+            Self::Тупость => &*Тупость,
+            Self::УтешительныйПриз => &*УтешительныйПриз,
+            Self::Хривна => &*Хривна,
+            Self::Чёрт480 => &*Чёрт480,
         }
     }
 
-    НеутешительныйПриз {
-        name: cs!["НЕУТЕШИТЕЛЬНЫЙ ПРИЗ"],
-        groups: [D, ByМаксим, Дизморалит],
+    #[allow(non_upper_case_globals)]
+    pub fn abilities(self) -> &'static GameCallbacks {
+        lazy_static! {
+            static ref CuOh2: GameCallbacks = cu_oh2::abilities();
+            static ref Godhead: GameCallbacks = godhead::abilities();
+            static ref Баян: GameCallbacks = баян::abilities();
+            static ref Берн: GameCallbacks = берн::abilities();
+            static ref Биология: GameCallbacks = биология::abilities();
+            static ref Душа: GameCallbacks = душа::abilities();
+            static ref ЖёлтаяИскра: GameCallbacks = жёлтая_искра::abilities();
+            static ref Зеркало: GameCallbacks = зеркало::abilities();
+            static ref Козерог: GameCallbacks = козерог::abilities();
+            static ref Коммунизм: GameCallbacks = коммунизм::abilities();
+            static ref Ластик: GameCallbacks = ластик::abilities();
+            static ref ЛезвиеНожа: GameCallbacks = лезвие_ножа::abilities();
+            static ref МегаовощнойКейти: GameCallbacks = мегаовощной_кейти::abilities();
+            static ref МойРотРазворот: GameCallbacks = мой_рот_разворот::abilities();
+            static ref Монархия: GameCallbacks = монархия::abilities();
+            static ref НеутешительныйПриз: GameCallbacks = неутешительный_приз::abilities();
+            static ref Обратка: GameCallbacks = обратка::abilities();
+            static ref Охаги: GameCallbacks = охаги::abilities();
+            static ref ПионерУжеВКоммунизме: GameCallbacks = пионер_уже_в_коммунизме::abilities();
+            static ref ПустаяКарта: GameCallbacks = пустая_карта::abilities();
+            static ref Разум: GameCallbacks = разум::abilities();
+            static ref РучкаНожа: GameCallbacks = ручка_ножа::abilities();
+            static ref СатокинаБита: GameCallbacks = сатокина_бита::abilities();
+            static ref Тело: GameCallbacks = тело::abilities();
+            static ref ТетрадьСмерти: GameCallbacks = тетрадь_смерти::abilities();
+            static ref Тупость: GameCallbacks = тупость::abilities();
+            static ref УтешительныйПриз: GameCallbacks = утешительный_приз::abilities();
+            static ref Хривна: GameCallbacks = хривна::abilities();
+            static ref Чёрт480: GameCallbacks = чёрт480::abilities();
+        };
 
-        // арт — уголёк
-
-        description: cs![
-            Epitaph(cs![
-                "максим писал про эту медаль так:\n",
-                "\"пепега какая-то\""]),
-            __,
-            Condition(cs!["использован на персонажа"]),
-            Point(cs!["статы, равные максимальному -= 1"]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_chr: Some(|_game, _args| {
-                todo!()
-            }),
-
-            ..Default::default()
+        match self {
+            Self::CuOh2 => &*CuOh2,
+            Self::Godhead => &*Godhead,
+            Self::Баян => &*Баян,
+            Self::Берн => &*Берн,
+            Self::Биология => &*Биология,
+            Self::Душа => &*Душа,
+            Self::ЖёлтаяИскра => &*ЖёлтаяИскра,
+            Self::Зеркало => &*Зеркало,
+            Self::Козерог => &*Козерог,
+            Self::Коммунизм => &*Коммунизм,
+            Self::Ластик => &*Ластик,
+            Self::ЛезвиеНожа => &*ЛезвиеНожа,
+            Self::МегаовощнойКейти => &*МегаовощнойКейти,
+            Self::МойРотРазворот => &*МойРотРазворот,
+            Self::Монархия => &*Монархия,
+            Self::НеутешительныйПриз => &*НеутешительныйПриз,
+            Self::Обратка => &*Обратка,
+            Self::Охаги => &*Охаги,
+            Self::ПионерУжеВКоммунизме => &*ПионерУжеВКоммунизме,
+            Self::ПустаяКарта => &*ПустаяКарта,
+            Self::Разум => &*Разум,
+            Self::РучкаНожа => &*РучкаНожа,
+            Self::СатокинаБита => &*СатокинаБита,
+            Self::Тело => &*Тело,
+            Self::ТетрадьСмерти => &*ТетрадьСмерти,
+            Self::Тупость => &*Тупость,
+            Self::УтешительныйПриз => &*УтешительныйПриз,
+            Self::Хривна => &*Хривна,
+            Self::Чёрт480 => &*Чёрт480,
         }
     }
 
-    Биология {
-        name: cs!["НЕДОСЫП"],
-        groups: [D, ByЛёня, Реальность, Дизморалит],
-
-        description: cs![
-            Condition(cs!["использован на персонажа"]),
-            Point(cs![Vitality, " & ", Intellect, " -= 2"]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_chr: Some(|game, args| {
-                game.stat_add(args.target_id, StatType::Vitality, -2);
-                game.stat_add(args.target_id, StatType::Intellect, -2);
-                Chain::Continue(args)
-            }),
-
-            ..Default::default()
-        }
-    }
-
-    СатокинаБита {
-        name: cs!["САТОКИНА БИТА"],
-        groups: [C, ByКостя, Higurashi],
-
-        description: cs![
-            Condition(cs!["использована на персонажа"]),
-            Point(cs![Damage, " += 2"]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_chr: Some(|game, args| {
-                game.stat_add(args.target_id, StatType::Damage, 2);
-                Chain::Continue(args)
-            }),
-
-            ..Default::default()
-        }
-    }
-
-    Охаги {
-        name: cs!["ОХАГИ"],
-        groups: [D, ByКостя, Higurashi],
-
-        description: cs![
-            Condition(cs!["использованы на персонажа с ", Intellect, " ", LE, " 3"]),
-            Point(cs!["наносят 1 ", Damage]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_chr: Some(|game, args| {
-                let chr_int = game.state().chr(args.target_id).stats.int.into_value();
-                if !(chr_int <= 3) {
-                    terminate!();
-                }
-
-                let _ = game.hurt(args.target_id, 1);
-                Chain::Continue(args)
-            }),
-
-            ..Default::default()
-        }
-    }
-
-    Тупость {
-        name: cs!["ТУПОСТЬ"],
-        groups: [D, ByЛёня, Моралит],
-
-        description: cs![
-            Condition(cs!["использована в ответ на ", Дизморалит, "-активку"]),
-            Point(cs!["отменяет её эффект"]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_field: Some(|_game, _args| {
-                todo!();
-            }),
-
-            ..Default::default()
-        }
-    }
-
-    Зеркало {
-        name: cs!["ЗЕРКАЛО"],
-        groups: [D, ByЛёша, Реальность],
-
-        description: cs![
-            Condition(cs!["использовано на персонажа"]),
-            Point(cs!["копирует выбранную способность противника"]),
-        ],
-
-        // TODO
-        // (нужна какая-то пометка, какие способности возможно копировать)
-    }
-
-    Хривна {
-        name: cs!["ХРИВНА"],
-        groups: [D, ByКостя, Реальность],
-
-        description: cs![
-            Condition(cs!["использована на персонажа"]),
-            Point(cs![Intellect, " -= 1"]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_chr: Some(|game, args| {
-                game.stat_add(args.target_id, StatType::Intellect, -1);
-                Chain::Continue(args)
-            }),
-
-            ..Default::default()
-        }
-    }
-
-    CuOH2 {
-        name: cs!["CU(OH)₂"],
-        groups: [C, ByЛёня, Химия],
-
-        description: cs![
-            Condition(cs!["использован на персонажа"]),
-            Point(cs![Vitality, " /= 2"]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_chr: Some(|_game, _args| {
-                todo!()
-            }),
-
-            ..Default::default()
-        }
-    }
-
-    МегаовощнойКейти {
-        name: cs!["МЕГАОВОЩНОЙ КЕЙТИ"],
-        groups: [C, ByКостя, Higurashi],
-
-        description: cs![
-            Condition(cs!["использован на персонажа"]),
-            Point(cs![Intellect, " = 0"]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_chr: Some(|_game, _args| {
-                todo!("{} = 0", cs![Intellect])
-            }),
-
-            ..Default::default()
-        }
-    }
-
-    Ластик {
-        name: cs!["ЛАСТИК"],
-        groups: [D, ByЛёня, Реальность],
-
-        description: cs![
-            Condition(cs!["использовано в качестве хода"]),
-            Point(cs!["уничтожает все карты в бите и по одной выбранной каждым игроком у себя в руке"]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_field: Some(|_game, _args| {
-                todo!();
-            }),
-
-            ..Default::default()
-        }
-    }
-
-    МойРотРазворот {
-        name: cs!["МОЙ РОТ РАЗВОРОТ"],
-        groups: [D, ByЛёня, Мемы],
-
-        description: cs![
-            Condition(cs!["использовано в начале своего хода"]),
-            Point(cs!["меняет направление ходов на противоположное"]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_field: Some(|_game, _args| {
-                todo!();
-            }),
-
-            ..Default::default()
-        }
-    }
-
-    Чёрт480 {
-        name: cs!["ЧЁРТ 480"],
-        groups: [C, ByЛёня, Скрытая, ПепежноеСущество, ЦитатыКости],
-
-        description: cs![
-            Condition(cs!["использовано в битве"]),
-            Point(cs!["следующая активка, использованная противником, не сработает"]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_field: Some(|_game, _args| {
-                todo!();
-            }),
-
-            ..Default::default()
-        }
-    }
-
-    ПионерУжеВКоммунизме {
-        name: cs!["\"ЛЕЖИТ ПИОНЕР БЕЗ ПРИЗНАКОВ ЖИЗНИ, ЕМУ ХОРОШО, ОН УЖЕ В КОММУНИЗМЕ\""],
-        groups: [D, ByКостя, Цитаты],
-
-        description: cs![
-            Condition(cs!["использовано на карту в руке"]),
-            Point(cs!["отдай её следующему по направлению ходов игроку"]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_field: Some(|_game, _args| {
-                todo!();
-            }),
-
-            ..Default::default()
-        }
-    }
-
-    Козерог {
-        name: cs!["КОЗЕРОГ"],
-        groups: [B, ByЛёня, TBoI, Зодиак],
-
-        description: cs![
-            Condition(cs!["использовано на персонажа"]),
-            NamedPoint(cs!["\"ALL STATS UP\""], cs![Physique, " & ", Vitality, " & ", Defence, " & ", Damage, " & ", Intellect, " += 2"]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_chr: Some(|game, args| {
-                game.stat_add(args.target_id, StatType::Physique, 2);
-                game.stat_add(args.target_id, StatType::Vitality, 2);
-                game.stat_add(args.target_id, StatType::Defence, 2);
-                game.stat_add(args.target_id, StatType::Damage, 2);
-                game.stat_add(args.target_id, StatType::Intellect, 2);
-                Chain::Continue(args)
-            }),
-
-            ..Default::default()
-        }
-    }
-
-    ЛезвиеНожа {
-        name: cs!["ЛЕЗВИЕ НОЖА"],
-        groups: [D, ByЛёня, TBoI],
-
-        description: cs![
-            Condition(cs!["использовано на персонажа"]),
-            Point(cs![Damage, " += 1"]),
-            Point(cs!["если ранее была использована ", РучкаНожа, ", получи ", Нож]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_chr: Some(|game, args| {
-                game.stat_add(args.target_id, StatType::Physique, 1);
-
-                #[allow(unreachable_code)]
-                #[allow(clippy::diverging_sub_expression)]
-                if todo!("ранее была использована РУЧКА НОЖА") {
-                    let owner_id = game.state().find_owner_act(args.act_id);
-
-                    let drawn_chr_id = game.state_mut().chrs.add(CharacterInfo::new(CharacterType::Нож));
-                    game.state_mut().chrs.add_to_player(drawn_chr_id, owner_id);
-                }
-
-                Chain::Continue(args)
-            }),
-
-            ..Default::default()
-        },
-    }
-
-    РучкаНожа {
-        name: cs!["РУЧКА НОЖА"],
-        groups: [D, ByЛёня, TBoI],
-
-        description: cs![
-            Condition(cs!["использовано на персонажа"]),
-            Point(cs![Physique, " += 1"]),
-            Point(cs!["если ранее было использовано ", ЛезвиеНожа, ", получи ", Нож]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_chr: Some(|game, args| {
-                game.stat_add(args.target_id, StatType::Physique, 1);
-
-                #[allow(unreachable_code)]
-                #[allow(clippy::diverging_sub_expression)]
-                if todo!("ранее было использовано ЛЕЗВИЕ НОЖА") {
-                    let owner_id = game.state().find_owner_act(args.act_id);
-
-                    let drawn_chr_id = game.state_mut().chrs.add(CharacterInfo::new(CharacterType::Нож));
-                    game.state_mut().chrs.add_to_player(drawn_chr_id, owner_id);
-                }
-
-                Chain::Continue(args)
-            }),
-
-            ..Default::default()
-        },
-    }
-
-    Берн {
-        name: cs!["БЕРН"],
-        groups: [C, ByМаксим, Umineko],
-
-        description: cs![
-            Condition(cs!["использована на противника, единственного на поле"]),
-            Point(cs!["противник обязан поменять персонажа"]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_chr: Some(|game, args| {
-                let target_owner_id = game.state().find_owner_chr(args.target_id);
-
-                let Some(replacing_chr_id) = game.choose_chr_in_hand(ChooseCardArgsP {
-                    prompt: PromptArgs {
-                        str: cs![Active(Берн), ": на кого поменять?"],
-                        is_cancellable: false,
-                        autochoose_single_option: true,
-                    },
-                    player_id: target_owner_id,
-                    p: &|game_state, chr_id| chr_id != args.target_id && game_state.is_placeable(chr_id)
-                }) else { terminate!() };
-
-                game.replace(args.target_id, replacing_chr_id);
-                Chain::Continue(args)
-            }),
-
-            ..Default::default()
-        }
-    }
-
-    Разум {
-        name: cs!["РАЗУМ"],
-        groups: [D, ByЛёня, TBoI],
-
-        description: cs![
-            Condition(cs!["использован на персонажа"]),
-            NamedPoint(cs!["\"I KNOW ALL\""], cs![Intellect, " += 2"]),
-            Point(cs!["уже были использованы ", Тело, " и ", Душа, " ", Implies, " получи ", Godhead]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_chr: Some(|game, args| {
-                game.stat_add(args.target_id, StatType::Intellect, 2);
-                Chain::Continue(args)
-            }),
-
-            ..Default::default()
-        }
-    }
-
-    Тело {
-        name: cs!["ТЕЛО"],
-        groups: [C, ByЛёня, TBoI],
-
-        description: cs![
-            Condition(cs!["использовано на персонажа"]),
-            NamedPoint(cs!["\"I FEEL ALL\""], cs![Physique, " & ", Vitality, " += 2"]),
-            Point(cs!["уже были использованы ", Разум, " и ", Душа, " ", Implies, " получи ", Godhead]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_chr: Some(|game, args| {
-                game.stat_add(args.target_id, StatType::Physique, 2);
-                game.stat_add(args.target_id, StatType::Vitality, 2);
-                Chain::Continue(args)
-            }),
-
-            ..Default::default()
-        }
-    }
-
-    Душа {
-        name: cs!["ДУША"],
-        groups: [D, ByЛёня, TBoI],
-
-        description: cs![
-            Condition(cs!["использована на персонажа"]),
-            NamedPoint(cs!["\"I AM ALL\""], cs![Defence, " += 2"]),
-            Point(cs!["уже были использованы ", Разум, " и ", Тело, " ", Implies, " получи ", Godhead]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_chr: Some(|game, args| {
-                game.stat_add(args.target_id, StatType::Defence, 2);
-                Chain::Continue(args)
-            }),
-
-            ..Default::default()
-        }
-    }
-
-    Godhead {
-        name: cs!["GODHEAD"],
-        groups: [C, ByЛёня, TBoI],
-
-        description: cs![
-            Condition(cs!["использован на персонажа"]),
-            NamedPoint(cs!["\"GOD TEARS\""], cs![Damage, " += 2"]),
-        ],
-
-        abilities: GameCallbacks {
-            use_on_chr: Some(|game, args| {
-                game.stat_add(args.target_id, StatType::Damage, 2);
-                Chain::Continue(args)
-            }),
-
-            ..Default::default()
-        }
-    }
-    // */
 }

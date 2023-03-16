@@ -21,7 +21,7 @@ macro_rules! custom_string_slice {
             )*
         }
     ) => {
-        #[derive(Clone)]
+        #[derive(Clone, PartialEq, Eq)]
         pub enum CustomStringSlice {
             $($ArgsCase $args,)*
 
@@ -138,7 +138,9 @@ impl From<Group> for CustomStringSlice {
     }
 }
 
-#[derive(Clone, Default)]
+////////////////////////////////////////////////////////////
+
+#[derive(Clone, Default, PartialEq, Eq)]
 pub struct CustomString {
     pub slices: Vec<CustomStringSlice>,
 }

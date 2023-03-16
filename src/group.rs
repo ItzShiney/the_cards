@@ -83,11 +83,13 @@ group![
     Нераздаваемая > "\x1b[31mнераздаваемая\x1b[39m";
 ];
 
+pub type Groups = BTreeSet<Group>;
+
 fn fmt_groups(
     groups: impl Iterator<Item = Group> + Clone,
     f: &mut std::fmt::Formatter,
 ) -> std::fmt::Result {
-    fn supers(groups: impl Iterator<Item = Group>) -> BTreeSet<Group> {
+    fn supers(groups: impl Iterator<Item = Group>) -> Groups {
         groups.flat_map(|group| group.supers()).collect()
     }
 

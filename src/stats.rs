@@ -1,6 +1,5 @@
+use std::fmt;
 use std::fmt::Display;
-use std::fmt::Formatter;
-use std::fmt::{self};
 use std::ops::AddAssign;
 use std::ops::SubAssign;
 
@@ -30,7 +29,7 @@ impl StatValue {
 }
 
 impl Display for StatValue {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::WillChange(x) => write!(f, "{}?", x),
             Self::Var(x) => write!(f, "{}", x),
@@ -94,7 +93,7 @@ macro_rules! make_stat {
         pub struct $Name(pub StatValue);
 
         impl Display for $Name {
-            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+            fn fmt(&self, f: &mut fmt::Formatter) -> std::fmt::Result {
                 write!(f, "{} {}", $crate::cs![$Name], self.0)
             }
         }
@@ -179,7 +178,7 @@ impl Stats {
 }
 
 impl Display for Stats {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.vit.0 != self.phy.0 {
             write!(f, "{} / ", self.vit)?;
         }

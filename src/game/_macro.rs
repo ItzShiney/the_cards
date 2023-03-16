@@ -18,7 +18,8 @@ macro_rules! callbacks {
                 $(pub $arg_name: $ArgType,)*
             }
 
-            pub type [<$name:camel Callback>] = fn(&mut $crate::game::Game, [<$name:camel Args>]) -> $crate::game::chain::Chain<[<$name:camel Args>], $($Return)?>;
+            #[allow(unused_parens)]
+            pub type [<$name:camel Callback>] = fn(&mut $crate::game::Game, [<$name:camel Args>]) -> ::std::ops::ControlFlow<($($Return)?), [<$name:camel Args>]>;
             pub type [<Post $name:camel Callback>] = fn(&mut $crate::game::Game, &[<$name:camel Args>]);
         )*
 
@@ -38,11 +39,11 @@ macro_rules! callbacks {
 
                         while let Some(callback) = $self.callbacks.$name {
                             match (callback)($self, args) {
-                                $crate::game::chain::Chain::Continue(new_args) => {
+                                ::std::ops::ControlFlow::Continue(new_args) => {
                                     args = new_args;
                                 }
 
-                                $crate::game::chain::Chain::Break(result) => return result,
+                                ::std::ops::ControlFlow::Break(result) => return result,
                             }
                         }
                     )? */
@@ -51,11 +52,11 @@ macro_rules! callbacks {
                     $(
                         if let Some(callback) = $self.state.$self_namespace.get(id).type_.abilities().$name {
                             match (callback)($self, args) {
-                                $crate::game::chain::Chain::Continue(new_args) => {
+                                ::std::ops::ControlFlow::Continue(new_args) => {
                                     args = new_args;
                                 }
 
-                                $crate::game::chain::Chain::Break(result) => return result,
+                                ::std::ops::ControlFlow::Break(result) => return result,
                             }
                         }
                     )?

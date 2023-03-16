@@ -1,7 +1,9 @@
 #![allow(clippy::uninlined_format_args)]
 #![allow(clippy::nonminimal_bool)]
+#![warn(trivial_casts, trivial_numeric_casts, unused_extern_crates, unused_import_braces)]
 
 pub mod acts;
+mod card_uses;
 pub mod chrs;
 pub mod console;
 pub mod custom_string;

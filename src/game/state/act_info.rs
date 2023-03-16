@@ -28,7 +28,7 @@ impl Display for ActiveInfo {
             writeln!(f, "{}", DefaultFormatted(groups))?;
         }
 
-        if let Some(description) = description {
+        if !description.slices.is_empty() {
             write!(f, "\n{}", description)?;
         }
 
