@@ -1,3 +1,4 @@
+#[macro_use]
 mod _macro;
 
 use crate::card_uses::ActiveID;
@@ -6,7 +7,6 @@ use crate::card_uses::GameState;
 use crate::card_uses::Stat0;
 use crate::card_uses::StatType;
 use crate::card_uses::Subturner;
-use crate::game_chaining_methods;
 use crate::game_input::ChooseCardArgs;
 use crate::game_input::ChooseCardArgsP;
 use crate::game_input::GameInput;
@@ -267,7 +267,7 @@ impl Game<'_, '_> {
             || self.can_use_on_field(act_id)
     }
 
-    pub fn can_use_on_own_chr(&self, act_id: ActiveID) -> bool {
+    pub fn can_use_on_own_chr(&mut self, act_id: ActiveID) -> bool {
         let Some(chr_id) = self.state.current_subturner_on_field().chr_id else {
             return false;
         };
@@ -275,7 +275,7 @@ impl Game<'_, '_> {
         self.can_use_on_chr(act_id, chr_id)
     }
 
-    pub fn can_use_on_enemy_chr(&self, act_id: ActiveID) -> bool {
+    pub fn can_use_on_enemy_chr(&mut self, act_id: ActiveID) -> bool {
         let Some(chr_id) = self.state.other_subturner_on_field().chr_id else {
             return false;
         };
@@ -283,9 +283,13 @@ impl Game<'_, '_> {
         self.can_use_on_chr(act_id, chr_id)
     }
 
-    pub fn stat(&self, chr_id: CharacterID, stat_type: StatType) -> Stat0 {
+    pub fn stat(&mut self, chr_id: CharacterID, stat_type: StatType) -> Stat0 {
         let val = self.state.chr(chr_id).stats.stat(stat_type).into_value();
         self.stat_map(chr_id, stat_type, val)
+    }
+
+    pub fn end_subturn(&mut self) {
+        self.state.current_subturner.switch()
     }
 
     /* pub fn attack(
@@ -296,7 +300,9 @@ impl Game<'_, '_> {
         let dmg = self.chr(attacker_id).stats.dmg.0.into_value();
         self.attack_map(attacker_id, target_id, dmg)
     } */
+}
 
+impl Game<'_, '_> {
     pub fn choose_chr_in_hand(
         &mut self,
         args: ChooseCardArgsP<'_, CharacterID>,
@@ -309,13 +315,11 @@ impl Game<'_, '_> {
     }
 
     pub fn choose_chr_in_hand_any(&mut self, args: ChooseCardArgs) -> Option<CharacterID> {
-        let p = |_, _| true;
-        self.input.choose_chr_in_hand(self.state, ChooseCardArgsP::new(args, &p))
+        self.input.choose_chr_in_hand(self.state, ChooseCardArgsP::new(args, &|_, _| true))
     }
 
     pub fn choose_act_in_hand_any(&mut self, args: ChooseCardArgs) -> Option<ActiveID> {
-        let p = |_, _| true;
-        self.input.choose_act_in_hand(self.state, ChooseCardArgsP::new(args, &p))
+        self.input.choose_act_in_hand(self.state, ChooseCardArgsP::new(args, &|_, _| true))
     }
 
     pub fn choose_chr_on_field(
@@ -330,16 +334,10 @@ impl Game<'_, '_> {
     }
 
     pub fn choose_chr_on_field_any(&mut self, args: ChooseCardArgs) -> Option<CharacterID> {
-        let p = |_, _| true;
-        self.input.choose_chr_on_field(self.state, ChooseCardArgsP::new(args, &p))
+        self.input.choose_chr_on_field(self.state, ChooseCardArgsP::new(args, &|_, _| true))
     }
 
     pub fn choose_act_on_field_any(&mut self, args: ChooseCardArgs) -> Option<ActiveID> {
-        let p = |_, _| true;
-        self.input.choose_act_on_field(self.state, ChooseCardArgsP::new(args, &p))
-    }
-
-    pub fn end_subturn(&mut self) {
-        self.state.current_subturner.switch()
+        self.input.choose_act_on_field(self.state, ChooseCardArgsP::new(args, &|_, _| true))
     }
 }

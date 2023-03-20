@@ -31,7 +31,7 @@ pub fn abilities() -> GameCallbacks {
             (is_used_on_enemy && is_enemy_single).then_some(args)
         }),
 
-        force_use_on_chr: Some(|game, args| {
+        force_use_on_chr: Some(|_game, _args| {
             todo!();
         }),
 

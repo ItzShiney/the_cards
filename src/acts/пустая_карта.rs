@@ -27,7 +27,7 @@ pub fn abilities() -> GameCallbacks {
             todo!();
         }),
 
-        force_use_on_field: Some(|game, args| {
+        force_use_on_field: Some(|mut game, args| {
             let owner_id = game.state.find_owner_of_act(args.act_id);
             let imitated_act_id = game
                 .choose_act_in_hand(ChooseCardArgsP {
@@ -37,9 +37,7 @@ pub fn abilities() -> GameCallbacks {
                         autochoose_single_option: false,
                     },
                     player_id: owner_id,
-                    p: &|game_state, act_id| {
-                        act_id != args.act_id && game_state.can_use_in_any_way(act_id)
-                    },
+                    p: &|game, act_id| act_id != args.act_id && game.can_use_in_any_way(act_id),
                 })
                 .unwrap();
 

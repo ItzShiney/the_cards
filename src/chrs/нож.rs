@@ -33,7 +33,7 @@ pub fn description() -> CustomString {
 
 pub fn abilities() -> GameCallbacks {
     GameCallbacks {
-        force_place: Some(|game, args| {
+        force_place: Some(|mut game, args| {
             let value = repeat_with(|| game.random(0, 1)).take(9).sum();
 
             let self_id = args.chr_id;

@@ -16,13 +16,13 @@ pub struct ChooseCardArgs {
 pub struct ChooseCardArgsP<'p, ID> {
     pub prompt: PromptArgs,
     pub player_id: PlayerID,
-    pub p: &'p dyn Fn(Game, ID) -> bool,
+    pub p: &'p dyn Fn(&mut Game, ID) -> bool,
 }
 
 impl<'p, ID> ChooseCardArgsP<'p, ID> {
     pub fn new(
         ChooseCardArgs { prompt, player_id }: ChooseCardArgs,
-        p: &'p dyn Fn(Game, ID) -> bool,
+        p: &'p dyn Fn(&mut Game, ID) -> bool,
     ) -> Self {
         Self { prompt, player_id, p }
     }

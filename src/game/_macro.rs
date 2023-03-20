@@ -1,4 +1,3 @@
-#[macro_export]
 macro_rules! game_chaining_methods {
     (
         @ { $($arg_structs:tt)* }
@@ -13,7 +12,7 @@ macro_rules! game_chaining_methods {
 
         $($xs:tt)*
     ) => {::paste::paste! {
-        $crate::game_chaining_methods! {
+        game_chaining_methods! {
             @ {
                 $($arg_structs)*
 
@@ -24,8 +23,8 @@ macro_rules! game_chaining_methods {
             @ {
                 $($game_callbacks_fields)*
 
-                [<can_ $method:camel:snake>]: Option<fn($crate::game::Game, [<$method:camel Args>]) -> Option<[<$method:camel Args>]>>,
-                [<force_ $method:camel:snake>]: Option<fn($crate::game::Game, [<$method:camel Args>]) -> [<$method:camel Args>]>,
+                pub [<can_ $method:camel:snake>]: Option<fn(&mut $crate::game::Game, [<$method:camel Args>]) -> Option<[<$method:camel Args>]>>,
+                pub [<force_ $method:camel:snake>]: Option<fn(&mut $crate::game::Game, [<$method:camel Args>]) -> [<$method:camel Args>]>,
             }
             @ {
                 $($game_state_impl)*
@@ -57,7 +56,7 @@ macro_rules! game_chaining_methods {
 
         $($xs:tt)*
     ) => {::paste::paste! {
-        $crate::game_chaining_methods! {
+        game_chaining_methods! {
             @ {
                 $($arg_structs)*
 
@@ -68,7 +67,7 @@ macro_rules! game_chaining_methods {
             @ {
                 $($game_callbacks_fields)*
 
-                $method: Option<fn(&mut $crate::game_state::GameState, &mut dyn $crate::game_input::GameInput, [<$method:camel Args>]) -> [<$method:camel Args>]>,
+                pub $method: Option<fn($crate::game::Game, [<$method:camel Args>]) -> [<$method:camel Args>]>,
             }
             @ {
                 $($game_state_impl)*
@@ -106,7 +105,7 @@ macro_rules! game_chaining_methods {
     };
 
     ( $($xs:tt)* ) => {
-        $crate::game_chaining_methods!(
+        game_chaining_methods!(
             @ {}
             @ {}
             @ {}

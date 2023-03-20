@@ -16,12 +16,10 @@ pub mod group;
 pub mod stats;
 
 use acts::ActiveType;
+use card_uses::console::ConsoleInput;
 use card_uses::Game;
 use chrs::CharacterType;
 use console::prompt;
-use game_input::DefaultRandom;
-use game_input::DefaultRandomBool;
-use game_input::GameInputTuple;
 use game_input::PromptArgs;
 use game_state::act_id::ActiveID;
 use game_state::act_info::ActiveInfo;
@@ -125,18 +123,14 @@ fn main() {
         Player { nickname: "maxvog".into() },
     ]);
 
-    let mut input = GameInputTuple {
-        random: DefaultRandom,
-        random_bool: DefaultRandomBool,
-        choose_chr_in_hand: console::ChooseCharacterInHand,
-        choose_act_in_hand: console::ChooseActiveInHand,
-        choose_chr_on_field: console::ChooseCharacterOnField,
-        choose_act_on_field: console::ChooseActiveOnField,
-    };
+    let mut input = ConsoleInput;
 
-    let game = Game { state: &mut state, input: &mut input };
+    let mut game = Game { state: &mut state, input: &mut input };
 
+    #[allow(unused)]
     let state = ();
+
+    #[allow(unused)]
     let input = ();
 
     {
