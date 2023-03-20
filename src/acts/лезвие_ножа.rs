@@ -27,9 +27,8 @@ pub fn abilities() -> GameCallbacks {
         force_use_on_chr: Some(|game, args| {
             game.stat_add(args.target_id, StatType::Physique, 1);
 
-            #[allow(unreachable_code)]
-            #[allow(clippy::diverging_sub_expression)]
-            if todo!("ранее была использована РУЧКА НОЖА") {
+            let was_ручка_ножа_used = false; // TODO ранее была использована РУЧКА НОЖА
+            if was_ручка_ножа_used {
                 let owner_id = game.state.find_owner_of_act(args.act_id);
 
                 let drawn_chr_id = game.state.chrs.add(CharacterInfo::new(Нож));

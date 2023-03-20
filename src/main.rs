@@ -127,10 +127,10 @@ fn main() {
 
     let mut game = Game { state: &mut state, input: &mut input };
 
-    #[allow(unused)]
+    #[allow(unused, clippy::let_unit_value)]
     let state = ();
 
-    #[allow(unused)]
+    #[allow(unused, clippy::let_unit_value)]
     let input = ();
 
     {

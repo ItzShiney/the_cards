@@ -35,7 +35,7 @@ fn add_all_method(res: &mut String, cases: &[SnakePascal]) {
 }
 
 fn add_lazy_method(res: &mut String, cases: &[SnakePascal], Method { name, ret }: Method) {
-    *res += "    #[allow(non_upper_case_globals)]\n";
+    *res += "    #[allow(non_upper_case_globals, clippy::explicit_auto_deref)]\n";
     *res += format!("    pub fn {name}(self) -> &'static {ret} {{\n").as_str();
     *res += "        lazy_static! {\n";
     for SnakePascal { snake, pascal } in cases.iter() {
@@ -79,7 +79,7 @@ fn file_names(dir: &Path) -> io::Result<Vec<SnakePascal>> {
     Ok(res)
 }
 
-fn make_enum_file<'uses, 'copy_methods, 'lazy_methods>(
+fn make_enum_file(
     input_dir: &Path,
     enum_name: &str,
     copy_methods: impl IntoIterator<Item = Method>,

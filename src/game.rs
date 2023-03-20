@@ -307,7 +307,7 @@ impl Game<'_, '_> {
         &mut self,
         args: ChooseCardArgsP<'_, CharacterID>,
     ) -> Option<CharacterID> {
-        self.input.choose_chr_in_hand(&mut self.state, args)
+        self.input.choose_chr_in_hand(self.state, args)
     }
 
     pub fn choose_act_in_hand(&mut self, args: ChooseCardArgsP<'_, ActiveID>) -> Option<ActiveID> {
