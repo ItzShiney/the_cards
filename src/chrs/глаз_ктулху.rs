@@ -33,12 +33,12 @@ pub fn description() -> CustomString {
 
 pub fn abilities() -> GameCallbacks {
     GameCallbacks {
-        attack_map: Some(|game, mut args| {
+        force_attack: Some(|game, mut args| {
             if game.random_bool(1. / 2.) {
                 args.dmg += 1;
             }
 
-            Continue(args)
+            args
         }),
 
         ..Default::default()

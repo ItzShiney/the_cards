@@ -30,12 +30,8 @@ pub fn description() -> CustomString {
 
 pub fn abilities() -> GameCallbacks {
     GameCallbacks {
-        attack_map: Some(|game, args| {
-            if game.state().chr(args.attacker_id).stats.int.0.into_value() >= 3 {
-                Break(Err(Terminated))
-            } else {
-                Continue(args)
-            }
+        can_attack: Some(|game, args| {
+            (game.state.chr(args.attacker_id).stats.int.0.into_value() >= 3).else_some(args)
         }),
 
         ..Default::default()

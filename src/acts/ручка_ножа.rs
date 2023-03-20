@@ -24,19 +24,19 @@ pub fn description() -> CustomString {
 
 pub fn abilities() -> GameCallbacks {
     GameCallbacks {
-        use_on_chr: Some(|game, args| {
+        force_use_on_chr: Some(|game, args| {
             game.stat_add(args.target_id, StatType::Physique, 1);
 
             #[allow(unreachable_code)]
             #[allow(clippy::diverging_sub_expression)]
             if todo!("ранее было использовано ЛЕЗВИЕ НОЖА") {
-                let owner_id = game.state().find_owner_act(args.act_id);
+                let owner_id = game.state.find_owner_of_act(args.act_id);
 
-                let drawn_chr_id = game.state_mut().chrs.add(CharacterInfo::new(Нож));
-                game.state_mut().chrs.add_to_player(drawn_chr_id, owner_id);
+                let drawn_chr_id = game.state.chrs.add(CharacterInfo::new(Нож));
+                game.state.chrs.add_to_player(drawn_chr_id, owner_id);
             }
 
-            Continue(args)
+            args
         }),
 
         ..Default::default()

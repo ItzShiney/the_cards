@@ -1,6 +1,6 @@
 use crate::custom_string::CustomString;
 use crate::default_formatted::DefaultFormatted;
-use crate::game::input::PromptArgs;
+use crate::game_input::PromptArgs;
 use crossterm::event;
 use crossterm::event::Event;
 use crossterm::event::KeyCode;

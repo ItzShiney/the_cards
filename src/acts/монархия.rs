@@ -24,7 +24,11 @@ pub fn description() -> CustomString {
 
 pub fn abilities() -> GameCallbacks {
     GameCallbacks {
-        use_on_field: Some(|_game, _args| {
+        can_use_on_field: Some(|_game, _args| {
+            todo!();
+        }),
+
+        force_use_on_field: Some(|_game, _args| {
             todo!();
         }),
 

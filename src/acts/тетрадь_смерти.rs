@@ -20,9 +20,9 @@ pub fn description() -> CustomString {
 
 pub fn abilities() -> GameCallbacks {
     GameCallbacks {
-        use_on_chr: Some(|game, args| {
-            drop(game.die(args.target_id));
-            Continue(args)
+        force_use_on_chr: Some(|game, args| {
+            _ = game.try_die(args.target_id);
+            args
         }),
 
         ..Default::default()

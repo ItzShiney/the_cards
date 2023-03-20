@@ -16,14 +16,14 @@ pub fn groups() -> Groups {
 
 pub fn description() -> CustomString {
     cs![
-        Condition(cs!["использовано на карту в руке"]),
-        Point(cs!["отдай её следующему по направлению ходов игроку"]),
+        Condition(cs!["использовано"]),
+        Point(cs!["выбери карту в руке. отдай её следующему по направлению ходов игроку"]),
     ]
 }
 
 pub fn abilities() -> GameCallbacks {
     GameCallbacks {
-        use_on_field: Some(|_game, _args| {
+        force_use_on_field: Some(|_game, _args| {
             todo!();
         }),
 

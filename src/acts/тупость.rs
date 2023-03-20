@@ -16,17 +16,12 @@ pub fn groups() -> Groups {
 
 pub fn description() -> CustomString {
     cs![
+        // TODO
         Condition(cs!["использована в ответ на ", Дизморалит, "-активку"]),
         Point(cs!["отменяет её эффект"]),
     ]
 }
 
 pub fn abilities() -> GameCallbacks {
-    GameCallbacks {
-        use_on_field: Some(|_game, _args| {
-            todo!();
-        }),
-
-        ..Default::default()
-    }
+    GameCallbacks::default()
 }

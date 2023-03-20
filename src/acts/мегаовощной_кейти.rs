@@ -20,7 +20,7 @@ pub fn description() -> CustomString {
 
 pub fn abilities() -> GameCallbacks {
     GameCallbacks {
-        use_on_chr: Some(|_game, _args| todo!("{} = 0", cs![Intellect])),
+        force_use_on_chr: Some(|_game, _args| todo!("{} = 0", cs![Intellect])),
 
         ..Default::default()
     }

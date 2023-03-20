@@ -13,7 +13,12 @@ use self::chr_info::CharacterInfo;
 use self::id_manager::id_trait::IDTrait;
 use self::id_manager::IDManager;
 use self::player_id::PlayerID;
+use crate::card_uses::ActiveType;
+use crate::card_uses::CharacterType;
+use crate::group::Group;
 use itertools::Itertools;
+use rand::seq::IteratorRandom;
+use rand::thread_rng;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::fmt::Debug;
@@ -234,7 +239,7 @@ impl GameState {
                 panic!("not enough players");
             };
 
-        Self {
+        let mut res = Self {
             chrs,
             acts,
 
@@ -243,6 +248,64 @@ impl GameState {
             attacker: SubturnerOnField::new(attacker_id),
             defender: SubturnerOnField::new(defender_id),
             current_subturner: Subturner::Attacker,
+        };
+        res.init_cards();
+        res
+    }
+
+    // TODO сделать конструктор принимающим GameInitInfo или GameConfig со всеми этими параметрами
+    const INIT_CHARACTERS_PER_HAND: usize = 3;
+    const INIT_ACTIVES_PER_HAND: usize = 6;
+
+    const CHARACTERS_GAINED_AFTER_TURN: usize = 2;
+    const ACTIVES_GAINED_AFTER_TURN: usize = 4;
+
+    const TOTAL_GAINS_PER_PLAYER: usize = 4;
+
+    fn init_cards(&mut self) {
+        self.init_gain_pile();
+
+        for player_id in self.players_map.keys().copied() {
+            self.chrs.pick_n(player_id, Self::INIT_CHARACTERS_PER_HAND);
+            self.acts.pick_n(player_id, Self::INIT_ACTIVES_PER_HAND);
+        }
+    }
+
+    fn init_gain_pile(&mut self) {
+        let players_count = self.players_map.len();
+
+        let total_chrs_count = players_count
+            * (Self::INIT_CHARACTERS_PER_HAND
+                + Self::CHARACTERS_GAINED_AFTER_TURN * Self::TOTAL_GAINS_PER_PLAYER);
+
+        let total_acts_count = players_count
+            * (Self::INIT_ACTIVES_PER_HAND
+                + Self::ACTIVES_GAINED_AFTER_TURN * Self::TOTAL_GAINS_PER_PLAYER);
+
+        for _ in 1..=total_chrs_count {
+            let chr_type = CharacterType::all()
+                .into_iter()
+                .filter(|&chr_type| !chr_type.groups().contains(&Group::Нераздаваемая))
+                .choose(&mut thread_rng())
+                .unwrap();
+
+            let chr = CharacterInfo::new(chr_type);
+
+            let chr_id = self.add_chr(chr);
+            self.chrs.add_to_drawpile(chr_id);
+        }
+
+        for _ in 1..=total_acts_count {
+            let act_type = ActiveType::all()
+                .into_iter()
+                .filter(|&chr_type| !chr_type.groups().contains(&Group::Нераздаваемая))
+                .choose(&mut thread_rng())
+                .unwrap();
+
+            let act = ActiveInfo::new(act_type);
+
+            let act_id = self.add_act(act);
+            self.acts.add_to_drawpile(act_id);
         }
     }
 }
@@ -367,7 +430,7 @@ impl GameState {
 }
 
 impl GameState {
-    pub fn try_find_owner_on_field_chr(&self, chr_id: CharacterID) -> Option<PlayerID> {
+    pub fn try_find_owner_on_field_of_chr(&self, chr_id: CharacterID) -> Option<PlayerID> {
         if self.attacker.chr_id == Some(chr_id) {
             return Some(self.attacker.player_id);
         }
@@ -379,25 +442,25 @@ impl GameState {
         None
     }
 
-    pub fn find_owner_on_field_chr(&self, chr_id: CharacterID) -> PlayerID {
-        self.try_find_owner_on_field_chr(chr_id).unwrap()
+    pub fn find_owner_on_field_of_chr(&self, chr_id: CharacterID) -> PlayerID {
+        self.try_find_owner_on_field_of_chr(chr_id).unwrap()
     }
 
-    pub fn try_find_owner_chr(&self, chr_id: CharacterID) -> Option<PlayerID> {
-        if let Some(owner_id) = self.try_find_owner_on_field_chr(chr_id) {
+    pub fn try_find_owner_of_chr(&self, chr_id: CharacterID) -> Option<PlayerID> {
+        if let Some(owner_id) = self.try_find_owner_on_field_of_chr(chr_id) {
             return Some(owner_id);
         }
 
         self.chrs.try_find_owner_in_decks(chr_id)
     }
 
-    pub fn find_owner_chr(&self, chr_id: CharacterID) -> PlayerID {
-        self.try_find_owner_chr(chr_id).unwrap()
+    pub fn find_owner_of_chr(&self, chr_id: CharacterID) -> PlayerID {
+        self.try_find_owner_of_chr(chr_id).unwrap()
     }
 }
 
 impl GameState {
-    pub fn try_find_owner_on_field_act(&self, act_id: ActiveID) -> Option<PlayerID> {
+    pub fn try_find_owner_on_field_of_act(&self, act_id: ActiveID) -> Option<PlayerID> {
         if self.attacker.used_act_ids.contains(&act_id) {
             return Some(self.attacker.player_id);
         }
@@ -409,48 +472,19 @@ impl GameState {
         None
     }
 
-    pub fn find_owner_on_field_act(&self, act_id: ActiveID) -> PlayerID {
-        self.try_find_owner_on_field_act(act_id).unwrap()
+    pub fn find_owner_on_field_of_act(&self, act_id: ActiveID) -> PlayerID {
+        self.try_find_owner_on_field_of_act(act_id).unwrap()
     }
 
-    pub fn try_find_owner_act(&self, act_id: ActiveID) -> Option<PlayerID> {
-        if let Some(owner_id) = self.try_find_owner_on_field_act(act_id) {
+    pub fn try_find_owner_of_act(&self, act_id: ActiveID) -> Option<PlayerID> {
+        if let Some(owner_id) = self.try_find_owner_on_field_of_act(act_id) {
             return Some(owner_id);
         }
 
         self.acts.try_find_owner_in_decks(act_id)
     }
 
-    pub fn find_owner_act(&self, act_id: ActiveID) -> PlayerID {
-        self.try_find_owner_act(act_id).unwrap()
-    }
-}
-
-impl GameState {
-    pub fn is_placeable(&self, chr_id: CharacterID) -> bool {
-        let Some(owner_id) = self.try_find_owner_chr(chr_id) else {
-            return true
-        };
-
-        (owner_id == self.attacker.player_id && self.attacker.chr_id.is_none())
-            || (owner_id == self.defender.player_id && self.defender.chr_id.is_none())
-    }
-
-    pub fn is_usable_in_any_way(&self, act_id: ActiveID) -> bool {
-        self.is_usable_on_own_chr(act_id)
-            || self.is_usable_on_enemy_chr(act_id)
-            || self.is_usable_on_field(act_id)
-    }
-
-    pub fn is_usable_on_field(&self, act_id: ActiveID) -> bool {
-        self.act(act_id).type_.abilities().use_on_field.is_some()
-    }
-
-    pub fn is_usable_on_own_chr(&self, act_id: ActiveID) -> bool {
-        self.act(act_id).type_.abilities().use_on_chr.is_some() // FIXME use_on_own_chr
-    }
-
-    pub fn is_usable_on_enemy_chr(&self, act_id: ActiveID) -> bool {
-        self.act(act_id).type_.abilities().use_on_chr.is_some() // FIXME use_on_enemy_chr
+    pub fn find_owner_of_act(&self, act_id: ActiveID) -> PlayerID {
+        self.try_find_owner_of_act(act_id).unwrap()
     }
 }

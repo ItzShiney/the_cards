@@ -2,8 +2,9 @@ pub use crate::*;
 pub use acts::*;
 pub use custom_string::*;
 pub use game::*;
+pub use game_input::*;
+pub use game_state::*;
 pub use group::*;
-pub use input::*;
 pub use itertools::Itertools;
 pub use stats::*;
 pub use std::iter::repeat_with;
@@ -38,4 +39,14 @@ pub fn description() -> CustomString {
 #[allow(unused)]
 pub fn abilities() -> GameCallbacks {
     GameCallbacks::default()
+}
+
+pub trait ElseSome<T> {
+    fn else_some(self, t: T) -> Option<T>;
+}
+
+impl<T> ElseSome<T> for bool {
+    fn else_some(self, t: T) -> Option<T> {
+        (!self).then_some(t)
+    }
 }

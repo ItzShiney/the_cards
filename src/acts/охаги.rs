@@ -23,14 +23,14 @@ pub fn description() -> CustomString {
 
 pub fn abilities() -> GameCallbacks {
     GameCallbacks {
-        use_on_chr: Some(|game, args| {
-            let chr_int = game.state().chr(args.target_id).stats.int.into_value();
-            if !(chr_int <= 3) {
-                return Break(Err(Terminated));
-            }
+        can_use_on_chr: Some(|game, args| {
+            let chr_int = game.state.chr(args.target_id).stats.int.into_value();
+            (chr_int <= 3).then_some(args)
+        }),
 
-            let _ = game.hurt(args.target_id, 1);
-            Continue(args)
+        force_use_on_chr: Some(|game, args| {
+            _ = game.try_get_hurt(args.target_id, 1);
+            args
         }),
 
         ..Default::default()

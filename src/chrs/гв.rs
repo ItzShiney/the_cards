@@ -42,19 +42,19 @@ pub fn description() -> CustomString {
 
 pub fn abilities() -> GameCallbacks {
     GameCallbacks {
-        post_place: Some(|game, args| {
+        force_place: Some(|game, args| {
             let self_id = args.chr_id;
-            let owner_id = game.state().find_owner_chr(self_id);
+            let owner_id = game.state.find_owner_of_chr(self_id);
 
             let phy = {
                 let chrs_sum = game
-                    .state()
+                    .state
                     .chrs
                     .hand(owner_id)
                     .iter()
                     .copied()
                     .filter_map(|chr_id| {
-                        let chr = game.state().chr(chr_id);
+                        let chr = game.state.chr(chr_id);
                         if chr.type_.groups().contains(&Иллюзия) {
                             Some(chr.stats.phy.0.into_value())
                         } else {
@@ -64,13 +64,13 @@ pub fn abilities() -> GameCallbacks {
                     .sum::<Stat0>();
 
                 let acts_sum = game
-                    .state()
+                    .state
                     .acts
                     .hand(owner_id)
                     .iter()
                     .copied()
                     .filter_map(|act_id| {
-                        let act = game.state().act(act_id);
+                        let act = game.state.act(act_id);
                         match act.type_ {
                             Берн => Some(3),
                             _ => None,
@@ -82,6 +82,8 @@ pub fn abilities() -> GameCallbacks {
             };
 
             game.force_set_phy_vit(self_id, phy);
+
+            args
         }),
 
         ..Default::default()

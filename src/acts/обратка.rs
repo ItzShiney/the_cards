@@ -23,15 +23,16 @@ pub fn description() -> CustomString {
 
 pub fn abilities() -> GameCallbacks {
     GameCallbacks {
-        use_on_chr: Some(|game, args| {
-            let owner_id = game.state().try_find_owner_act(args.act_id);
-            let target_owner_id = game.state().try_find_owner_chr(args.target_id);
+        can_use_on_chr: Some(|game, args| {
+            let is_used_on_enemy =
+                Some(args.target_id) == game.state.other_subturner_on_field().chr_id;
+            let is_enemy_single = game.state.current_subturner_on_field().chr_id.is_none();
 
-            if owner_id == target_owner_id {
-                return Break(Err(Terminated));
-            }
+            (is_used_on_enemy && is_enemy_single).then_some(args)
+        }),
 
-            todo!()
+        force_use_on_chr: Some(|game, args| {
+            todo!();
         }),
 
         ..Default::default()

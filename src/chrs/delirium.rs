@@ -42,9 +42,9 @@ pub fn description() -> CustomString {
 
 pub fn abilities() -> GameCallbacks {
     GameCallbacks {
-        post_place: Some(|game, args| {
+        force_place: Some(|game, args| {
             let self_id = args.chr_id;
-            let owner_id = game.state().find_owner_chr(self_id);
+            let owner_id = game.state.find_owner_of_chr(self_id);
             let Some(copied_chr_id) = game.choose_chr_in_hand_any(ChooseCardArgs {
                 prompt: PromptArgs {
                     str: cs![Character(Delirium), ": чьи ", Vitality, " и ", Damage, " скопировать?"],
@@ -52,14 +52,16 @@ pub fn abilities() -> GameCallbacks {
                     autochoose_single_option: false,
                 },
                 player_id: owner_id,
-            }) else { return };
+            }) else { return args };
 
-            let stats = &game.state().chr(copied_chr_id).stats;
+            let stats = &game.state.chr(copied_chr_id).stats;
             let phy = stats.phy.0.into_value();
             let dmg = stats.dmg.0.into_value();
 
             game.force_set_phy_vit(self_id, phy);
             game.force_set_stat(self_id, StatType::Damage, dmg);
+
+            args
         }),
 
         ..Default::default()

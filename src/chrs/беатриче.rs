@@ -30,15 +30,7 @@ pub fn description() -> CustomString {
 
 pub fn abilities() -> GameCallbacks {
     GameCallbacks {
-        die: Some(
-            |game, args| {
-                if game.random_bool(1. / 4.) {
-                    Break(Err(Terminated))
-                } else {
-                    Continue(args)
-                }
-            },
-        ),
+        can_die: Some(|game, args| game.random_bool(1. / 4.).else_some(args)),
 
         ..Default::default()
     }

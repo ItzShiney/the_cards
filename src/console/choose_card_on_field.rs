@@ -2,15 +2,15 @@ macro_rules! choose_card_on_field {
     ( $Namespace:ident, $namespace:ident, |$game_state:ident| $options:expr ) => {::paste::paste!{
         pub struct [<Choose $Namespace OnField>];
 
-        impl $crate::game::input::[<Choose $namespace:camel OnField>] for [<Choose $Namespace OnField>] {
+        impl $crate::game_input::[<Choose $namespace:camel OnField>] for [<Choose $Namespace OnField>] {
             fn [<choose_ $namespace _on_field>] <'game_state>(
                 &mut self,
-                $game_state: &'game_state $crate::game::state::GameState,
-                args: $crate::game::input::ChooseCardArgsP<'game_state, '_, $crate::game::state::[<$namespace _id>]::[<$Namespace ID>]>,
-            ) -> Option<$crate::game::state::[<$namespace _id>]::[<$Namespace ID>]> {
+                $game_state: &'game_state $crate::game_state::GameState,
+                args: $crate::game_input::ChooseCardArgsP<'_, $crate::game_state::[<$namespace _id>]::[<$Namespace ID>]>,
+            ) -> Option<$crate::game_state::[<$namespace _id>]::[<$Namespace ID>]> {
                 use itertools::Itertools;
 
-                let cards: Vec<$crate::game::state::[<$namespace _id>]::[<$Namespace ID>]> = $options;
+                let cards: Vec<$crate::game_state::[<$namespace _id>]::[<$Namespace ID>]> = $options;
                 let is_enabled =
                     cards.iter().copied().map(|id| (args.p)($game_state, id)).collect_vec();
 

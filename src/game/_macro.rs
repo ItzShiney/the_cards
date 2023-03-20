@@ -1,97 +1,116 @@
 #[macro_export]
-macro_rules! callbacks {
+macro_rules! game_chaining_methods {
     (
-        $(
-            $(#[ping($self_namespace:ident)])?
-            $(#[pre($pre_value:expr)])?
-            pub fn $name:ident(
-                &mut $self:ident
-                $(
-                    , $arg_name:ident : $ArgType:ty
-                )* $(,)?
-            ) $(-> $Return:ty)? $callback_action:block
-        )*
-    ) => {paste::paste! {
-        $(
-            #[derive(Clone)]
-            pub struct [<$name:camel Args>] {
-                $(pub $arg_name: $ArgType,)*
-            }
+        @ { $($arg_structs:tt)* }
+        @ { $($game_callbacks_fields:tt)* }
+        @ { $($game_state_impl:tt)* }
 
-            #[allow(unused_parens)]
-            pub type [<$name:camel Callback>] = fn(&mut $crate::game::Game, [<$name:camel Args>]) -> ::std::ops::ControlFlow<($($Return)?), [<$name:camel Args>]>;
-            pub type [<Post $name:camel Callback>] = fn(&mut $crate::game::Game, &[<$name:camel Args>]);
-        )*
+        $( #[chain($chain:ident)] )?
+        try $method:ident ( &mut $self:ident $(, $arg:ident : $Arg:ty)* $(,)? ) $(-> $Ret:ty)? {
+            can $can:block
+            force $force:block
+        }
+
+        $($xs:tt)*
+    ) => {::paste::paste! {
+        $crate::game_chaining_methods! {
+            @ {
+                $($arg_structs)*
+
+                pub struct [<$method:camel Args>] {
+                    $(pub $arg: $Arg,)*
+                }
+            }
+            @ {
+                $($game_callbacks_fields)*
+
+                [<can_ $method:camel:snake>]: Option<fn($crate::game::Game, [<$method:camel Args>]) -> Option<[<$method:camel Args>]>>,
+                [<force_ $method:camel:snake>]: Option<fn($crate::game::Game, [<$method:camel Args>]) -> [<$method:camel Args>]>,
+            }
+            @ {
+                $($game_state_impl)*
+
+                pub fn [<can_ $method:camel:snake>] (&mut $self $(, $arg: $Arg)*) -> bool $can
+
+                pub fn [<force_ $method:camel:snake>] (&mut $self $(, $arg: $Arg)*) $(-> $Ret)? $force
+
+                #[allow(unused_parens)]
+                pub fn [<try_ $method:camel:snake>] (&mut $self $(, $arg: $Arg)*) -> Option<($($Ret)?)> {
+                    if $self.[<can_ $method:camel:snake>]($($arg),*) {
+                        Some($self.[<force_ $method:camel:snake>]($($arg),*))
+                    } else {
+                        None
+                    }
+                }
+            }
+            $($xs)*
+        }
+    }};
+
+    (
+        @ { $($arg_structs:tt)* }
+        @ { $($game_callbacks_fields:tt)* }
+        @ { $($game_state_impl:tt)* }
+
+        $( #[chain($chain:ident)] )?
+        fn $method:ident ( &mut $self:ident $(, $arg:ident : $Arg:ty)* $(,)? ) $(-> $Ret:ty)? $body:block
+
+        $($xs:tt)*
+    ) => {::paste::paste! {
+        $crate::game_chaining_methods! {
+            @ {
+                $($arg_structs)*
+
+                pub struct [<$method:camel Args>] {
+                    $(pub $arg: $Arg,)*
+                }
+            }
+            @ {
+                $($game_callbacks_fields)*
+
+                $method: Option<fn(&mut $crate::game_state::GameState, &mut dyn $crate::game_input::GameInput, [<$method:camel Args>]) -> [<$method:camel Args>]>,
+            }
+            @ {
+                $($game_state_impl)*
+
+                #[allow(unused_parens)]
+                pub fn $method (&mut $self $(, $arg: $Arg)*) $(-> $Ret)? $body
+            }
+            $($xs)*
+        }
+    }};
+
+    (
+        @ { $($arg_structs:tt)* }
+        @ { $($game_callbacks_fields:tt)* }
+        @ { $($game_state_impl:tt)* }
+    ) => {
+        $($arg_structs)*
 
         #[derive(Default)]
         pub struct GameCallbacks {
-            $(
-                pub $name: Option<[<$name:camel Callback>]>,
-                pub [<post_ $name>]: Option<[<Post $name:camel Callback>]>,
-            )*
+            $($game_callbacks_fields)*
         }
 
-        impl $crate::game::Game {
-            $(
-                pub fn [<$name:camel:snake _args>] (&mut $self, #[allow(unused_mut)] mut args: [<$name:camel Args>] ) $(-> $Return)? {
-                    /* $(
-                        const _: () = assert!($pre_value);
+        impl $crate::game::Game<'_, '_> { $($game_state_impl)* }
+    };
 
-                        while let Some(callback) = $self.callbacks.$name {
-                            match (callback)($self, args) {
-                                ::std::ops::ControlFlow::Continue(new_args) => {
-                                    args = new_args;
-                                }
+    (
+        @ { $($arg_structs:tt)* }
+        @ { $($game_callbacks_fields:tt)* }
+        @ { $($game_state_impl:tt)* }
 
-                                ::std::ops::ControlFlow::Break(result) => return result,
-                            }
-                        }
-                    )? */
+        $($xs:tt)*
+    ) => {
+        std::compile_error!(std::concat!("'", std::stringify!($($xs)*), "' could not match any branch"));
+    };
 
-                    #[allow(unused)] let id = ($(args.$arg_name,)* 0,).0;
-                    $(
-                        if let Some(callback) = $self.state.$self_namespace.get(id).type_.abilities().$name {
-                            match (callback)($self, args) {
-                                ::std::ops::ControlFlow::Continue(new_args) => {
-                                    args = new_args;
-                                }
-
-                                ::std::ops::ControlFlow::Break(result) => return result,
-                            }
-                        }
-                    )?
-                    #[allow(unused)] let id = ();
-
-                    #[allow(clippy::redundant_closure_call)]
-                    let res = (|| {
-                        #[allow(unused)]
-                        let [<$name:camel Args>] { $($arg_name,)* } = args.clone();
-
-                        $callback_action
-                    })();
-
-                    $self.[<post_ $name:camel:snake _args>](&args);
-                    res
-                }
-
-                pub fn [<post_ $name:camel:snake _args>] (&mut $self, #[allow(unused)] args: &[<$name:camel Args>] ) {
-                    /* while let Some(callback) = $self.callbacks.[<post_ $name>] {
-                        (callback)($self, args);
-                    } */
-
-                    #[allow(unused)] let id = ($(args.$arg_name,)* 0,).0;
-                    $(
-                        if let Some(callback) = $self.state.$self_namespace.get(id).type_.abilities().[<post_ $name>] {
-                            (callback)($self, args);
-                        }
-                    )?
-                    #[allow(unused)] let id = ();
-                }
-
-                pub fn $name (&mut $self, $($arg_name: $ArgType,)* ) $(-> $Return)? {
-                    $self.[<$name:camel:snake _args>]([<$name:camel Args>] { $($arg_name,)* })
-                }
-            )*
-        }
-    }};
+    ( $($xs:tt)* ) => {
+        $crate::game_chaining_methods!(
+            @ {}
+            @ {}
+            @ {}
+            $($xs)*
+        );
+    };
 }

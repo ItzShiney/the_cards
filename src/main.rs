@@ -10,23 +10,25 @@ pub mod custom_string;
 pub mod default_formatted;
 pub mod effect;
 pub mod game;
+pub mod game_input;
+pub mod game_state;
 pub mod group;
 pub mod stats;
 
 use acts::ActiveType;
+use card_uses::Game;
 use chrs::CharacterType;
 use console::prompt;
-use game::input::DefaultRandom;
-use game::input::DefaultRandomBool;
-use game::input::GameInputTuple;
-use game::input::PromptArgs;
-use game::state::act_id::ActiveID;
-use game::state::act_info::ActiveInfo;
-use game::state::chr_id::CharacterID;
-use game::state::chr_info::CharacterInfo;
-use game::state::GameState;
-use game::state::Player;
-use game::Game;
+use game_input::DefaultRandom;
+use game_input::DefaultRandomBool;
+use game_input::GameInputTuple;
+use game_input::PromptArgs;
+use game_state::act_id::ActiveID;
+use game_state::act_info::ActiveInfo;
+use game_state::chr_id::CharacterID;
+use game_state::chr_info::CharacterInfo;
+use game_state::GameState;
+use game_state::Player;
 use std::iter::repeat;
 
 pub fn print_chrs() {
@@ -118,34 +120,37 @@ impl InputState {
 }
 
 fn main() {
-    let state = GameState::new(vec![
+    let mut state = GameState::new(vec![
         Player { nickname: "Shiney".into() },
         Player { nickname: "maxvog".into() },
     ]);
 
-    let input = Box::new(GameInputTuple {
+    let mut input = GameInputTuple {
         random: DefaultRandom,
         random_bool: DefaultRandomBool,
         choose_chr_in_hand: console::ChooseCharacterInHand,
         choose_act_in_hand: console::ChooseActiveInHand,
         choose_chr_on_field: console::ChooseCharacterOnField,
         choose_act_on_field: console::ChooseActiveOnField,
-    });
+    };
 
-    let mut game = Game::new(state, input);
+    let game = Game { state: &mut state, input: &mut input };
+
+    let state = ();
+    let input = ();
 
     {
         use InputState::*;
 
-        let mut state = InputState::default();
+        let mut input_state = InputState::default();
         loop {
-            let player_id = game.state().current_subturner_on_field().player_id;
+            let player_id = game.state.current_subturner_on_field().player_id;
 
-            state = match state {
+            input_state = match input_state {
                 ChooseAction => {
-                    let player_nickname = game.state().players_map[&player_id].nickname.clone();
-                    let can_end_subturn = game.state().attacker.player_id != player_id
-                        || game.state().attacker.chr_id.is_some();
+                    let player_nickname = game.state.players_map[&player_id].nickname.clone();
+                    let can_end_subturn = game.state.attacker.player_id != player_id
+                        || game.state.attacker.chr_id.is_some();
 
                     match prompt(
                         PromptArgs {
@@ -168,8 +173,8 @@ fn main() {
                 }
 
                 CheckField => {
-                    let is_own_chr_placed = game.state().try_own_chr_id(player_id).is_some();
-                    let is_enemy_chr_placed = game.state().try_enemy_chr_id(player_id).is_some();
+                    let is_own_chr_placed = game.state.try_own_chr_id(player_id).is_some();
+                    let is_enemy_chr_placed = game.state.try_enemy_chr_id(player_id).is_some();
 
                     match prompt(
                         PromptArgs {
@@ -183,7 +188,7 @@ fn main() {
                         ]
                         .into_iter(),
                     ) {
-                        None => state.previous(),
+                        None => input_state.previous(),
                         Some(0) => CheckOwnCharacter,
                         Some(1) => CheckEnemyCharacter,
                         _ => unreachable!(),
@@ -191,22 +196,22 @@ fn main() {
                 }
 
                 CheckOwnCharacter => {
-                    let chr_id = game.state().own_chr_id(player_id);
-                    println!("{}", game.state().chr(chr_id));
+                    let chr_id = game.state.own_chr_id(player_id);
+                    println!("{}", game.state.chr(chr_id));
 
-                    state.previous()
+                    input_state.previous()
                 }
 
                 CheckEnemyCharacter => {
-                    let chr_id = game.state().enemy_chr_id(player_id);
-                    println!("{}", game.state().chr(chr_id));
+                    let chr_id = game.state.enemy_chr_id(player_id);
+                    println!("{}", game.state.chr(chr_id));
 
-                    state.previous()
+                    input_state.previous()
                 }
 
                 CardsList => {
-                    let has_chrs = !game.state().chrs.hand(player_id).is_empty();
-                    let has_acts = !game.state().acts.hand(player_id).is_empty();
+                    let has_chrs = !game.state.chrs.hand(player_id).is_empty();
+                    let has_acts = !game.state.acts.hand(player_id).is_empty();
 
                     match prompt(
                         PromptArgs {
@@ -216,7 +221,7 @@ fn main() {
                         },
                         [(has_chrs, cs!["персонажи"]), (has_acts, cs!["активки"])].into_iter(),
                     ) {
-                        None => state.previous(),
+                        None => input_state.previous(),
                         Some(0) => CharactersList,
                         Some(1) => ActivesList,
                         _ => unreachable!(),
@@ -224,11 +229,11 @@ fn main() {
                 }
 
                 CharactersList => {
-                    let chr_ids = game.state().chrs.hand(player_id);
+                    let chr_ids = game.state.chrs.hand(player_id);
                     let chr_names = chr_ids
                         .iter()
                         .copied()
-                        .map(|chr_id| cs![Character(game.state().chr(chr_id).type_)]);
+                        .map(|chr_id| cs![Character(game.state.chr(chr_id).type_)]);
                     let options = repeat(true).zip(chr_names);
 
                     match prompt(
@@ -239,7 +244,7 @@ fn main() {
                         },
                         options,
                     ) {
-                        None => state.previous(),
+                        None => input_state.previous(),
 
                         Some(chr_id_idx) => {
                             let chr_id = chr_ids[chr_id_idx];
@@ -252,17 +257,14 @@ fn main() {
                 CharacterOptions { chr_id } => {
                     match prompt(
                         PromptArgs {
-                            str: cs![Character(game.state().chr(chr_id).type_)],
+                            str: cs![Character(game.state.chr(chr_id).type_)],
                             is_cancellable: true,
                             autochoose_single_option: false,
                         },
-                        [
-                            (true, cs!["просмотреть"]),
-                            (game.state().is_placeable(chr_id), cs!["выставить"]),
-                        ]
-                        .into_iter(),
+                        [(true, cs!["просмотреть"]), (game.can_place(chr_id), cs!["выставить"])]
+                            .into_iter(),
                     ) {
-                        None => state.previous(),
+                        None => input_state.previous(),
                         Some(0) => CheckCharacter { chr_id },
                         Some(1) => PlaceCharacter { chr_id },
                         _ => unreachable!(),
@@ -270,28 +272,25 @@ fn main() {
                 }
 
                 CheckCharacter { chr_id } => {
-                    println!("{}", game.state().chr(chr_id));
+                    println!("{}", game.state.chr(chr_id));
 
-                    state.previous()
+                    input_state.previous()
                 }
 
                 PlaceCharacter { chr_id } => {
-                    game.place(chr_id).unwrap();
+                    game.try_place(chr_id).unwrap();
 
-                    println!(
-                        "персонаж {} выставлен",
-                        cs![Character(game.state().chr(chr_id).type_)]
-                    );
+                    println!("персонаж {} выставлен", cs![Character(game.state.chr(chr_id).type_)]);
 
                     InputState::default()
                 }
 
                 ActivesList => {
-                    let act_ids = game.state().acts.hand(player_id);
+                    let act_ids = game.state.acts.hand(player_id);
                     let act_names = act_ids
                         .iter()
                         .copied()
-                        .map(|act_id| cs![Active(game.state().act(act_id).type_)]);
+                        .map(|act_id| cs![Active(game.state.act(act_id).type_)]);
                     let options = repeat(true).zip(act_names);
 
                     match prompt(
@@ -302,7 +301,7 @@ fn main() {
                         },
                         options,
                     ) {
-                        None => state.previous(),
+                        None => input_state.previous(),
 
                         Some(act_id_idx) => {
                             let act_id = act_ids[act_id_idx];
@@ -315,17 +314,17 @@ fn main() {
                 ActiveOptions { act_id } => {
                     match prompt(
                         PromptArgs {
-                            str: cs![Active(game.state().act(act_id).type_)],
+                            str: cs![Active(game.state.act(act_id).type_)],
                             is_cancellable: true,
                             autochoose_single_option: false,
                         },
                         [
                             (true, cs!["просмотреть"]),
-                            (game.state().is_usable_in_any_way(act_id), cs!["использовать"]),
+                            (game.can_use_in_any_way(act_id), cs!["использовать"]),
                         ]
                         .into_iter(),
                     ) {
-                        None => state.previous(),
+                        None => input_state.previous(),
                         Some(0) => CheckActive { act_id },
                         Some(1) => UseActive { act_id },
                         _ => unreachable!(),
@@ -333,19 +332,16 @@ fn main() {
                 }
 
                 CheckActive { act_id } => {
-                    println!("{}", game.state().act(act_id));
+                    println!("{}", game.state.act(act_id));
 
-                    state.previous()
+                    input_state.previous()
                 }
 
                 UseActive { act_id } => {
-                    let is_usable_on_field = game.state().is_usable_on_field(act_id);
+                    let can_use_on_field = game.can_use_on_field(act_id);
 
-                    let is_usable_on_own_chr = game.state().try_own_chr_id(player_id).is_some()
-                        && game.state().is_usable_on_own_chr(act_id);
-
-                    let is_usable_on_enemy_chr = game.state().try_enemy_chr_id(player_id).is_some()
-                        && game.state().is_usable_on_enemy_chr(act_id);
+                    let can_use_on_own_chr = game.can_use_on_own_chr(act_id);
+                    let can_use_on_enemy_chr = game.can_use_on_enemy_chr(act_id);
 
                     match prompt(
                         PromptArgs {
@@ -354,13 +350,13 @@ fn main() {
                             autochoose_single_option: false,
                         },
                         [
-                            (is_usable_on_field, cs!["на поле"]),
-                            (is_usable_on_own_chr, cs!["на своего персонажа"]),
-                            (is_usable_on_enemy_chr, cs!["на противника"]),
+                            (can_use_on_field, cs!["на поле"]),
+                            (can_use_on_own_chr, cs!["на своего персонажа"]),
+                            (can_use_on_enemy_chr, cs!["на противника"]),
                         ]
                         .into_iter(),
                     ) {
-                        None => state.previous(),
+                        None => input_state.previous(),
                         Some(0) => UseActiveOnField { act_id },
                         Some(1) => UseActiveOnOwnCharacter { act_id },
                         Some(2) => UseActiveOnEnemyCharacter { act_id },
@@ -369,37 +365,37 @@ fn main() {
                 }
 
                 UseActiveOnField { act_id } => {
-                    game.use_on_field(act_id).unwrap();
+                    game.try_use_on_field(act_id).unwrap();
 
                     println!(
                         "активка {} использована на поле",
-                        cs![Active(game.state().act(act_id).type_)]
+                        cs![Active(game.state.act(act_id).type_)]
                     );
 
                     InputState::default()
                 }
 
                 UseActiveOnOwnCharacter { act_id } => {
-                    let target_id = game.state().own_chr_id(player_id);
-                    game.use_on_chr(act_id, target_id).unwrap();
+                    let target_id = game.state.own_chr_id(player_id);
+                    game.try_use_on_chr(act_id, target_id).unwrap();
 
                     println!(
                         "активка {} использована на персонажа {}",
-                        cs![Active(game.state().act(act_id).type_)],
-                        cs![Character(game.state().chr(target_id).type_)],
+                        cs![Active(game.state.act(act_id).type_)],
+                        cs![Character(game.state.chr(target_id).type_)],
                     );
 
                     InputState::default()
                 }
 
                 UseActiveOnEnemyCharacter { act_id } => {
-                    let target_id = game.state().enemy_chr_id(player_id);
-                    game.use_on_chr(act_id, target_id).unwrap();
+                    let target_id = game.state.enemy_chr_id(player_id);
+                    game.try_use_on_chr(act_id, target_id).unwrap();
 
                     println!(
                         "активка {} использована на персонажа {}",
-                        cs![Active(game.state().act(act_id).type_)],
-                        cs![Character(game.state().chr(target_id).type_)],
+                        cs![Active(game.state.act(act_id).type_)],
+                        cs![Character(game.state.chr(target_id).type_)],
                     );
 
                     InputState::default()

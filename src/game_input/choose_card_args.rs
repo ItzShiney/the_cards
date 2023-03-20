@@ -1,6 +1,6 @@
 use crate::custom_string::CustomString;
-use crate::game::state::player_id::PlayerID;
-use crate::game::state::GameState;
+use crate::game::Game;
+use crate::game_state::player_id::PlayerID;
 
 pub struct PromptArgs {
     pub str: CustomString,
@@ -13,16 +13,16 @@ pub struct ChooseCardArgs {
     pub player_id: PlayerID,
 }
 
-pub struct ChooseCardArgsP<'game_state, 'p, ID> {
+pub struct ChooseCardArgsP<'p, ID> {
     pub prompt: PromptArgs,
     pub player_id: PlayerID,
-    pub p: &'p dyn Fn(&'game_state GameState, ID) -> bool,
+    pub p: &'p dyn Fn(Game, ID) -> bool,
 }
 
-impl<'game_state, 'p, ID> ChooseCardArgsP<'game_state, 'p, ID> {
+impl<'p, ID> ChooseCardArgsP<'p, ID> {
     pub fn new(
         ChooseCardArgs { prompt, player_id }: ChooseCardArgs,
-        p: &'p dyn Fn(&'game_state GameState, ID) -> bool,
+        p: &'p dyn Fn(Game, ID) -> bool,
     ) -> Self {
         Self { prompt, player_id, p }
     }

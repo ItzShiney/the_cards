@@ -1,4 +1,5 @@
 use_small_heuristics = "Max"
+single_line_if_else_max_width = 20
 
 unstable_features = true
 imports_granularity = "Item"
