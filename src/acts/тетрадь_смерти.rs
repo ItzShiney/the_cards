@@ -20,7 +20,7 @@ pub fn description() -> CustomString {
 
 pub fn abilities() -> GameCallbacks {
     GameCallbacks {
-        force_use_on_chr: Some(|mut game, args| {
+        force_use_on_chr: Some(|game, args| {
             _ = game.try_die(args.target_id);
             args
         }),

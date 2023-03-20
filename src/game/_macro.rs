@@ -29,9 +29,9 @@ macro_rules! game_chaining_methods {
             @ {
                 $($game_state_impl)*
 
-                pub fn [<can_ $method:camel:snake>] (&mut $self $(, $arg: $Arg)*) -> bool $can
+                pub fn [<can_ $method:camel:snake>] (&mut $self $(, #[allow(unused)] $arg: $Arg)*) -> bool $can
 
-                pub fn [<force_ $method:camel:snake>] (&mut $self $(, $arg: $Arg)*) $(-> $Ret)? $force
+                pub fn [<force_ $method:camel:snake>] (&mut $self $(, #[allow(unused)] $arg: $Arg)*) $(-> $Ret)? $force
 
                 #[allow(unused_parens)]
                 pub fn [<try_ $method:camel:snake>] (&mut $self $(, $arg: $Arg)*) -> Option<($($Ret)?)> {
@@ -73,7 +73,7 @@ macro_rules! game_chaining_methods {
                 $($game_state_impl)*
 
                 #[allow(unused_parens)]
-                pub fn $method (&mut $self $(, $arg: $Arg)*) $(-> $Ret)? $body
+                pub fn $method (&mut $self $(, #[allow(unused)] $arg: $Arg)*) $(-> $Ret)? $body
             }
             $($xs)*
         }

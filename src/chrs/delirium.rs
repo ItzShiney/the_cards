@@ -42,7 +42,7 @@ pub fn description() -> CustomString {
 
 pub fn abilities() -> GameCallbacks {
     GameCallbacks {
-        force_place: Some(|mut game, args| {
+        force_place: Some(|game, args| {
             let self_id = args.chr_id;
 
             let Some(copied_chr_id) = game.choose_chr_in_hand_any(ChooseCardArgs {

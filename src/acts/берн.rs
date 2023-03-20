@@ -24,7 +24,7 @@ pub fn description() -> CustomString {
 
 pub fn abilities() -> GameCallbacks {
     GameCallbacks {
-        force_use_on_chr: Some(|mut game, args| {
+        force_use_on_chr: Some(|game, args| {
             let target_owner_id = game.state.find_owner_of_chr(args.target_id);
 
             let replacing_chr_id = game
@@ -35,7 +35,7 @@ pub fn abilities() -> GameCallbacks {
                         autochoose_single_option: true,
                     },
                     player_id: target_owner_id,
-                    p: &|mut game, chr_id| chr_id != args.target_id && game.can_place(chr_id),
+                    p: &|game, chr_id| chr_id != args.target_id && game.can_place(chr_id),
                 })
                 .unwrap();
 

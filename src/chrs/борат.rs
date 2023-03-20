@@ -33,7 +33,7 @@ pub fn description() -> CustomString {
 
 pub fn abilities() -> GameCallbacks {
     GameCallbacks {
-        force_place: Some(|mut game, args| {
+        force_place: Some(|game, args| {
             let self_id = args.chr_id;
 
             if let Some(gained_act_id) = game.state.acts.pick(game.state.find_owner_of_chr(self_id))

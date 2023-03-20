@@ -28,7 +28,7 @@ pub fn abilities() -> GameCallbacks {
             (chr_int <= 3).then_some(args)
         }),
 
-        force_use_on_chr: Some(|mut game, args| {
+        force_use_on_chr: Some(|game, args| {
             _ = game.try_get_hurt(args.target_id, 1);
             args
         }),
