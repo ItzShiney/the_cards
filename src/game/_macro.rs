@@ -1,6 +1,5 @@
 macro_rules! game_chaining_methods {
     (
-        @ { $($arg_structs:tt)* }
         @ { $($game_callbacks_fields:tt)* }
         @ { $($game_state_impl:tt)* }
 
@@ -12,14 +11,11 @@ macro_rules! game_chaining_methods {
 
         $($xs:tt)*
     ) => {::paste::paste! {
-        game_chaining_methods! {
-            @ {
-                $($arg_structs)*
+        pub struct [<$method:camel Args>] {
+            $(pub $arg: $Arg,)*
+        }
 
-                pub struct [<$method:camel Args>] {
-                    $(pub $arg: $Arg,)*
-                }
-            }
+        game_chaining_methods! {
             @ {
                 $($game_callbacks_fields)*
 
@@ -47,7 +43,6 @@ macro_rules! game_chaining_methods {
     }};
 
     (
-        @ { $($arg_structs:tt)* }
         @ { $($game_callbacks_fields:tt)* }
         @ { $($game_state_impl:tt)* }
 
@@ -56,14 +51,11 @@ macro_rules! game_chaining_methods {
 
         $($xs:tt)*
     ) => {::paste::paste! {
-        game_chaining_methods! {
-            @ {
-                $($arg_structs)*
+        pub struct [<$method:camel Args>] {
+            $(pub $arg: $Arg,)*
+        }
 
-                pub struct [<$method:camel Args>] {
-                    $(pub $arg: $Arg,)*
-                }
-            }
+        game_chaining_methods! {
             @ {
                 $($game_callbacks_fields)*
 
@@ -80,12 +72,9 @@ macro_rules! game_chaining_methods {
     }};
 
     (
-        @ { $($arg_structs:tt)* }
         @ { $($game_callbacks_fields:tt)* }
         @ { $($game_state_impl:tt)* }
     ) => {
-        $($arg_structs)*
-
         #[derive(Default)]
         pub struct GameCallbacks {
             $($game_callbacks_fields)*
@@ -95,7 +84,6 @@ macro_rules! game_chaining_methods {
     };
 
     (
-        @ { $($arg_structs:tt)* }
         @ { $($game_callbacks_fields:tt)* }
         @ { $($game_state_impl:tt)* }
 
@@ -106,7 +94,6 @@ macro_rules! game_chaining_methods {
 
     ( $($xs:tt)* ) => {
         game_chaining_methods!(
-            @ {}
             @ {}
             @ {}
             $($xs)*
