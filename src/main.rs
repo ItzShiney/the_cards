@@ -143,8 +143,9 @@ fn main() {
             input_state = match input_state {
                 ChooseAction => {
                     let player_nickname = game.state.players_map[&player_id].nickname.clone();
-                    let can_end_subturn = game.state.attacker.player_id != player_id
-                        || game.state.attacker.chr_id.is_some();
+                    let can_end_subturn = !(game.state.current_subturner_on_field().player_id
+                        == player_id
+                        && game.state.current_subturner_on_field().chr_id.is_none());
 
                     match prompt(
                         PromptArgs {
