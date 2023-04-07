@@ -1,7 +1,7 @@
 use convert_case::Case;
 use convert_case::Casing;
-use std::fs::{self};
-use std::io::{self};
+use std::fs;
+use std::io;
 use std::path::Path;
 
 struct SnakePascal {
