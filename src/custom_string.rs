@@ -69,6 +69,15 @@ custom_string_slice![
         Random(RangeInclusive<CustomString>) =>
             |f, (range)| write!(f, "🎲[{}..{}]", range.start(), range.end());
 
+        Choice(Vec<CustomString>) =>
+            |f, (options)| {
+                write!(f, "🎲({}", options[0])?;
+                for option in &options[1..] {
+                    write!(f, ", {}", option)?;
+                }
+                write!(f, ")")
+            };
+
         Mean(Vec<CustomString>) =>
             |f, (args)| write!(f, "⟨{}⟩", args.iter().join(", "));
 
@@ -104,6 +113,7 @@ custom_string_slice![
         LE => |f| write!(f, "≤");
         GE => |f| write!(f, "≥");
 
+        Tab => |f| write!(f, "    ");
         __ => |f| writeln!(f);
     }
 ];
