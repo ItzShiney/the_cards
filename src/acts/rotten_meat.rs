@@ -15,14 +15,17 @@ pub fn groups() -> Groups {
 }
 
 pub fn description() -> CustomString {
-    cs![Condition(cs!["использовано на персонажа"]), Point(cs![Physique, " & ", Vitality, " += 1"]),]
+    cs![
+        Condition(cs!["использовано на персонажа"]),
+        Point(cs![Physique, " += 1, ", Vitality, " += 2"]),
+    ]
 }
 
 pub fn abilities() -> GameCallbacks {
     GameCallbacks {
         force_use_on_chr: Some(|game, args| {
             game.stat_add(args.target_id, StatType::Physique, 1);
-            game.stat_add(args.target_id, StatType::Vitality, 1);
+            game.stat_add(args.target_id, StatType::Vitality, 2);
             args
         }),
 
