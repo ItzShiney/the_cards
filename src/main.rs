@@ -117,7 +117,12 @@ impl InputState {
     }
 }
 
-fn main() {
+pub fn main() {
+    print_chrs();
+    print_acts();
+}
+
+pub fn main2() {
     let mut state = GameState::new(vec![
         Player { nickname: "Shiney".into() },
         Player { nickname: "maxvog".into() },
