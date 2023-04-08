@@ -7,16 +7,16 @@ use std::collections::BTreeSet;
 use std::fmt::Display;
 
 group![
+    ByЛёня > "\x1b[35m@лёня\x1b[39m";
+    ByМаксим > "\x1b[36m@максим\x1b[39m";
+    ByКостя > "\x1b[33m@костя\x1b[39m";
+    ByЛёша > "\x1b[31m@лёша\x1b[39m";
+
     S > "\x1b[34mS\x1b[39m";
     A > "\x1b[31mA\x1b[39m";
     B > "\x1b[33mB\x1b[39m";
     C > "\x1b[32mС\x1b[39m";
     D > "\x1b[36mD\x1b[39m";
-
-    ByЛёня > "\x1b[35m@лёня\x1b[39m";
-    ByМаксим > "\x1b[36m@максим\x1b[39m";
-    ByКостя > "\x1b[33m@костя\x1b[39m";
-    ByЛёша > "\x1b[31m@лёша\x1b[39m";
 
     Скрытая > "\x1b[90mскрытая\x1b[39m";
 
