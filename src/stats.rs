@@ -33,7 +33,7 @@ impl Display for StatValue {
         match self {
             Self::WillChange(x) => write!(f, "{}?", x),
             Self::Var(x) => write!(f, "{}", x),
-            Self::Const(x) => write!(f, "{}=const", x),
+            Self::Const(x) => write!(f, "{} 🔒", x),
         }
     }
 }
