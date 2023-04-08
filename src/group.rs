@@ -89,6 +89,14 @@ fn fmt_groups(
     groups: impl Iterator<Item = Group> + Clone,
     f: &mut std::fmt::Formatter,
 ) -> std::fmt::Result {
+    let res = groups.clone().join(" ");
+    write!(f, "{}", res)
+}
+
+/* fn fmt_groups(
+    groups: impl Iterator<Item = Group> + Clone,
+    f: &mut std::fmt::Formatter,
+) -> std::fmt::Result {
     fn supers(groups: impl Iterator<Item = Group>) -> Groups {
         groups.flat_map(|group| group.supers()).collect()
     }
@@ -102,7 +110,7 @@ fn fmt_groups(
     } else {
         Ok(())
     }
-}
+} */
 
 impl Display for DefaultFormatted<&BTreeSet<Group>> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
