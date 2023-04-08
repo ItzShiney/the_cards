@@ -1,7 +1,7 @@
 pub use crate::card_uses::*;
 
 pub fn name() -> CustomString {
-    cs!["МАКСИМ ЖИВОТВОРЯЩИЙ"]
+    cs!["МАКСИМОВА ИНКАРНАЦИЯ ЖИВОТВОРЯЩАЯ"]
 }
 
 #[rustfmt::skip]
@@ -32,8 +32,5 @@ pub fn description() -> CustomString {
         Point(cs!["\x1b[1m[LIBRA]\x1b[0m"]),         // TODO
         Point(cs!["\x1b[1m[CROOKED PENNY]\x1b[0m"]), // TODO
         Point(cs![Godhead]),
-        __,
-        Condition(cs!["в игре использована ", Животворит, "-активка"]),
-        NamedPoint(cs!["ЖИВОТВОРЯЩАЯ ЖИВОТВОРЯЩЕСТЬ"], cs![Intellect, " += 2"]),
     ]
 }
