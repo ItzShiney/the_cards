@@ -7,7 +7,7 @@ pub fn name() -> CustomString {
 #[rustfmt::skip]
 pub fn groups() -> Groups {
     GroupsBuilder {
-        tier: B,
+        tier: C,
         author: ByКостя,
         genders: [Женщина],
         tags: [Higurashi],
