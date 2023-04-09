@@ -1,7 +1,7 @@
 pub use crate::card_uses::*;
 
 pub fn name() -> CustomString {
-    cs!["МАГДАЛИНА"]
+    cs!["MAGDALENE"]
 }
 
 #[rustfmt::skip]
@@ -20,7 +20,7 @@ pub fn stats() -> Stats {
     Stats::new(
         phy!(7),
         dmg!(2),
-        int!(6), // TODO брать у CharacterType::Айзек
+        Isaac.stats().int
     )
 }
 
