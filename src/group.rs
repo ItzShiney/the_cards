@@ -91,10 +91,10 @@ group![
 pub type Groups = BTreeSet<Group>;
 
 fn fmt_groups(
-    groups: impl Iterator<Item = Group> + Clone,
+    mut groups: impl Iterator<Item = Group> + Clone,
     f: &mut std::fmt::Formatter,
 ) -> std::fmt::Result {
-    let res = groups.clone().join(" ");
+    let res = groups.join(" ");
     write!(f, "{}", res)
 }
 

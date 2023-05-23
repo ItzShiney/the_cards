@@ -18,17 +18,20 @@ pub struct Game<'state, 'input> {
 
 // TODO: разнести по файлам
 
+#[derive(Debug, Clone, Copy)]
+pub struct CannotUse;
+
 pub trait CanForce {
     type Output;
 
     fn can(&self, game: &mut Game) -> bool;
     fn force(&self, game: &mut Game) -> Self::Output;
 
-    fn try_(&self, game: &mut Game) -> Result<Self::Output, ()> {
+    fn try_(&self, game: &mut Game) -> Result<Self::Output, CannotUse> {
         if self.can(game) {
             Ok(self.force(game))
         } else {
-            Err(())
+            Err(CannotUse)
         }
     }
 }
