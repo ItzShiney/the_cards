@@ -24,11 +24,9 @@ impl Parse for ItemImpls {
 #[proc_macro]
 #[allow(non_snake_case)]
 pub fn GameCallbacks(tokens: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let item_impls = parse_macro_input!(tokens as ItemImpls);
-    let item_impls = item_impls.0;
+    let item_impls = parse_macro_input!(tokens as ItemImpls).0;
 
     let mut fields = quote! {};
-    // let mut game_impl = quote! {};
 
     for item_impl in item_impls.iter() {
         let path = match &*item_impl.self_ty {
@@ -59,24 +57,6 @@ pub fn GameCallbacks(tokens: proc_macro::TokenStream) -> proc_macro::TokenStream
                     pub #can_ident: Option<fn(&mut Game<'_, '_>, #ident_upper) -> Option<#ident_upper>>,
                     pub #force_ident: Option<fn(&mut Game<'_, '_>, #ident_upper) -> (#ident_upper, <#ident_upper as CanForce>::Output)>,
                 });
-
-                /* game_impl.extend(quote! {
-                    pub fn #can_ident(&self, args: #ident_upper) -> bool {
-                        args.can(self)
-                    }
-
-                    fn #force_ident(&mut self, args: #ident_upper) -> <#ident_upper as CanForce>::Output {
-                        args.force(self)
-                    }
-
-                    pub fn #try_ident(&mut self, args: #ident_upper) -> Result<<#ident_upper as CanForce>::Output, ()> {
-                        if self.#can_ident(args) {
-                            Ok(self.#force_ident(args))
-                        } else {
-                            Err(())
-                        }
-                    }
-                }); */
             }
 
             "Map" => {
@@ -96,10 +76,6 @@ pub fn GameCallbacks(tokens: proc_macro::TokenStream) -> proc_macro::TokenStream
         pub struct GameCallbacks {
             #fields
         }
-
-        /* impl Game<'_, '_> {
-            #game_impl
-        } */
     }
     .into()
 }
