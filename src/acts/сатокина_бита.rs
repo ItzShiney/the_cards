@@ -21,8 +21,8 @@ pub fn description() -> CustomString {
 pub fn abilities() -> GameCallbacks {
     GameCallbacks {
         force_use_on_chr: Some(|game, args| {
-            game.stat_add(args.target_id, StatType::Damage, 2);
-            args
+            _ = StatAdd::new(args.target_id, StatType::Damage, 2).try_(game);
+            (args, ())
         }),
 
         ..Default::default()

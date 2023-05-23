@@ -54,7 +54,7 @@ pub fn abilities() -> GameCallbacks {
             game.force_set_stat(self_id, StatType::Damage, dmg);
             game.force_set_stat(self_id, StatType::Intellect, int);
 
-            args
+            (args, ())
         }),
 
         ..Default::default()

@@ -56,7 +56,7 @@ pub fn abilities() -> GameCallbacks {
                     .filter_map(|chr_id| {
                         let chr = game.state.chr(chr_id);
                         if chr.type_.groups().contains(&Иллюзия) {
-                            Some(chr.stats.phy.0.into_value())
+                            Some(chr.stats.phy.0)
                         } else {
                             None
                         }
@@ -83,7 +83,7 @@ pub fn abilities() -> GameCallbacks {
 
             game.force_set_phy_vit(self_id, phy);
 
-            args
+            (args, ())
         }),
 
         ..Default::default()

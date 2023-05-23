@@ -38,7 +38,7 @@ pub fn abilities() -> GameCallbacks {
                 args.dmg += 1;
             }
 
-            args
+            (args, ())
         }),
 
         ..Default::default()

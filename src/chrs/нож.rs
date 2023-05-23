@@ -39,7 +39,7 @@ pub fn abilities() -> GameCallbacks {
             let self_id = args.chr_id;
             game.force_set_stat(self_id, StatType::Damage, value);
 
-            args
+            (args, ())
         }),
 
         ..Default::default()

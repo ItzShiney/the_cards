@@ -35,12 +35,12 @@ pub fn abilities() -> GameCallbacks {
                         autochoose_single_option: true,
                     },
                     player_id: target_owner_id,
-                    p: &|game, chr_id| chr_id != args.target_id && game.can_place(chr_id),
+                    p: &|game, chr_id| chr_id != args.target_id && Place::new(chr_id).can(game),
                 })
                 .unwrap();
 
-            game.replace(args.target_id, replacing_chr_id);
-            args
+            _ = Replace::new(args.target_id, replacing_chr_id).try_(game);
+            (args, ())
         }),
 
         ..Default::default()

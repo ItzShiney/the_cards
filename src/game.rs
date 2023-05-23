@@ -1,15 +1,14 @@
-#[macro_use]
-mod _macro;
-
-use crate::card_uses::ActiveID;
-use crate::card_uses::CharacterID;
-use crate::card_uses::GameState;
-use crate::card_uses::Stat0;
-use crate::card_uses::StatType;
-use crate::card_uses::Subturner;
 use crate::game_input::ChooseCardArgs;
 use crate::game_input::ChooseCardArgsP;
 use crate::game_input::GameInput;
+use crate::game_state::act_id::ActiveID;
+use crate::game_state::chr_id::CharacterID;
+use crate::game_state::GameState;
+use crate::game_state::Subturner;
+use crate::stats::Stat0;
+use crate::stats::StatType;
+use derive_more::Constructor;
+use macros::GameCallbacks;
 use std::mem::take;
 
 pub struct Game<'state, 'input> {
@@ -17,213 +16,294 @@ pub struct Game<'state, 'input> {
     pub input: &'input mut dyn GameInput,
 }
 
-game_chaining_methods! {
-    #[chain(act_id)]
-    try use_on_field(
-        &mut self,
-        act_id: ActiveID,
-    ) {
-        can {
-            self.state.act(act_id).type_.abilities().force_use_on_field.is_some()
+// TODO: разнести по файлам
+
+pub trait CanForce {
+    type Output;
+
+    fn can(&self, game: &mut Game) -> bool;
+    fn force(&self, game: &mut Game) -> Self::Output;
+
+    fn try_(&self, game: &mut Game) -> Result<Self::Output, ()> {
+        if self.can(game) {
+            Ok(self.force(game))
+        } else {
+            Err(())
+        }
+    }
+}
+
+pub trait Map {
+    type Value;
+
+    fn map(&self, game: &mut Game, value: Self::Value) -> Self::Value;
+}
+
+#[derive(Constructor, Clone, Copy)]
+pub struct UseOnField {
+    pub act_id: ActiveID,
+}
+
+#[derive(Constructor, Clone, Copy)]
+pub struct UseOnCharacter {
+    pub act_id: ActiveID,
+    pub target_id: CharacterID,
+}
+
+// TODO:
+// добавить поле `caller: Caller`
+// верифицировать изменения приватных статов проверкой `caller == Caller::Character(chr_id)`
+#[derive(Constructor, Clone, Copy)]
+pub struct StatAdd {
+    pub chr_id: CharacterID,
+    pub stat_type: StatType,
+    pub val: Stat0,
+}
+
+#[derive(Constructor, Clone, Copy)]
+pub struct Attack {
+    pub attacker_id: CharacterID,
+    pub target_id: CharacterID,
+    pub dmg: Stat0,
+}
+
+#[derive(Constructor, Clone, Copy)]
+pub struct GetHurt {
+    pub chr_id: CharacterID,
+    pub dmg: Stat0,
+}
+
+#[derive(Constructor, Clone, Copy)]
+pub struct Place {
+    pub chr_id: CharacterID,
+}
+
+#[derive(Constructor, Clone, Copy)]
+pub struct Die {
+    pub chr_id: CharacterID,
+}
+
+#[derive(Constructor, Clone, Copy)]
+pub struct EndTurn;
+
+#[derive(Constructor, Clone, Copy)]
+pub struct Replace {
+    pub replaced_chr_id: CharacterID,
+    pub replacing_chr_id: CharacterID,
+}
+
+#[derive(Constructor, Clone, Copy)]
+pub struct HealOnFieldLeaveMap {
+    pub chr_id: CharacterID,
+}
+
+#[derive(Constructor, Clone, Copy)]
+pub struct StatMap {
+    pub chr_id: CharacterID,
+    pub stat_type: StatType,
+}
+
+// TODO: перепроверить все реализации. вероятны лишние `.unwrap()`
+GameCallbacks! {
+    impl CanForce for UseOnField {
+        type Output = ();
+
+        fn can(&self, game: &mut Game) -> bool {
+            game.state.act(self.act_id).type_.abilities().force_use_on_field.is_some()
         }
 
-        force {
-            self.state.acts.remove_from_some_player(act_id);
+        fn force(&self, game: &mut Game) -> Self::Output {
+            game.state.acts.remove_from_some_player(self.act_id);
         }
     }
 
-    #[chain(act_id)]
-    try use_on_chr(
-        &mut self,
-        act_id: ActiveID,
-        target_id: CharacterID,
-    ) {
-        can {
-            self.state.act(act_id).type_.abilities().force_use_on_chr.is_some()
+    impl CanForce for UseOnCharacter {
+        type Output = ();
+
+        fn can(&self, game: &mut Game) -> bool {
+            game.state.act(self.act_id).type_.abilities().force_use_on_chr.is_some()
         }
 
-        force {
-            self.state.acts.remove_from_some_player(act_id);
+        fn force(&self, game: &mut Game) -> Self::Output {
+            game.state.acts.remove_from_some_player(self.act_id);
         }
     }
 
-    #[chain(chr_id)]
-    fn stat_map(
-        &mut self,
-        chr_id: CharacterID,
-        stat_type: StatType,
-        val: Stat0
-    ) -> Stat0 {
-        val
-    }
+    impl CanForce for StatAdd {
+        type Output = ();
 
-    #[chain(chr_id)]
-    fn stat_add(
-        &mut self,
-        chr_id: CharacterID,
-        stat_type: StatType,
-        val: Stat0,
-    ) {
-        let mut res = self.state.chr(chr_id).stats.stat(stat_type).into_value();
-        res += val;
-        res = res.max(0);
-
-        if stat_type == StatType::Vitality {
-            let phy = self.state.chr(chr_id).stats.phy.0.into_value();
-            res = res.min(phy);
+        fn can(&self, game: &mut Game) -> bool {
+            !(game.is_const(self.chr_id, self.stat_type)
+                || game.is_private(self.chr_id, self.stat_type))
         }
 
-        self.state.chr_mut(chr_id).stats.stat_mut(stat_type).set(res);
-    }
+        fn force(&self, game: &mut Game) -> Self::Output {
+            let mut res = game.state.chr(self.chr_id).stats.stat(self.stat_type);
+            res += self.val;
+            res = res.max(0);
 
-    #[chain(attacker_id)]
-    try attack(
-        &mut self,
-        attacker_id: CharacterID,
-        target_id: CharacterID,
-        dmg: Stat0,
-    ) {
-        can {
-            self.can_get_hurt(target_id, dmg)
-        }
+            if self.stat_type == StatType::Vitality {
+                let phy = game.state.chr(self.chr_id).stats.phy.0;
+                res = res.min(phy);
+            }
 
-        force {
-            _ = self.try_get_hurt(target_id, dmg);
+            *game.state.chr_mut(self.chr_id).stats.stat_mut(self.stat_type) = res;
         }
     }
 
-    #[chain(chr_id)]
-    try get_hurt(
-        &mut self,
-        chr_id: CharacterID,
-        dmg: Stat0,
-    ) {
-        can {
-            dmg != 0
+    impl CanForce for Attack {
+        type Output = ();
+
+        fn can(&self, game: &mut Game) -> bool {
+            GetHurt::new(self.target_id, self.dmg).can(game)
         }
 
-        force {
-            let old_def = self.state.chr(chr_id).stats.def.0.into_value();
-            self.stat_add(chr_id, StatType::Defence, dmg);
-            let new_def = self.state.chr(chr_id).stats.def.0.into_value();
+        fn force(&self, game: &mut Game) -> Self::Output {
+            GetHurt::new(self.target_id, self.dmg).try_(game).unwrap();
+        }
+    }
+
+    impl CanForce for GetHurt {
+        type Output = ();
+
+        fn can(&self, _game: &mut Game) -> bool {
+            self.dmg != 0
+        }
+
+        fn force(&self, game: &mut Game) -> Self::Output {
+            let old_def = game.state.chr(self.chr_id).stats.def.0;
+            _ = StatAdd::new(self.chr_id, StatType::Defence, self.dmg).try_(game);
+            let new_def = game.state.chr(self.chr_id).stats.def.0;
 
             let def_dmg_taken = old_def - new_def;
-            let vit_dmg_to_take = dmg - def_dmg_taken;
+            let vit_dmg_to_take = self.dmg - def_dmg_taken;
 
             if vit_dmg_to_take > 0 {
-                self.stat_add(chr_id, StatType::Vitality, vit_dmg_to_take);
+                _ = StatAdd::new(self.chr_id, StatType::Vitality, vit_dmg_to_take).try_(game);
             }
         }
     }
 
-    #[chain(chr_id)]
-    try place(
-        &mut self,
-        chr_id: CharacterID,
-    ) {
-        can {
-            let Some(owner_id) = self.state.try_find_owner_of_chr(chr_id) else {
-                return true;
-            };
+    impl CanForce for Place {
+        type Output = ();
 
-            (owner_id == self.state.attacker.player_id && self.state.attacker.chr_id.is_none())
-                || (owner_id == self.state.defender.player_id && self.state.defender.chr_id.is_none())
+        fn can(&self, game: &mut Game) -> bool {
+            if let Some(owner_id) = game.state.try_find_owner_of_chr(self.chr_id) {
+                (owner_id == game.state.attacker.player_id && game.state.attacker.chr_id.is_none())
+                    || (owner_id == game.state.defender.player_id
+                        && game.state.defender.chr_id.is_none())
+            } else {
+                true
+            }
         }
 
-        force {
-            let Some(player_id) = self.state.try_find_owner_of_chr(chr_id) else { return };
+        fn force(&self, game: &mut Game) -> Self::Output {
+            if let Some(player_id) = game.state.try_find_owner_of_chr(self.chr_id) {
+                if player_id == game.state.attacker.player_id {
+                    let attacker_chr_id = &mut game.state.attacker.chr_id;
 
-            if player_id == self.state.attacker.player_id {
-                let attacker_chr_id = &mut self.state.attacker.chr_id;
+                    if attacker_chr_id.is_some() {
+                        return;
+                    }
 
-                if attacker_chr_id.is_some() {
-                    return;
+                    game.state.chrs.remove_from_player(self.chr_id, player_id);
+                    *attacker_chr_id = Some(self.chr_id);
+                } else if player_id == game.state.defender.player_id {
+                    let defender_chr_id = &mut game.state.defender.chr_id;
+
+                    if defender_chr_id.is_some() {
+                        return;
+                    }
+
+                    game.state.chrs.remove_from_player(self.chr_id, player_id);
+                    *defender_chr_id = Some(self.chr_id);
                 }
-
-                self.state.chrs.remove_from_player(chr_id, player_id);
-                *attacker_chr_id = Some(chr_id);
-            } else if player_id == self.state.defender.player_id {
-                let defender_chr_id = &mut self.state.defender.chr_id;
-
-                if defender_chr_id.is_some() {
-                    return;
-                }
-
-                self.state.chrs.remove_from_player(chr_id, player_id);
-                *defender_chr_id = Some(chr_id);
             }
         }
     }
 
-    #[chain(chr_id)]
-    try die(
-        &mut self,
-        chr_id: CharacterID,
-    ) {
-        can {
+    impl CanForce for Die {
+        type Output = ();
+
+        fn can(&self, _game: &mut Game) -> bool {
             true
         }
 
-        force {
-            self.state.chr_mut(chr_id).stats.max_vit();
-            self.state.chrs.add_to_wastepile(chr_id);
+        fn force(&self, game: &mut Game) -> Self::Output {
+            game.heal_on_field_leave(self.chr_id);
+            game.state.chrs.add_to_wastepile(self.chr_id);
 
-            self.force_end_turn();
+            EndTurn::new().force(game);
         }
     }
 
-    #[chain(chr_id)]
-    fn is_dead(
-        &mut self,
-        chr_id: CharacterID,
-    ) -> bool {
-        self.state.chr(chr_id).stats.vit.into_value() == 0
+    impl CanForce for EndTurn {
+        type Output = ();
+
+        fn can(&self, _game: &mut Game) -> bool {
+            true
+        }
+
+        fn force(&self, game: &mut Game) -> Self::Output {
+            game.force_remove_from_field(game.state.current_subturner);
+            game.force_remove_from_field(game.state.current_subturner.other());
+            game.state.change_turner();
+        }
     }
 
-    fn random(
-        &mut self,
-        min: Stat0,
-        max: Stat0,
-    ) -> Stat0 {
+    impl CanForce for Replace {
+        type Output = ();
+
+        fn can(&self, _game: &mut Game) -> bool {
+            true
+        }
+
+        fn force(&self, _game: &mut Game) -> Self::Output {
+            todo!()
+        }
+    }
+
+    impl Map for HealOnFieldLeaveMap {
+        type Value = Stat0;
+
+        fn map(&self, _game: &mut Game, value: Self::Value) -> Self::Value {
+            value
+        }
+    }
+
+    impl Map for StatMap {
+        type Value = Stat0;
+
+        fn map(&self, _game: &mut Game, value: Self::Value) -> Self::Value {
+            value
+        }
+    }
+}
+
+impl Game<'_, '_> {
+    pub fn is_dead(&mut self, chr_id: CharacterID) -> bool {
+        self.state.chr(chr_id).stats.vit.0 == 0
+    }
+
+    pub fn random(&mut self, min: Stat0, max: Stat0) -> Stat0 {
         self.input.random(min, max)
     }
 
-    fn random_bool(
-        &mut self,
-        true_prob: f64,
-    ) -> bool {
+    pub fn random_bool(&mut self, true_prob: f64) -> bool {
         self.input.random_bool(true_prob)
     }
 
-    try end_turn(
-        &mut self,
-    ) {
-        can {
-            true
-        }
-
-        force {
-            self.force_remove_from_field(self.state.current_subturner);
-            self.force_remove_from_field(self.state.current_subturner.other());
-
-            self.state.change_turner();
-        }
-    }
-
-    fn force_remove_from_field(
-        &mut self,
-        subturner: Subturner
-    ) {
+    pub fn force_remove_from_field(&mut self, subturner: Subturner) {
         let subturner_on_field = self.state.subturner_on_field_mut(subturner);
         let chr_id = subturner_on_field.chr_id.take().expect("expected chr to be on field");
         let used_act_ids = take(&mut subturner_on_field.used_act_ids);
 
         if self.is_dead(chr_id) {
-            self.force_die(chr_id);
+            Die::new(chr_id).force(self);
             return;
         }
 
-        self.state.chr_mut(chr_id).stats.max_vit();
+        self.heal_on_field_leave(chr_id);
 
         let owner_id = self.state.find_owner_of_chr(chr_id);
         self.state.chrs.add_to_player(chr_id, owner_id);
@@ -233,30 +313,25 @@ game_chaining_methods! {
         }
     }
 
-    fn force_set_stat(
-        &mut self,
-        chr_id: CharacterID,
-        stat_type: StatType,
-        value: Stat0
-    ) {
-        self.state.chr_mut(chr_id).stats.stat_mut(stat_type).set(value)
+    pub fn force_set_stat(&mut self, chr_id: CharacterID, stat_type: StatType, value: Stat0) {
+        *self.state.chr_mut(chr_id).stats.stat_mut(stat_type) = value;
     }
 
-    fn force_set_phy_vit(
-        &mut self,
-        chr_id: CharacterID,
-        value: Stat0
-    ) {
+    pub fn force_set_phy_vit(&mut self, chr_id: CharacterID, value: Stat0) {
         self.force_set_stat(chr_id, StatType::Physique, value);
         self.force_set_stat(chr_id, StatType::Vitality, value);
     }
 
-    fn replace(
-        &mut self,
-        replaced_chr_id: CharacterID,
-        replacing_chr_id: CharacterID
-    ) {
-        todo!()
+    pub fn is_const(&self, _chr_id: CharacterID, _stat_type: StatType) -> bool {
+        false
+    }
+
+    pub fn is_private(&self, _chr_id: CharacterID, _stat_type: StatType) -> bool {
+        false
+    }
+
+    pub fn will_change(&self, _chr_id: CharacterID, _stat_type: StatType) -> bool {
+        false
     }
 }
 
@@ -264,7 +339,7 @@ impl Game<'_, '_> {
     pub fn can_use_in_any_way(&mut self, act_id: ActiveID) -> bool {
         self.can_use_on_own_chr(act_id)
             || self.can_use_on_enemy_chr(act_id)
-            || self.can_use_on_field(act_id)
+            || UseOnField::new(act_id).can(self)
     }
 
     pub fn can_use_on_own_chr(&mut self, act_id: ActiveID) -> bool {
@@ -272,7 +347,7 @@ impl Game<'_, '_> {
             return false;
         };
 
-        self.can_use_on_chr(act_id, chr_id)
+        UseOnCharacter::new(act_id, chr_id).can(self)
     }
 
     pub fn can_use_on_enemy_chr(&mut self, act_id: ActiveID) -> bool {
@@ -280,16 +355,20 @@ impl Game<'_, '_> {
             return false;
         };
 
-        self.can_use_on_chr(act_id, chr_id)
+        UseOnCharacter::new(act_id, chr_id).can(self)
     }
 
     pub fn stat(&mut self, chr_id: CharacterID, stat_type: StatType) -> Stat0 {
-        let val = self.state.chr(chr_id).stats.stat(stat_type).into_value();
-        self.stat_map(chr_id, stat_type, val)
+        let value = self.state.chr(chr_id).stats.stat(stat_type);
+        StatMap::new(chr_id, stat_type).map(self, value)
     }
 
     pub fn end_subturn(&mut self) {
         self.state.current_subturner.switch()
+    }
+
+    pub fn heal_on_field_leave(&mut self, _chr_id: CharacterID) {
+        todo!()
     }
 
     /* pub fn attack(
@@ -297,7 +376,7 @@ impl Game<'_, '_> {
         attacker_id: CharacterID,
         target_id: CharacterID,
     ) {
-        let dmg = self.chr(attacker_id).stats.dmg.0.into_value();
+        let dmg = self.chr(attacker_id).stats.dmg.0;
         self.attack_map(attacker_id, target_id, dmg)
     } */
 }

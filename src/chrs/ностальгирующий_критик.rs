@@ -34,21 +34,21 @@ pub fn description() -> CustomString {
 
 pub fn abilities() -> GameCallbacks {
     GameCallbacks {
-        stat_map: Some(|game, mut args| {
+        stat_map: Some(|game, args, mut value| {
             let owner_id = game.state.find_owner_of_chr(args.chr_id);
             if let Some(enemy_id) = game.state.try_enemy_chr_id(owner_id) {
-                let enemy_int = game.state.chr(enemy_id).stats.int.0.into_value();
+                let enemy_int = game.state.chr(enemy_id).stats.int.0;
 
                 if enemy_int <= 3 {
                     match args.stat_type {
-                        StatType::Vitality => args.val -= 1,
-                        StatType::Damage => args.val += 2,
+                        StatType::Vitality => value -= 1,
+                        StatType::Damage => value += 2,
                         _ => {}
                     }
                 }
             }
 
-            args
+            (args, value)
         }),
 
         ..Default::default()

@@ -38,14 +38,14 @@ pub fn abilities() -> GameCallbacks {
 
             if let Some(gained_act_id) = game.state.acts.pick(game.state.find_owner_of_chr(self_id))
             {
-                let could_use = game.try_use_on_chr(gained_act_id, self_id).is_some();
+                let could_use = UseOnCharacter::new(gained_act_id, self_id).try_(game).is_ok();
 
                 if !could_use {
                     game.state.acts.add_to_drawpile(gained_act_id);
                 }
             }
 
-            args
+            (args, ())
         }),
 
         ..Default::default()

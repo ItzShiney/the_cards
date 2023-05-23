@@ -53,17 +53,17 @@ pub fn abilities() -> GameCallbacks {
                 },
                 player_id: game.state.find_owner_of_chr(self_id),
             }) else {
-                return args
+                return (args, ());
             };
 
             let stats = &game.state.chr(copied_chr_id).stats;
-            let phy = stats.phy.0.into_value();
-            let dmg = stats.dmg.0.into_value();
+            let phy = stats.phy.0;
+            let dmg = stats.dmg.0;
 
             game.force_set_phy_vit(self_id, phy);
             game.force_set_stat(self_id, StatType::Damage, dmg);
 
-            args
+            (args, ())
         }),
 
         ..Default::default()

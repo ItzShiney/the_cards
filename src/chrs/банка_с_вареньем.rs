@@ -31,7 +31,7 @@ pub fn description() -> CustomString {
 pub fn abilities() -> GameCallbacks {
     GameCallbacks {
         can_attack: Some(|game, args| {
-            (game.state.chr(args.attacker_id).stats.int.0.into_value() >= 3).else_some(args)
+            (game.state.chr(args.attacker_id).stats.int.0 >= 3).else_some(args)
         }),
 
         ..Default::default()

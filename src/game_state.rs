@@ -409,7 +409,7 @@ impl GameState {
     }
 
     pub fn is_dead(&self, chr_id: CharacterID) -> bool {
-        self.chr(chr_id).stats.vit.0.into_value() == 0
+        self.chr(chr_id).stats.vit.0 == 0
     }
 
     pub fn try_own_chr_id(&self, player_id: PlayerID) -> Option<CharacterID> {

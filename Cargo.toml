@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+macros = { path = "macros" }
 scanner-rust = "2.0.16"
 itertools = "0.10.5"
 regex = "1.7.0"

@@ -25,7 +25,7 @@ pub fn description() -> CustomString {
 pub fn abilities() -> GameCallbacks {
     GameCallbacks {
         force_use_on_chr: Some(|game, args| {
-            game.stat_add(args.target_id, StatType::Physique, 1);
+            _ = StatAdd::new(args.target_id, StatType::Physique, 1).try_(game);
 
             let was_ручка_ножа_used = false; // TODO ранее была использована РУЧКА НОЖА
             if was_ручка_ножа_used {
@@ -35,7 +35,7 @@ pub fn abilities() -> GameCallbacks {
                 game.state.chrs.add_to_player(drawn_chr_id, owner_id);
             }
 
-            args
+            (args, ())
         }),
 
         ..Default::default()

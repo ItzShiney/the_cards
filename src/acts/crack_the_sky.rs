@@ -25,8 +25,8 @@ pub fn abilities() -> GameCallbacks {
     GameCallbacks {
         force_use_on_chr: Some(|game, args| {
             let dmg = game.random(0, 5);
-            _ = game.try_get_hurt(args.target_id, dmg);
-            args
+            _ = GetHurt::new(args.target_id, dmg).try_(game);
+            (args, ())
         }),
 
         ..Default::default()
