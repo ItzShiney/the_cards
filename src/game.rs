@@ -21,13 +21,13 @@ pub struct Game<'state, 'input> {
 #[derive(Debug, Clone, Copy)]
 pub struct CannotUse;
 
-pub trait CanForce {
+pub trait CanForce: Copy {
     type Output;
 
-    fn can(&self, game: &mut Game) -> bool;
-    fn force(&self, game: &mut Game) -> Self::Output;
+    fn can(self, game: &mut Game) -> bool;
+    fn force(self, game: &mut Game) -> Self::Output;
 
-    fn try_(&self, game: &mut Game) -> Result<Self::Output, CannotUse> {
+    fn try_(self, game: &mut Game) -> Result<Self::Output, CannotUse> {
         if self.can(game) {
             Ok(self.force(game))
         } else {
@@ -36,10 +36,10 @@ pub trait CanForce {
     }
 }
 
-pub trait Map {
+pub trait Map: Copy {
     type Value;
 
-    fn map(&self, game: &mut Game, value: Self::Value) -> Self::Value;
+    fn map(self, game: &mut Game, value: Self::Value) -> Self::Value;
 }
 
 #[derive(Constructor, Clone, Copy)]
@@ -53,9 +53,6 @@ pub struct UseOnCharacter {
     pub target_id: CharacterID,
 }
 
-// TODO:
-// добавить поле `caller: Caller`
-// верифицировать изменения приватных статов проверкой `caller == Caller::Character(chr_id)`
 #[derive(Constructor, Clone, Copy)]
 pub struct StatAdd {
     pub chr_id: CharacterID,
@@ -106,16 +103,42 @@ pub struct StatMap {
     pub stat_type: StatType,
 }
 
+fn chain_can<T: CanForce, R>(
+    f: Option<impl FnOnce(&mut Game, T) -> Option<R>>,
+    args: T,
+    game: &mut Game,
+) -> bool {
+    match f {
+        Some(f) => f(game, args).is_some(),
+        None => true,
+    }
+}
+
+fn chain_force<T: CanForce, R>(
+    f: Option<impl FnOnce(&mut Game, T) -> (T, R)>,
+    args: &mut T,
+    game: &mut Game,
+) {
+    if let Some(f) = f {
+        *args = f(game, *args).0;
+    }
+}
+
 // TODO: перепроверить все реализации. вероятны лишние `.unwrap()`
 GameCallbacks! {
     impl CanForce for UseOnField {
         type Output = ();
 
-        fn can(&self, game: &mut Game) -> bool {
-            game.state.act(self.act_id).type_.abilities().force_use_on_field.is_some()
+        fn can(self, game: &mut Game) -> bool {
+            let abilities = game.state.act(self.act_id).type_.abilities();
+
+            abilities.force_use_on_field.is_some()
+                && chain_can(abilities.can_use_on_field, self, game)
         }
 
-        fn force(&self, game: &mut Game) -> Self::Output {
+        fn force(mut self, game: &mut Game) -> Self::Output {
+            chain_force(game.state.act(self.act_id).type_.abilities().force_use_on_field, &mut self, game);
+
             game.state.acts.remove_from_some_player(self.act_id);
         }
     }
@@ -123,11 +146,16 @@ GameCallbacks! {
     impl CanForce for UseOnCharacter {
         type Output = ();
 
-        fn can(&self, game: &mut Game) -> bool {
-            game.state.act(self.act_id).type_.abilities().force_use_on_chr.is_some()
+        fn can(self, game: &mut Game) -> bool {
+            let abilities = game.state.act(self.act_id).type_.abilities();
+
+            abilities.force_use_on_chr.is_some()
+                && chain_can(abilities.can_use_on_chr, self, game)
         }
 
-        fn force(&self, game: &mut Game) -> Self::Output {
+        fn force(mut self, game: &mut Game) -> Self::Output {
+            chain_force(game.state.act(self.act_id).type_.abilities().force_use_on_chr, &mut self, game);
+
             game.state.acts.remove_from_some_player(self.act_id);
         }
     }
@@ -135,12 +163,15 @@ GameCallbacks! {
     impl CanForce for StatAdd {
         type Output = ();
 
-        fn can(&self, game: &mut Game) -> bool {
-            !(game.is_const(self.chr_id, self.stat_type)
-                || game.is_private(self.chr_id, self.stat_type))
+        fn can(self, game: &mut Game) -> bool {
+            !game.is_const(self.chr_id, self.stat_type)
+                && !game.is_private(self.chr_id, self.stat_type) // TODO: && caller == Caller::Character(self.chr_id)
+                && chain_can(game.state.chr(self.chr_id).type_.abilities().can_stat_add, self, game)
         }
 
-        fn force(&self, game: &mut Game) -> Self::Output {
+        fn force(mut self, game: &mut Game) -> Self::Output {
+            chain_force(game.state.chr(self.chr_id).type_.abilities().force_stat_add, &mut self, game);
+
             let mut res = game.state.chr(self.chr_id).stats.stat(self.stat_type);
             res += self.val;
             res = res.max(0);
@@ -157,23 +188,26 @@ GameCallbacks! {
     impl CanForce for Attack {
         type Output = ();
 
-        fn can(&self, game: &mut Game) -> bool {
+        fn can(self, game: &mut Game) -> bool {
             GetHurt::new(self.target_id, self.dmg).can(game)
         }
 
-        fn force(&self, game: &mut Game) -> Self::Output {
-            GetHurt::new(self.target_id, self.dmg).try_(game).unwrap();
+        fn force(self, game: &mut Game) -> Self::Output {
+            GetHurt::new(self.target_id, self.dmg).force(game);
         }
     }
 
     impl CanForce for GetHurt {
         type Output = ();
 
-        fn can(&self, _game: &mut Game) -> bool {
+        fn can(self, game: &mut Game) -> bool {
             self.dmg != 0
+                && chain_can(game.state.chr(self.chr_id).type_.abilities().can_get_hurt, self, game)
         }
 
-        fn force(&self, game: &mut Game) -> Self::Output {
+        fn force(mut self, game: &mut Game) -> Self::Output {
+            chain_force(game.state.chr(self.chr_id).type_.abilities().force_get_hurt, &mut self, game);
+
             let old_def = game.state.chr(self.chr_id).stats.def.0;
             _ = StatAdd::new(self.chr_id, StatType::Defence, self.dmg).try_(game);
             let new_def = game.state.chr(self.chr_id).stats.def.0;
@@ -190,35 +224,37 @@ GameCallbacks! {
     impl CanForce for Place {
         type Output = ();
 
-        fn can(&self, game: &mut Game) -> bool {
-            if let Some(owner_id) = game.state.try_find_owner_of_chr(self.chr_id) {
-                (owner_id == game.state.attacker.player_id && game.state.attacker.chr_id.is_none())
-                    || (owner_id == game.state.defender.player_id
-                        && game.state.defender.chr_id.is_none())
-            } else {
-                true
-            }
+        fn can(self, game: &mut Game) -> bool {
+            let Some(owner_id) = game.state.try_find_owner_of_chr(self.chr_id) else {
+                return false;
+            };
+
+            let can_place = {
+                let attacker_can_place = (owner_id == game.state.attacker.player_id) && game.state.attacker.chr_id.is_none();
+                let defender_can_place = (owner_id == game.state.defender.player_id) && game.state.defender.chr_id.is_none();
+
+                attacker_can_place || defender_can_place
+            };
+
+            can_place
+                && chain_can(game.state.chr(self.chr_id).type_.abilities().can_place, self, game)
         }
 
-        fn force(&self, game: &mut Game) -> Self::Output {
+        fn force(mut self, game: &mut Game) -> Self::Output {
+            chain_force(game.state.chr(self.chr_id).type_.abilities().force_place, &mut self, game);
+
             if let Some(player_id) = game.state.try_find_owner_of_chr(self.chr_id) {
                 if player_id == game.state.attacker.player_id {
                     let attacker_chr_id = &mut game.state.attacker.chr_id;
 
-                    if attacker_chr_id.is_some() {
-                        return;
-                    }
-
                     game.state.chrs.remove_from_player(self.chr_id, player_id);
+
                     *attacker_chr_id = Some(self.chr_id);
                 } else if player_id == game.state.defender.player_id {
                     let defender_chr_id = &mut game.state.defender.chr_id;
 
-                    if defender_chr_id.is_some() {
-                        return;
-                    }
-
                     game.state.chrs.remove_from_player(self.chr_id, player_id);
+
                     *defender_chr_id = Some(self.chr_id);
                 }
             }
@@ -228,26 +264,28 @@ GameCallbacks! {
     impl CanForce for Die {
         type Output = ();
 
-        fn can(&self, _game: &mut Game) -> bool {
-            true
+        fn can(self, game: &mut Game) -> bool {
+            chain_can(game.state.chr(self.chr_id).type_.abilities().can_die, self, game)
         }
 
-        fn force(&self, game: &mut Game) -> Self::Output {
-            game.heal_on_field_leave(self.chr_id);
+        fn force(mut self, game: &mut Game) -> Self::Output {
+            chain_force(game.state.chr(self.chr_id).type_.abilities().force_die, &mut self, game);
+
             game.state.chrs.add_to_wastepile(self.chr_id);
 
             EndTurn::new().force(game);
         }
     }
 
+    // TODO: это точно CanForce?
     impl CanForce for EndTurn {
         type Output = ();
 
-        fn can(&self, _game: &mut Game) -> bool {
+        fn can(self, _game: &mut Game) -> bool {
             true
         }
 
-        fn force(&self, game: &mut Game) -> Self::Output {
+        fn force(self, game: &mut Game) -> Self::Output {
             game.force_remove_from_field(game.state.current_subturner);
             game.force_remove_from_field(game.state.current_subturner.other());
             game.state.change_turner();
@@ -257,11 +295,11 @@ GameCallbacks! {
     impl CanForce for Replace {
         type Output = ();
 
-        fn can(&self, _game: &mut Game) -> bool {
+        fn can(self, _game: &mut Game) -> bool {
             true
         }
 
-        fn force(&self, _game: &mut Game) -> Self::Output {
+        fn force(self, _game: &mut Game) -> Self::Output {
             todo!()
         }
     }
@@ -269,7 +307,7 @@ GameCallbacks! {
     impl Map for HealOnFieldLeaveMap {
         type Value = Stat0;
 
-        fn map(&self, _game: &mut Game, value: Self::Value) -> Self::Value {
+        fn map(self, _game: &mut Game, value: Self::Value) -> Self::Value {
             value
         }
     }
@@ -277,7 +315,7 @@ GameCallbacks! {
     impl Map for StatMap {
         type Value = Stat0;
 
-        fn map(&self, _game: &mut Game, value: Self::Value) -> Self::Value {
+        fn map(self, _game: &mut Game, value: Self::Value) -> Self::Value {
             value
         }
     }

@@ -24,7 +24,9 @@ impl Parse for ItemImpls {
 #[proc_macro]
 #[allow(non_snake_case)]
 pub fn GameCallbacks(tokens: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let item_impls = parse_macro_input!(tokens as ItemImpls).0;
+    let tokens_clone = tokens.clone();
+    let item_impls = parse_macro_input!(tokens_clone as ItemImpls).0;
+    let tokens = proc_macro2::TokenStream::from(tokens);
 
     let mut fields = quote! {};
 
@@ -51,7 +53,6 @@ pub fn GameCallbacks(tokens: proc_macro::TokenStream) -> proc_macro::TokenStream
             "CanForce" => {
                 let can_ident = format_ident!("can_{}", ident_lower);
                 let force_ident = format_ident!("force_{}", ident_lower);
-                // let try_ident = format_ident!("try_{}", ident_lower);
 
                 fields.extend(quote! {
                     pub #can_ident: Option<fn(&mut Game<'_, '_>, #ident_upper) -> Option<#ident_upper>>,
@@ -70,7 +71,7 @@ pub fn GameCallbacks(tokens: proc_macro::TokenStream) -> proc_macro::TokenStream
     }
 
     quote! {
-        #(#item_impls)*
+        #tokens
 
         #[derive(Default)]
         pub struct GameCallbacks {
