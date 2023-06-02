@@ -21,9 +21,19 @@ macro_rules! make_stat {
         {
             fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
                 if self.game.is_const(self.id, StatType::$Name) {
-                    write!(f, "{} {}", $crate::cs![$Name], $crate::cs![Const(self.value.0)])
+                    write!(
+                        f,
+                        "{} {}",
+                        $crate::cs![$Name],
+                        $crate::cs![Const($crate::cs![self.value.0.to_string()])]
+                    )
                 } else if self.game.is_private(self.id, StatType::$Name) {
-                    write!(f, "{} {}", $crate::cs![$Name], $crate::cs![Private(self.value.0)])
+                    write!(
+                        f,
+                        "{} {}",
+                        $crate::cs![$Name],
+                        $crate::cs![Private($crate::cs![self.value.0.to_string()])]
+                    )
                 } else {
                     write!(f, "{} {}", $crate::cs![$Name], self.value.0)
                 }

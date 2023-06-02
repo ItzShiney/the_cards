@@ -25,7 +25,7 @@ pub fn stats() -> Stats {
 
 pub fn description() -> CustomString {
     cs![
-        NamedPoint(cs!["ВЕЧНЫЙ ПРОГРАММИСТ"], cs![Intellect, " ", Const(0)]),
+        NamedPoint(cs!["ВЕЧНЫЙ ПРОГРАММИСТ"], cs![Const(cs![Intellect])]),
         __,
         Condition(cs!["закончилась битва"]),
         NamedPoint(

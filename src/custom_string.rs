@@ -1,5 +1,4 @@
 use crate::acts::ActiveType;
-use crate::card_uses::Stat0;
 use crate::chrs::CharacterType;
 use crate::group::Group;
 use itertools::Itertools;
@@ -61,14 +60,14 @@ custom_string_slice![
         Group(Group) =>
             |f, (group)| write!(f, "{}", group);
 
-        Const(Stat0) =>
-            |f, (stat)| write!(f, "{} 🔒", stat);
+        Const(CustomString) =>
+            |f, (arg)| write!(f, "{} 🔒", arg);
 
-        Private(Stat0) =>
-            |f, (stat)| write!(f, "{} 🔑", stat);
+        Private(CustomString) =>
+            |f, (arg)| write!(f, "{} 🔑", arg);
 
-        WillChange(Stat0) =>
-            |f, (stat)| write!(f, "{}?", stat);
+        WillChange(CustomString) =>
+            |f, (arg)| write!(f, "{}?", arg);
 
         SumAll { body: CustomString } =>
             |f, { body }| write!(f, "∑ {}", body);
