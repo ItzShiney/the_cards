@@ -37,7 +37,7 @@ pub fn use_on_chr(
         return Err(Cancelled);
     }
 
-    Event::get_hurt(chr_id, 1).sign(act_id).try_(game)?;
+    Event::GetHurt { chr_id, dmg: 1 }.sign(act_id).try_(game)?;
 
     Ok(chr_id)
 }

@@ -33,7 +33,7 @@ pub fn use_on_chr(
         unreachable!()
     };
 
-    Event::get_hurt(chr_id, dmg).sign(act_id).try_(game)?;
+    Event::GetHurt { chr_id, dmg }.sign(act_id).try_(game)?;
 
     Ok(chr_id)
 }

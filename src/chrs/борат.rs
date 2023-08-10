@@ -51,7 +51,11 @@ pub fn handle_event(
                 .is_ok();
 
                 if !could_use {
-                    game.state.acts.add_to_drawpile(gained_act_id);
+                    _ = Event::PutActiveInDrawpile {
+                        act_id: gained_act_id,
+                    }
+                    .sign(chr_id)
+                    .try_(game);
                 }
             }
         }

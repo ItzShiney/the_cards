@@ -1,5 +1,6 @@
 use {
     self::event::Event,
+    crate::act_uses::StatType,
     std::collections::HashSet,
 };
 
@@ -284,7 +285,7 @@ impl GameState {
     const TOTAL_GAINS_PER_PLAYER: usize = 4;
 
     fn init_cards(&mut self) {
-        self.init_gain_pile();
+        self.init_drawpile();
 
         for player_id in self.players_map.keys().copied() {
             self.chrs.pick_n(player_id, Self::INIT_CHARACTERS_PER_HAND);
@@ -292,7 +293,7 @@ impl GameState {
         }
     }
 
-    fn init_gain_pile(&mut self) {
+    fn init_drawpile(&mut self) {
         let players_count = self.players_map.len();
 
         let total_chrs_count = players_count
@@ -470,12 +471,26 @@ impl GameState {
 
         // TODO: used actives
 
+        let attacker_hand_chrs = self
+            .chrs
+            .hand(self.attacker.player_id)
+            .iter()
+            .copied()
+            .map(CardID::Character);
+
         let attacker_hand_acts = self
             .acts
             .hand(self.attacker.player_id)
             .iter()
             .copied()
             .map(CardID::Active);
+
+        let defender_hand_chrs = self
+            .chrs
+            .hand(self.defender.player_id)
+            .iter()
+            .copied()
+            .map(CardID::Character);
 
         let defender_hand_acts = self
             .acts
@@ -486,7 +501,9 @@ impl GameState {
 
         attacker
             .chain(defender)
+            .chain(attacker_hand_chrs)
             .chain(attacker_hand_acts)
+            .chain(defender_hand_chrs)
             .chain(defender_hand_acts)
     }
 
@@ -511,7 +528,7 @@ impl GameState {
         &mut self,
         Nested {
             children,
-            value: SignedEvent { signature, value },
+            value: SignedEvent { value, .. },
         }: Nested<SignedEvent>,
     ) {
         match value {
@@ -526,20 +543,41 @@ impl GameState {
                 chr_id,
                 stat_type,
                 old_value,
+                old_vit_value,
                 ..
             } => {
                 self.chr_mut(chr_id)
                     .stats
                     .set(stat_type, old_value.unwrap());
+
+                if let Some(old_vit_value) = old_vit_value {
+                    self.chr_mut(chr_id)
+                        .stats
+                        .set(StatType::Vitality, old_vit_value);
+                }
             }
 
             Event::Attack { .. } => {}
 
             Event::GetHurt { .. } => {}
 
-            Event::TakeCharacter { player_id, chr_id } => todo!(),
+            Event::TakeCharacter { player_id, chr_id } => {
+                let chr_id = chr_id.unwrap();
 
-            Event::TakeActive { player_id, act_id } => todo!(),
+                self.chrs.remove_from_player(chr_id, player_id);
+                self.chrs.add_to_drawpile(chr_id);
+            }
+
+            Event::TakeActive { player_id, act_id } => {
+                let act_id = act_id.unwrap();
+
+                self.acts.remove_from_player(act_id, player_id);
+                self.acts.add_to_drawpile(act_id);
+            }
+
+            Event::PutCharacterInDrawpile { chr_id } => todo!(),
+
+            Event::PutActiveInDrawpile { act_id } => todo!(),
 
             Event::Place { chr_id } => {
                 let owner_id = self.find_owner_on_field_of_chr(chr_id);

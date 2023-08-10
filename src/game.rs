@@ -31,6 +31,10 @@ use {
         stats::StatType,
     },
     itertools::Itertools,
+    rand::{
+        thread_rng,
+        Rng,
+    },
 };
 
 // TODO: move to another file
@@ -132,10 +136,7 @@ impl Game<'_, '_> {
 
         match value {
             Event::StatChange {
-                chr_id,
-                stat_type,
-                stat_change,
-                ..
+                chr_id, stat_type, ..
             } => {
                 if self.is_const(chr_id, stat_type, signature) {
                     return Err(Cancelled);
@@ -155,7 +156,7 @@ impl Game<'_, '_> {
     }
 
     fn pre_chain_event(&mut self, signed_event: SignedEvent) -> EventResult {
-        let SignedEvent { value, signature } = signed_event;
+        let SignedEvent { value, .. } = signed_event;
 
         match value {
             Event::Place { chr_id } => {
@@ -213,9 +214,14 @@ impl Game<'_, '_> {
                 stat_type,
                 stat_change,
                 ref mut old_value,
+                ref mut old_vit_value,
             } => {
                 let stats = &mut self.state.chr_mut(chr_id).stats;
                 *old_value = Some(stats.stat(stat_type));
+
+                if stat_type == StatType::Physique {
+                    *old_vit_value = Some(stats.vit.0);
+                }
 
                 match stat_change {
                     StatChange::Add(value) => {
@@ -240,6 +246,23 @@ impl Game<'_, '_> {
 
                     _ => todo!(),
                 }
+            }
+
+            &mut Event::Random {
+                min,
+                max,
+                ref mut output,
+            } => {
+                let res = thread_rng().gen_range(min..=max);
+                *output = Some(res);
+            }
+
+            &mut Event::RandomBool {
+                true_p,
+                ref mut output,
+            } => {
+                let res = thread_rng().gen_bool(true_p);
+                *output = Some(res);
             }
 
             _ => {}

@@ -36,6 +36,7 @@ pub enum Event {
         stat_change: StatChange,
 
         old_value: Option<Stat0>,
+        old_vit_value: Option<Stat0>,
     },
     Attack {
         attacker_id: CharacterID,
@@ -55,6 +56,12 @@ pub enum Event {
         player_id: PlayerID,
 
         act_id: Option<ActiveID>,
+    },
+    PutCharacterInDrawpile {
+        chr_id: CharacterID,
+    },
+    PutActiveInDrawpile {
+        act_id: ActiveID,
     },
     Place {
         chr_id: CharacterID,
@@ -90,17 +97,16 @@ impl Event {
             chr_id,
             stat_type,
             stat_change,
-            old_value: None,
-        }
-    }
 
-    pub fn get_hurt(chr_id: CharacterID, dmg: Stat0) -> Self {
-        Self::GetHurt { chr_id, dmg }
+            old_value: None,
+            old_vit_value: None,
+        }
     }
 
     pub fn take_chr(player_id: PlayerID) -> Self {
         Self::TakeCharacter {
             player_id,
+
             chr_id: None,
         }
     }
@@ -108,6 +114,7 @@ impl Event {
     pub fn take_act(player_id: PlayerID) -> Self {
         Self::TakeActive {
             player_id,
+
             act_id: None,
         }
     }
@@ -116,6 +123,7 @@ impl Event {
         Self::Random {
             min,
             max,
+
             output: None,
         }
     }
@@ -123,6 +131,7 @@ impl Event {
     pub fn random_bool(true_p: f64) -> Self {
         Self::RandomBool {
             true_p,
+
             output: None,
         }
     }
