@@ -29,5 +29,13 @@ pub fn use_on_chr(
     act_id: ActiveID,
     chr_id: CharacterID,
 ) -> Result<CharacterID, Cancelled> {
-    todo!()
+    if game.state.chr(chr_id).type_ == Isaac {
+        return Err(Cancelled);
+    }
+
+    Event::morph_chr(chr_id, CharacterInfo::new(Isaac))
+        .sign(act_id)
+        .try_(game)?;
+
+    Ok(chr_id)
 }

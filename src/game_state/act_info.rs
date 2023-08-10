@@ -11,7 +11,7 @@ use {
     },
 };
 
-#[derive(Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct ActiveInfo {
     pub type_: ActiveType,
 }

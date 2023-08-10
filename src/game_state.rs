@@ -561,6 +561,18 @@ impl GameState {
 
             Event::GetHurt { .. } => {}
 
+            Event::MorphCharacter {
+                chr_id,
+                new_info,
+                old_info,
+            } => todo!(),
+
+            Event::MorphActive {
+                act_id,
+                new_info,
+                old_info,
+            } => todo!(),
+
             Event::TakeCharacter { player_id, chr_id } => {
                 let chr_id = chr_id.unwrap();
 

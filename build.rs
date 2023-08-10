@@ -174,7 +174,7 @@ fn make_enum_file(
         }
     }
     {
-        res += "#[derive(Clone, Copy, PartialEq, Eq)]\n";
+        res += "#[derive(Debug, Clone, Copy, PartialEq, Eq)]\n";
         res += format!("pub enum {enum_name} {{\n").as_str();
         for SnakePascal { snake: _, pascal } in cases.iter() {
             res += format!("    {pascal},\n").as_str();

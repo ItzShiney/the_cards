@@ -4,9 +4,15 @@ use {
         chr_id::CharacterID,
         player_id::PlayerID,
     },
-    crate::stats::{
-        Stat0,
-        StatType,
+    crate::{
+        act_uses::{
+            ActiveInfo,
+            CharacterInfo,
+        },
+        stats::{
+            Stat0,
+            StatType,
+        },
     },
 };
 
@@ -46,6 +52,18 @@ pub enum Event {
     GetHurt {
         chr_id: CharacterID,
         dmg: Stat0,
+    },
+    MorphCharacter {
+        chr_id: CharacterID,
+        new_info: CharacterInfo,
+
+        old_info: Option<CharacterInfo>,
+    },
+    MorphActive {
+        act_id: ActiveID,
+        new_info: ActiveInfo,
+
+        old_info: Option<ActiveInfo>,
     },
     TakeCharacter {
         player_id: PlayerID,
@@ -100,6 +118,24 @@ impl Event {
 
             old_value: None,
             old_vit_value: None,
+        }
+    }
+
+    pub fn morph_chr(chr_id: CharacterID, new_info: CharacterInfo) -> Self {
+        Self::MorphCharacter {
+            chr_id,
+            new_info,
+
+            old_info: None,
+        }
+    }
+
+    pub fn morph_act(act_id: ActiveID, new_info: ActiveInfo) -> Self {
+        Self::MorphActive {
+            act_id,
+            new_info,
+
+            old_info: None,
         }
     }
 

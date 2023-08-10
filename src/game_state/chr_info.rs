@@ -13,7 +13,7 @@ use {
     },
 };
 
-#[derive(Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct CharacterInfo {
     pub type_: CharacterType,
     pub stats: Stats,
