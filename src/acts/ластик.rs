@@ -1,4 +1,4 @@
-pub use crate::card_uses::*;
+pub use crate::act_uses::*;
 
 pub fn name() -> CustomString {
     cs!["ЛАСТИК"]
@@ -17,20 +17,12 @@ pub fn groups() -> Groups {
 pub fn description() -> CustomString {
     cs![
         Condition(cs!["использовано в качестве хода"]),
-        Point(cs!["уничтожает все карты в бите и по одной выбранной каждым игроком у себя в руке"]),
+        Point(cs![
+            "уничтожает все карты в бите и по одной выбранной каждым игроком у себя в руке"
+        ]),
     ]
 }
 
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks {
-        can_use_on_field: Some(|_game, _args| {
-            todo!();
-        }),
-
-        force_use_on_field: Some(|_game, _args| {
-            todo!();
-        }),
-
-        ..Default::default()
-    }
+pub fn use_on_field(game: &mut Game, act_id: ActiveID) -> Result<(), Cancelled> {
+    todo!()
 }

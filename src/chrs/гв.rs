@@ -1,4 +1,4 @@
-pub use crate::card_uses::*;
+pub use crate::chr_uses::*;
 
 pub fn name() -> CustomString {
     cs!["ГВ"]
@@ -35,18 +35,26 @@ pub fn description() -> CustomString {
         ]),
         __,
         Condition(cs!["выставлен"]),
-        Point(cs![Physique, " = ", SumAll { body: cs![Physique, " всех ", Иллюзия, " в руке"] }]),
+        Point(cs![
+            Physique,
+            " = ",
+            SumAll {
+                body: cs![Physique, " всех ", Иллюзия, " в руке"]
+            }
+        ]),
         Point(cs!["считает ", Берн, " за персонажа с ", Physique, " 3"]),
     ]
 }
+pub fn handle_event(
+    game: &mut Game,
+    chr_id: CharacterID,
+    signed_event: SignedEvent,
+) -> EventResult {
+    match signed_event.value {
+        Event::Place { chr_id: _chr_id } if _chr_id == chr_id => {
+            let owner_id = game.state.find_owner_of_chr(chr_id);
 
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks {
-        force_place: Some(|game, args| {
-            let self_id = args.chr_id;
-            let owner_id = game.state.find_owner_of_chr(self_id);
-
-            let phy = {
+            let value = {
                 let chrs_sum = game
                     .state
                     .chrs
@@ -81,11 +89,17 @@ pub fn abilities() -> GameCallbacks {
                 chrs_sum + acts_sum
             };
 
-            game.force_set_phy_vit(self_id, phy);
+            Event::stat_change(chr_id, StatType::Physique, StatChange::Set(value))
+                .sign(chr_id)
+                .try_(game)?;
 
-            (args, ())
-        }),
+            Event::stat_change(chr_id, StatType::Vitality, StatChange::Set(value))
+                .sign(chr_id)
+                .try_(game)?;
+        }
 
-        ..Default::default()
+        _ => {}
     }
+
+    Ok(signed_event)
 }

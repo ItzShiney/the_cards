@@ -20,7 +20,7 @@ macro_rules! choose_card_in_hand {
                 args.prompt,
                 is_enabled.iter().copied().zip(displays),
             )?;
-            Some(cards[idx])
+            Some(cards.iter().copied().nth(idx).unwrap())
         }
     }};
 }

@@ -1,4 +1,4 @@
-pub use crate::card_uses::*;
+pub use crate::chr_uses::*;
 
 pub fn name() -> CustomString {
     cs!["БАНКА С ВАРЕНЬЕМ"]
@@ -25,15 +25,34 @@ pub fn stats() -> Stats {
 }
 
 pub fn description() -> CustomString {
-    cs![Point(cs!["не атакует, если ", Intellect, " противника ", GE, " 3"])]
+    cs![Point(cs![
+        "не атакует, если ",
+        Intellect,
+        " атакуемого ",
+        GE,
+        " 3"
+    ])]
 }
 
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks {
-        can_attack: Some(|game, args| {
-            (game.state.chr(args.attacker_id).stats.int.0 >= 3).else_some(args)
-        }),
+pub fn handle_event(
+    game: &mut Game,
+    chr_id: CharacterID,
+    signed_event: SignedEvent,
+) -> EventResult {
+    match signed_event.value {
+        Event::Attack {
+            attacker_id,
+            target_id,
+            ..
+        } if attacker_id == chr_id => {
+            let enemy_int = game.stat(target_id, StatType::Intellect, chr_id);
+            if enemy_int >= 3 {
+                return Err(Cancelled);
+            }
+        }
 
-        ..Default::default()
+        _ => {}
     }
+
+    Ok(signed_event)
 }

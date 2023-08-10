@@ -1,4 +1,4 @@
-use crate::card_uses::*;
+pub use crate::act_uses::*;
 
 pub fn name() -> CustomString {
     cs!["КОЗЕРОГ"]
@@ -26,17 +26,31 @@ pub fn description() -> CustomString {
     ]
 }
 
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks {
-        force_use_on_chr: Some(|game, args| {
-            _ = StatAdd::new(args.target_id, StatType::Physique, 2).try_(game);
-            _ = StatAdd::new(args.target_id, StatType::Vitality, 2).try_(game);
-            _ = StatAdd::new(args.target_id, StatType::Defence, 2).try_(game);
-            _ = StatAdd::new(args.target_id, StatType::Damage, 2).try_(game);
-            _ = StatAdd::new(args.target_id, StatType::Intellect, 2).try_(game);
-            (args, ())
-        }),
+pub fn use_on_chr(
+    game: &mut Game,
+    act_id: ActiveID,
+    chr_id: CharacterID,
+) -> Result<CharacterID, Cancelled> {
+    let phy = Event::stat_change(chr_id, StatType::Physique, StatChange::Add(2))
+        .sign(act_id)
+        .try_(game);
 
-        ..Default::default()
-    }
+    let vit = Event::stat_change(chr_id, StatType::Vitality, StatChange::Add(2))
+        .sign(act_id)
+        .try_(game);
+
+    let def = Event::stat_change(chr_id, StatType::Defence, StatChange::Add(2))
+        .sign(act_id)
+        .try_(game);
+
+    let dmg = Event::stat_change(chr_id, StatType::Damage, StatChange::Add(2))
+        .sign(act_id)
+        .try_(game);
+
+    let int = Event::stat_change(chr_id, StatType::Intellect, StatChange::Add(2))
+        .sign(act_id)
+        .try_(game);
+
+    phy.or(vit).or(def).or(dmg).or(int)?;
+    Ok(chr_id)
 }

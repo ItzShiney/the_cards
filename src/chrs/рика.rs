@@ -1,4 +1,4 @@
-pub use crate::card_uses::*;
+pub use crate::chr_uses::*;
 
 pub fn name() -> CustomString {
     cs!["РИКА"]

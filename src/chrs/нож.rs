@@ -1,4 +1,4 @@
-pub use crate::card_uses::*;
+pub use crate::chr_uses::*;
 
 pub fn name() -> CustomString {
     cs!["НОЖ"]
@@ -27,21 +27,32 @@ pub fn stats() -> Stats {
 pub fn description() -> CustomString {
     cs![
         Condition(cs!["выставлен"]),
-        Point(cs![Damage, " = ", Sum { times: cs!["9"], body: cs![Random(cs!["0"]..=cs!["1"])] }]),
+        Point(cs![
+            Damage,
+            " = ",
+            Sum {
+                times: cs!["9"],
+                body: cs![Random(cs!["0"]..=cs!["1"])]
+            }
+        ]),
     ]
 }
 
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks {
-        force_place: Some(|game, args| {
-            let value = repeat_with(|| game.random(0, 1)).take(9).sum();
+pub fn handle_event(
+    game: &mut Game,
+    chr_id: CharacterID,
+    signed_event: SignedEvent,
+) -> EventResult {
+    match signed_event.value {
+        Event::Place { chr_id: _chr_id } if _chr_id == chr_id => {
+            let value = repeat_with(|| game.random(0, 1, chr_id)).take(9).sum();
 
-            let self_id = args.chr_id;
-            game.force_set_stat(self_id, StatType::Damage, value);
+            let chr_id = chr_id;
+            Event::stat_change(chr_id, StatType::Damage, StatChange::Set(value));
+        }
 
-            (args, ())
-        }),
-
-        ..Default::default()
+        _ => {}
     }
+
+    Ok(signed_event)
 }

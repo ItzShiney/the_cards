@@ -1,9 +1,15 @@
-use crate::acts::ActiveType;
-use crate::card_uses::ActiveID;
-use crate::default_formatted::DefaultFormatted;
-use crate::game_formatted::GameFormatted;
-use std::fmt;
-use std::fmt::Display;
+use {
+    crate::{
+        acts::ActiveType,
+        card_uses::ActiveID,
+        default_formatted::DefaultFormatted,
+        GameFormatted,
+    },
+    std::{
+        fmt,
+        fmt::Display,
+    },
+};
 
 #[derive(Clone)]
 pub struct ActiveInfo {
@@ -16,11 +22,14 @@ impl ActiveInfo {
     }
 }
 
-impl Display for GameFormatted<'_, '_, '_, &ActiveInfo, ActiveID> {
+impl Display for GameFormatted<'_, '_, '_, ActiveID> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let name = self.value.type_.name();
-        let groups = self.value.type_.groups();
-        let description = self.value.type_.description();
+        let act_id = self.value;
+        let card = self.game.state.act(act_id);
+
+        let name = card.type_.name();
+        let groups = card.type_.groups();
+        let description = card.type_.description();
 
         writeln!(f, "──────────────────────────────────────")?;
 

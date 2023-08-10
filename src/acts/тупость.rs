@@ -1,4 +1,4 @@
-pub use crate::card_uses::*;
+pub use crate::act_uses::*;
 
 pub fn name() -> CustomString {
     cs!["ТУПОСТЬ"]
@@ -20,8 +20,4 @@ pub fn description() -> CustomString {
         Condition(cs!["использована в ответ на ", Дизморалит, "-активку"]),
         Point(cs!["отменяет её эффект"]),
     ]
-}
-
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks::default()
 }

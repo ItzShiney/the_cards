@@ -1,4 +1,4 @@
-pub use crate::card_uses::*;
+pub use crate::act_uses::*;
 
 pub fn name() -> CustomString {
     cs!["ТЕТРАДЬ СМЕРТИ"]
@@ -15,16 +15,18 @@ pub fn groups() -> Groups {
 }
 
 pub fn description() -> CustomString {
-    cs![Condition(cs!["использована на персонажа"]), Point(cs!["мгновенно убивает его"]),]
+    cs![
+        Condition(cs!["использована на персонажа"]),
+        Point(cs!["мгновенно убивает его"]),
+    ]
 }
 
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks {
-        force_use_on_chr: Some(|game, args| {
-            _ = Die::new(args.target_id).try_(game);
-            (args, ())
-        }),
+pub fn use_on_chr(
+    game: &mut Game,
+    act_id: ActiveID,
+    chr_id: CharacterID,
+) -> Result<CharacterID, Cancelled> {
+    Event::Die { chr_id }.sign(act_id).try_(game)?;
 
-        ..Default::default()
-    }
+    Ok(chr_id)
 }

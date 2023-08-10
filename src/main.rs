@@ -1,33 +1,46 @@
 #![allow(clippy::uninlined_format_args)]
 #![allow(clippy::nonminimal_bool)]
-#![warn(trivial_casts, trivial_numeric_casts, unused_extern_crates, unused_import_braces)]
+#![warn(
+    trivial_casts,
+    trivial_numeric_casts,
+    unused_extern_crates,
+    unused_import_braces
+)]
 
+mod act_uses;
 pub mod acts;
 mod card_uses;
+mod chr_uses;
 pub mod chrs;
 pub mod console;
 pub mod custom_string;
 pub mod default_formatted;
-pub mod effect;
 pub mod game;
-pub mod game_formatted;
+mod game_formatted;
 pub mod game_input;
 pub mod game_state;
 pub mod group;
 pub mod stats;
 
-use crate::console::ConsoleInput;
-use crate::game::*;
-use crate::game_formatted::GameFormatted;
-use chrs::CharacterType;
-use console::prompt;
-use game_input::PromptArgs;
-use game_state::act_id::ActiveID;
-use game_state::chr_id::CharacterID;
-use game_state::chr_info::CharacterInfo;
-use game_state::GameState;
-use game_state::Player;
-use std::iter::repeat;
+pub use game_formatted::*;
+use {
+    crate::{
+        act_uses::UseWay,
+        chr_uses::Sign,
+        console::ConsoleInput,
+        game::*,
+    },
+    console::prompt,
+    game_input::PromptArgs,
+    game_state::{
+        act_id::ActiveID,
+        chr_id::CharacterID,
+        event::Event,
+        GameState,
+        Player,
+    },
+    std::iter::repeat,
+};
 
 #[derive(Default)]
 pub enum InputState {
@@ -107,13 +120,20 @@ impl InputState {
 
 pub fn main() {
     let mut state = GameState::new(vec![
-        Player { nickname: "Shiney".into() },
-        Player { nickname: "maxvog".into() },
+        Player {
+            nickname: "Shiney".into(),
+        },
+        Player {
+            nickname: "maxvog".into(),
+        },
     ]);
 
     let mut input = ConsoleInput;
 
-    let mut game = Game { state: &mut state, input: &mut input };
+    let mut game = Game {
+        state: &mut state,
+        input: &mut input,
+    };
 
     // print_cards(&mut game);
     ui(&mut game);
@@ -184,14 +204,26 @@ fn ui(game: &mut Game) {
 
             CheckOwnCharacter => {
                 let chr_id = game.state.own_chr_id(player_id);
-                println!("{}", GameFormatted { value: game.state.chr(chr_id), game, id: chr_id });
+                println!(
+                    "{}",
+                    GameFormatted {
+                        game,
+                        value: (chr_id, player_id.into())
+                    }
+                );
 
                 input_state.previous()
             }
 
             CheckEnemyCharacter => {
                 let chr_id = game.state.enemy_chr_id(player_id);
-                println!("{}", GameFormatted { value: game.state.chr(chr_id), game, id: chr_id });
+                println!(
+                    "{}",
+                    GameFormatted {
+                        game,
+                        value: (chr_id, player_id.into())
+                    }
+                );
 
                 input_state.previous()
             }
@@ -234,7 +266,7 @@ fn ui(game: &mut Game) {
                     None => input_state.previous(),
 
                     Some(chr_id_idx) => {
-                        let chr_id = chr_ids[chr_id_idx];
+                        let chr_id = chr_ids.iter().copied().nth(chr_id_idx).unwrap();
 
                         CharacterOptions { chr_id }
                     }
@@ -248,8 +280,14 @@ fn ui(game: &mut Game) {
                         is_cancellable: true,
                         autochoose_single_option: false,
                     },
-                    [(true, cs!["просмотреть"]), (Place::new(chr_id).can(game), cs!["выставить"])]
-                        .into_iter(),
+                    [
+                        (true, cs!["просмотреть"]),
+                        (
+                            game.can(Event::Place { chr_id }.sign(player_id)),
+                            cs!["выставить"],
+                        ),
+                    ]
+                    .into_iter(),
                 ) {
                     None => input_state.previous(),
                     Some(0) => CheckCharacter { chr_id },
@@ -259,23 +297,34 @@ fn ui(game: &mut Game) {
             }
 
             CheckCharacter { chr_id } => {
-                println!("{}", GameFormatted { value: game.state.chr(chr_id), game, id: chr_id });
+                println!(
+                    "{}",
+                    GameFormatted {
+                        game,
+                        value: (chr_id, player_id.into())
+                    }
+                );
 
                 input_state.previous()
             }
 
             PlaceCharacter { chr_id } => {
-                Place::new(chr_id).try_(game).unwrap();
+                Event::Place { chr_id }.sign(player_id).try_(game).unwrap();
 
-                println!("персонаж {} выставлен", cs![Character(game.state.chr(chr_id).type_)]);
+                println!(
+                    "персонаж {} выставлен",
+                    cs![Character(game.state.chr(chr_id).type_)]
+                );
 
                 InputState::default()
             }
 
             ActivesList => {
                 let act_ids = game.state.acts.hand(player_id);
-                let act_names =
-                    act_ids.iter().copied().map(|act_id| cs![Active(game.state.act(act_id).type_)]);
+                let act_names = act_ids
+                    .iter()
+                    .copied()
+                    .map(|act_id| cs![Active(game.state.act(act_id).type_)]);
                 let options = repeat(true).zip(act_names);
 
                 match prompt(
@@ -289,7 +338,7 @@ fn ui(game: &mut Game) {
                     None => input_state.previous(),
 
                     Some(act_id_idx) => {
-                        let act_id = act_ids[act_id_idx];
+                        let act_id = act_ids.iter().copied().nth(act_id_idx).unwrap();
 
                         ActiveOptions { act_id }
                     }
@@ -317,13 +366,25 @@ fn ui(game: &mut Game) {
             }
 
             CheckActive { act_id } => {
-                println!("{}", GameFormatted { value: game.state.act(act_id), game, id: act_id });
+                println!(
+                    "{}",
+                    GameFormatted {
+                        game,
+                        value: act_id
+                    }
+                );
 
                 input_state.previous()
             }
 
             UseActive { act_id } => {
-                let can_use_on_field = UseOnField::new(act_id).can(game);
+                let can_use_on_field = game.can(
+                    Event::Use {
+                        act_id,
+                        use_way: UseWay::OnField,
+                    }
+                    .sign(player_id),
+                );
 
                 let can_use_on_own_chr = game.can_use_on_own_chr(act_id);
                 let can_use_on_enemy_chr = game.can_use_on_enemy_chr(act_id);
@@ -350,7 +411,13 @@ fn ui(game: &mut Game) {
             }
 
             UseActiveOnField { act_id } => {
-                UseOnField::new(act_id).try_(game).unwrap();
+                Event::Use {
+                    act_id,
+                    use_way: UseWay::OnField,
+                }
+                .sign(player_id)
+                .try_(game)
+                .unwrap();
 
                 println!(
                     "активка {} использована на поле",
@@ -362,7 +429,14 @@ fn ui(game: &mut Game) {
 
             UseActiveOnOwnCharacter { act_id } => {
                 let target_id = game.state.own_chr_id(player_id);
-                UseOnCharacter::new(act_id, target_id).try_(game).unwrap();
+
+                Event::Use {
+                    act_id,
+                    use_way: UseWay::OnCharacter(target_id),
+                }
+                .sign(player_id)
+                .try_(game)
+                .unwrap();
 
                 println!(
                     "активка {} использована на персонажа {}",
@@ -375,7 +449,13 @@ fn ui(game: &mut Game) {
 
             UseActiveOnEnemyCharacter { act_id } => {
                 let target_id = game.state.enemy_chr_id(player_id);
-                UseOnCharacter::new(act_id, target_id).try_(game).unwrap();
+                Event::Use {
+                    act_id,
+                    use_way: UseWay::OnCharacter(target_id),
+                }
+                .sign(player_id)
+                .try_(game)
+                .unwrap();
 
                 println!(
                     "активка {} использована на персонажа {}",

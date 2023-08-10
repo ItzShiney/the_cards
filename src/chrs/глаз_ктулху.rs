@@ -1,4 +1,4 @@
-pub use crate::card_uses::*;
+pub use crate::chr_uses::*;
 
 pub fn name() -> CustomString {
     cs!["ГЛАЗ КТУЛХУ"]
@@ -31,16 +31,34 @@ pub fn description() -> CustomString {
     ),]
 }
 
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks {
-        force_attack: Some(|game, mut args| {
-            if game.random_bool(1. / 2.) {
-                args.dmg += 1;
+pub fn handle_event(
+    game: &mut Game,
+    chr_id: CharacterID,
+    mut signed_event: SignedEvent,
+) -> EventResult {
+    match &mut signed_event.value {
+        &mut Event::Attack {
+            attacker_id: _chr_id,
+            target_id: _,
+            ref mut dmg,
+        } if _chr_id == chr_id => {
+            let Event::RandomBool {
+                output: Some(random_bool),
+                ..
+            } = game
+                .try_(Event::random_bool(1. / 2.).sign(chr_id))?
+                .value
+            else {
+                unreachable!()
+            };
+
+            if random_bool {
+                *dmg += 1;
             }
+        }
 
-            (args, ())
-        }),
-
-        ..Default::default()
+        _ => {}
     }
+
+    Ok(signed_event)
 }

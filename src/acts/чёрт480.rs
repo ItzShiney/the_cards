@@ -1,4 +1,4 @@
-use crate::card_uses::*;
+pub use crate::act_uses::*;
 
 pub fn name() -> CustomString {
     cs!["ЧЁРТ 480"]
@@ -17,20 +17,12 @@ pub fn groups() -> Groups {
 pub fn description() -> CustomString {
     cs![
         Condition(cs!["использовано в битве"]),
-        Point(cs!["следующая активка, использованная противником, не сработает"]),
+        Point(cs![
+            "следующая активка, использованная противником, не сработает"
+        ]),
     ]
 }
 
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks {
-        can_use_on_field: Some(|_game, _args| {
-            todo!("is battle");
-        }),
-
-        force_use_on_field: Some(|_game, _args| {
-            todo!();
-        }),
-
-        ..Default::default()
-    }
+pub fn use_on_field(game: &mut Game, act_id: ActiveID) -> Result<(), Cancelled> {
+    todo!()
 }

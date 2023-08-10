@@ -1,4 +1,4 @@
-pub use crate::card_uses::*;
+pub use crate::act_uses::*;
 
 pub fn name() -> CustomString {
     cs!["THE SUN"]
@@ -22,16 +22,20 @@ pub fn description() -> CustomString {
     ]
 }
 
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks {
-        can_use_on_chr: Some(|_game, _args| {
-            todo!();
-        }),
+pub fn use_on_chr(
+    game: &mut Game,
+    act_id: ActiveID,
+    chr_id: CharacterID,
+) -> Result<CharacterID, Cancelled> {
+    let phy = game.stat(chr_id, StatType::Physique, act_id);
+    let set_vit = Event::stat_change(chr_id, StatType::Vitality, StatChange::Set(phy))
+        .sign(act_id)
+        .try_(game);
 
-        force_use_on_chr: Some(|_game, _args| {
-            todo!();
-        }),
+    let owner_id = game.state.find_owner_of_act(act_id);
+    let take_chr = Event::take_chr(owner_id).sign(act_id).try_(game);
+    let take_act = Event::take_act(owner_id).sign(act_id).try_(game);
 
-        ..Default::default()
-    }
+    set_vit.or(take_chr).or(take_act)?;
+    Ok(chr_id)
 }

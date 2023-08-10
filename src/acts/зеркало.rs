@@ -1,4 +1,4 @@
-pub use crate::card_uses::*;
+pub use crate::act_uses::*;
 
 pub fn name() -> CustomString {
     cs!["ЗЕРКАЛО"]
@@ -21,4 +21,8 @@ pub fn description() -> CustomString {
         Condition(cs!["использовано на персонажа"]),
         Point(cs!["копирует выбранную способность противника"]),
     ]
+}
+
+pub fn use_on_field(game: &mut Game, act_id: ActiveID) -> Result<(), Cancelled> {
+    todo!()
 }

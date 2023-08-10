@@ -1,4 +1,4 @@
-pub use crate::card_uses::*;
+pub use crate::act_uses::*;
 
 pub fn name() -> CustomString {
     cs!["CU(OH)₂"]
@@ -15,9 +15,20 @@ pub fn groups() -> Groups {
 }
 
 pub fn description() -> CustomString {
-    cs![Condition(cs!["использован на персонажа"]), Point(cs![Vitality, " /= 2"]),]
+    cs![
+        Condition(cs!["использован на персонажа"]),
+        Point(cs![Vitality, " /= 2"]),
+    ]
 }
 
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks { force_use_on_chr: Some(|_game, _args| todo!()), ..Default::default() }
+pub fn use_on_chr(
+    game: &mut Game,
+    act_id: ActiveID,
+    chr_id: CharacterID,
+) -> Result<CharacterID, Cancelled> {
+    Event::stat_change(chr_id, StatType::Vitality, StatChange::Div(2))
+        .sign(act_id)
+        .try_(game)?;
+
+    Ok(chr_id)
 }

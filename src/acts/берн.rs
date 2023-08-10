@@ -1,4 +1,4 @@
-use crate::card_uses::*;
+pub use crate::act_uses::*;
 
 pub fn name() -> CustomString {
     cs!["БЕРН"]
@@ -22,27 +22,33 @@ pub fn description() -> CustomString {
     ]
 }
 
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks {
-        force_use_on_chr: Some(|game, args| {
-            let target_owner_id = game.state.find_owner_of_chr(args.target_id);
+pub fn use_on_chr(
+    game: &mut Game,
+    act_id: ActiveID,
+    chr_id: CharacterID,
+) -> Result<CharacterID, Cancelled> {
+    let target_owner_id = game.state.find_owner_of_chr(chr_id);
 
-            let replacing_chr_id = game
-                .choose_chr_in_hand(ChooseCardArgsP {
-                    prompt: PromptArgs {
-                        str: cs![Active(Берн), ": на кого поменять?"],
-                        is_cancellable: false,
-                        autochoose_single_option: true,
-                    },
-                    player_id: target_owner_id,
-                    p: &|game, chr_id| chr_id != args.target_id && Place::new(chr_id).can(game),
-                })
-                .unwrap();
+    let replacing_chr_id = game
+        .choose_chr_in_hand(ChooseCardArgsP {
+            prompt: PromptArgs {
+                str: cs![Active(Берн), ": на кого поменять?"],
+                is_cancellable: false,
+                autochoose_single_option: true,
+            },
+            player_id: target_owner_id,
+            p: &|game, prompt_chr_id| {
+                prompt_chr_id != chr_id && game.can(Event::Place { chr_id }.sign(act_id))
+            },
+        })
+        .unwrap();
 
-            _ = Replace::new(args.target_id, replacing_chr_id).try_(game);
-            (args, ())
-        }),
-
-        ..Default::default()
+    Event::Replace {
+        replaced_chr_id: chr_id,
+        replacing_chr_id,
     }
+    .sign(act_id)
+    .try_(game)?;
+
+    Ok(chr_id)
 }

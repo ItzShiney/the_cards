@@ -1,4 +1,4 @@
-pub use crate::card_uses::*;
+pub use crate::act_uses::*;
 
 pub fn name() -> CustomString {
     cs!["САТОКИНА БИТА"]
@@ -15,16 +15,20 @@ pub fn groups() -> Groups {
 }
 
 pub fn description() -> CustomString {
-    cs![Condition(cs!["использована на персонажа"]), Point(cs![Damage, " += 2"]),]
+    cs![
+        Condition(cs!["использована на персонажа"]),
+        Point(cs![Damage, " += 2"]),
+    ]
 }
 
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks {
-        force_use_on_chr: Some(|game, args| {
-            _ = StatAdd::new(args.target_id, StatType::Damage, 2).try_(game);
-            (args, ())
-        }),
+pub fn use_on_chr(
+    game: &mut Game,
+    act_id: ActiveID,
+    chr_id: CharacterID,
+) -> Result<CharacterID, Cancelled> {
+    Event::stat_change(chr_id, StatType::Damage, StatChange::Add(2))
+        .sign(act_id)
+        .try_(game)?;
 
-        ..Default::default()
-    }
+    Ok(chr_id)
 }

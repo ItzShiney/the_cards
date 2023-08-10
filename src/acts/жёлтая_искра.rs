@@ -1,4 +1,4 @@
-pub use crate::card_uses::*;
+pub use crate::act_uses::*;
 
 pub fn name() -> CustomString {
     cs!["ЖЁЛТАЯ ИСКРА"]
@@ -16,18 +16,22 @@ pub fn groups() -> Groups {
 }
 
 pub fn description() -> CustomString {
-    cs![Condition(cs!["использована на персонажа"]), Point(cs![Vitality, " = ", Physique]),]
+    cs![
+        Condition(cs!["использована на персонажа"]),
+        Point(cs![Vitality, " = ", Physique]),
+    ]
 }
 
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks {
-        force_use_on_chr: Some(|game, args| {
-            let phy = game.state.chr(args.target_id).stats.phy.0;
-            game.force_set_stat(args.target_id, StatType::Vitality, phy);
+pub fn use_on_chr(
+    game: &mut Game,
+    act_id: ActiveID,
+    chr_id: CharacterID,
+) -> Result<CharacterID, Cancelled> {
+    let phy = game.stat(chr_id, StatType::Vitality, act_id);
 
-            (args, ())
-        }),
+    Event::stat_change(chr_id, StatType::Vitality, StatChange::Set(phy))
+        .sign(act_id)
+        .try_(game)?;
 
-        ..Default::default()
-    }
+    Ok(chr_id)
 }

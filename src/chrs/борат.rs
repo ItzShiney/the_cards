@@ -1,4 +1,4 @@
-pub use crate::card_uses::*;
+pub use crate::chr_uses::*;
 
 pub fn name() -> CustomString {
     cs!["БОРАТ"]
@@ -31,23 +31,33 @@ pub fn description() -> CustomString {
 ]
 }
 
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks {
-        force_place: Some(|game, args| {
-            let self_id = args.chr_id;
+pub fn handle_event(
+    game: &mut Game,
+    chr_id: CharacterID,
+    signed_event: SignedEvent,
+) -> EventResult {
+    match signed_event.value {
+        Event::Place { chr_id: _chr_id } if _chr_id == chr_id => {
+            let chr_id = chr_id;
 
-            if let Some(gained_act_id) = game.state.acts.pick(game.state.find_owner_of_chr(self_id))
+            if let Some(gained_act_id) = game.state.acts.pick(game.state.find_owner_of_chr(chr_id))
             {
-                let could_use = UseOnCharacter::new(gained_act_id, self_id).try_(game).is_ok();
+                let could_use = Event::Use {
+                    act_id: gained_act_id,
+                    use_way: UseWay::OnCharacter(chr_id),
+                }
+                .sign(chr_id)
+                .try_(game)
+                .is_ok();
 
                 if !could_use {
                     game.state.acts.add_to_drawpile(gained_act_id);
                 }
             }
+        }
 
-            (args, ())
-        }),
-
-        ..Default::default()
+        _ => {}
     }
+
+    Ok(signed_event)
 }

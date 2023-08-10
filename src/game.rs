@@ -1,386 +1,281 @@
-use crate::game_input::ChooseCardArgs;
-use crate::game_input::ChooseCardArgsP;
-use crate::game_input::GameInput;
-use crate::game_state::act_id::ActiveID;
-use crate::game_state::chr_id::CharacterID;
-use crate::game_state::GameState;
-use crate::game_state::Subturner;
-use crate::stats::Stat0;
-use crate::stats::StatType;
-use derive_more::Constructor;
-use macros::GameCallbacks;
-use std::mem::take;
+use {
+    crate::{
+        act_uses::{
+            Nested,
+            StatChange,
+            UseWay,
+        },
+        card_uses::{
+            event::{
+                Event,
+                SignedEvent,
+            },
+            Signature,
+        },
+        chr_uses::{
+            Check,
+            Sign,
+            SignedCheck,
+            Stat0,
+        },
+        game_input::{
+            ChooseCardArgs,
+            ChooseCardArgsP,
+            GameInput,
+        },
+        game_state::{
+            act_id::ActiveID,
+            chr_id::CharacterID,
+            GameState,
+        },
+        stats::StatType,
+    },
+    itertools::Itertools,
+};
+
+// TODO: move to another file
+pub enum CardID {
+    Character(CharacterID),
+    Active(ActiveID),
+}
 
 pub struct Game<'state, 'input> {
     pub state: &'state mut GameState,
     pub input: &'input mut dyn GameInput,
 }
 
-// TODO: разнести по файлам
+#[derive(Debug)]
+pub struct Cancelled;
 
-#[derive(Debug, Clone, Copy)]
-pub struct CannotUse;
+pub type EventResult = Result<SignedEvent, Cancelled>;
+pub type CheckResult = Result<SignedCheck, Cancelled>;
 
-pub trait CanForce: Copy {
-    type Output;
+impl SignedEvent {
+    pub fn can(self, game: &mut Game) -> bool {
+        game.can(self)
+    }
 
-    fn can(self, game: &mut Game) -> bool;
-    fn force(self, game: &mut Game) -> Self::Output;
+    pub fn force(self, game: &mut Game) -> SignedEvent {
+        game.force(self)
+    }
 
-    fn try_(self, game: &mut Game) -> Result<Self::Output, CannotUse> {
-        if self.can(game) {
-            Ok(self.force(game))
-        } else {
-            Err(CannotUse)
-        }
+    pub fn try_(self, game: &mut Game) -> EventResult {
+        game.try_(self)
     }
 }
 
-pub trait Map: Copy {
-    type Value;
-
-    fn map(self, game: &mut Game, value: Self::Value) -> Self::Value;
-}
-
-#[derive(Constructor, Clone, Copy)]
-pub struct UseOnField {
-    pub act_id: ActiveID,
-}
-
-#[derive(Constructor, Clone, Copy)]
-pub struct UseOnCharacter {
-    pub act_id: ActiveID,
-    pub target_id: CharacterID,
-}
-
-#[derive(Constructor, Clone, Copy)]
-pub struct StatAdd {
-    pub chr_id: CharacterID,
-    pub stat_type: StatType,
-    pub val: Stat0,
-}
-
-#[derive(Constructor, Clone, Copy)]
-pub struct Attack {
-    pub attacker_id: CharacterID,
-    pub target_id: CharacterID,
-    pub dmg: Stat0,
-}
-
-#[derive(Constructor, Clone, Copy)]
-pub struct GetHurt {
-    pub chr_id: CharacterID,
-    pub dmg: Stat0,
-}
-
-#[derive(Constructor, Clone, Copy)]
-pub struct Place {
-    pub chr_id: CharacterID,
-}
-
-#[derive(Constructor, Clone, Copy)]
-pub struct Die {
-    pub chr_id: CharacterID,
-}
-
-#[derive(Constructor, Clone, Copy)]
-pub struct EndTurn;
-
-#[derive(Constructor, Clone, Copy)]
-pub struct Replace {
-    pub replaced_chr_id: CharacterID,
-    pub replacing_chr_id: CharacterID,
-}
-
-#[derive(Constructor, Clone, Copy)]
-pub struct HealOnFieldLeaveMap {
-    pub chr_id: CharacterID,
-}
-
-#[derive(Constructor, Clone, Copy)]
-pub struct StatMap {
-    pub chr_id: CharacterID,
-    pub stat_type: StatType,
-}
-
-fn chain_can<T: CanForce, R>(
-    f: Option<impl FnOnce(&mut Game, T) -> Option<R>>,
-    args: T,
-    game: &mut Game,
-) -> bool {
-    match f {
-        Some(f) => f(game, args).is_some(),
-        None => true,
-    }
-}
-
-fn chain_force<T: CanForce, R>(
-    f: Option<impl FnOnce(&mut Game, T) -> (T, R)>,
-    args: &mut T,
-    game: &mut Game,
-) {
-    if let Some(f) = f {
-        *args = f(game, *args).0;
-    }
-}
-
-// TODO: перепроверить все реализации. вероятны лишние `.unwrap()`
-GameCallbacks! {
-    impl CanForce for UseOnField {
-        type Output = ();
-
-        fn can(self, game: &mut Game) -> bool {
-            let abilities = game.state.act(self.act_id).type_.abilities();
-
-            abilities.force_use_on_field.is_some()
-                && chain_can(abilities.can_use_on_field, self, game)
-        }
-
-        fn force(mut self, game: &mut Game) -> Self::Output {
-            chain_force(game.state.act(self.act_id).type_.abilities().force_use_on_field, &mut self, game);
-
-            game.state.acts.remove_from_some_player(self.act_id);
-        }
+impl Game<'_, '_> {
+    pub fn can(&mut self, signed_event: SignedEvent) -> bool {
+        let anchor = self.state.anchor();
+        let res = self.try_(signed_event).is_ok();
+        self.state.revert_to(anchor);
+        res
     }
 
-    impl CanForce for UseOnCharacter {
-        type Output = ();
-
-        fn can(self, game: &mut Game) -> bool {
-            let abilities = game.state.act(self.act_id).type_.abilities();
-
-            abilities.force_use_on_chr.is_some()
-                && chain_can(abilities.can_use_on_chr, self, game)
-        }
-
-        fn force(mut self, game: &mut Game) -> Self::Output {
-            chain_force(game.state.act(self.act_id).type_.abilities().force_use_on_chr, &mut self, game);
-
-            game.state.acts.remove_from_some_player(self.act_id);
-        }
+    pub fn force(&mut self, signed_event: SignedEvent) -> SignedEvent {
+        self.try_(signed_event)
+            .expect("expected forced event not to be cancelled")
     }
 
-    impl CanForce for StatAdd {
-        type Output = ();
+    pub fn try_(&mut self, signed_event: SignedEvent) -> EventResult {
+        let anchor = self.state.anchor();
+        let maybe_signed_event = self.chain_event(signed_event);
 
-        fn can(self, game: &mut Game) -> bool {
-            !game.is_const(self.chr_id, self.stat_type)
-                && !game.is_private(self.chr_id, self.stat_type) // TODO: && caller == Caller::Character(self.chr_id)
-                && chain_can(game.state.chr(self.chr_id).type_.abilities().can_stat_add, self, game)
-        }
+        match maybe_signed_event {
+            Ok(signed_event) => {
+                let children = self.state.extract_events_from(anchor);
+                let nested_event = Nested {
+                    children,
+                    value: signed_event,
+                };
 
-        fn force(mut self, game: &mut Game) -> Self::Output {
-            chain_force(game.state.chr(self.chr_id).type_.abilities().force_stat_add, &mut self, game);
-
-            let mut res = game.state.chr(self.chr_id).stats.stat(self.stat_type);
-            res += self.val;
-            res = res.max(0);
-
-            if self.stat_type == StatType::Vitality {
-                let phy = game.state.chr(self.chr_id).stats.phy.0;
-                res = res.min(phy);
+                self.state.push_event(nested_event);
+                Ok(signed_event)
             }
 
-            *game.state.chr_mut(self.chr_id).stats.stat_mut(self.stat_type) = res;
-        }
-    }
-
-    impl CanForce for Attack {
-        type Output = ();
-
-        fn can(self, game: &mut Game) -> bool {
-            GetHurt::new(self.target_id, self.dmg).can(game)
-        }
-
-        fn force(self, game: &mut Game) -> Self::Output {
-            GetHurt::new(self.target_id, self.dmg).force(game);
-        }
-    }
-
-    impl CanForce for GetHurt {
-        type Output = ();
-
-        fn can(self, game: &mut Game) -> bool {
-            self.dmg != 0
-                && chain_can(game.state.chr(self.chr_id).type_.abilities().can_get_hurt, self, game)
-        }
-
-        fn force(mut self, game: &mut Game) -> Self::Output {
-            chain_force(game.state.chr(self.chr_id).type_.abilities().force_get_hurt, &mut self, game);
-
-            let old_def = game.state.chr(self.chr_id).stats.def.0;
-            _ = StatAdd::new(self.chr_id, StatType::Defence, self.dmg).try_(game);
-            let new_def = game.state.chr(self.chr_id).stats.def.0;
-
-            let def_dmg_taken = old_def - new_def;
-            let vit_dmg_to_take = self.dmg - def_dmg_taken;
-
-            if vit_dmg_to_take > 0 {
-                _ = StatAdd::new(self.chr_id, StatType::Vitality, vit_dmg_to_take).try_(game);
+            err @ Err(_) => {
+                self.state.revert_to(anchor);
+                err
             }
         }
     }
 
-    impl CanForce for Place {
-        type Output = ();
+    fn chain_event(&mut self, mut signed_event: SignedEvent) -> EventResult {
+        self.verify_chain_event(signed_event)?;
+        signed_event = self.pre_chain_event(signed_event)?;
+        self.verify_chain_event(signed_event)?;
 
-        fn can(self, game: &mut Game) -> bool {
-            let Some(owner_id) = game.state.try_find_owner_of_chr(self.chr_id) else {
-                return false;
-            };
+        for card_id in self.state.event_handling_card_ids().collect_vec() {
+            match card_id {
+                CardID::Character(chr_id) => {
+                    let type_ = self.state.chr(chr_id).type_;
+                    signed_event = type_.handle_event(self, chr_id, signed_event)?;
+                }
 
-            let can_place = {
-                let attacker_can_place = (owner_id == game.state.attacker.player_id) && game.state.attacker.chr_id.is_none();
-                let defender_can_place = (owner_id == game.state.defender.player_id) && game.state.defender.chr_id.is_none();
+                CardID::Active(act_id) => {
+                    let type_ = self.state.act(act_id).type_;
+                    signed_event = type_.handle_event(self, act_id, signed_event)?;
+                }
+            }
 
-                attacker_can_place || defender_can_place
-            };
-
-            can_place
-                && chain_can(game.state.chr(self.chr_id).type_.abilities().can_place, self, game)
+            self.verify_chain_event(signed_event)?;
         }
 
-        fn force(mut self, game: &mut Game) -> Self::Output {
-            chain_force(game.state.chr(self.chr_id).type_.abilities().force_place, &mut self, game);
+        signed_event = self.post_chain_event(signed_event)?;
+        self.verify_chain_event(signed_event)?;
 
-            if let Some(player_id) = game.state.try_find_owner_of_chr(self.chr_id) {
-                if player_id == game.state.attacker.player_id {
-                    let attacker_chr_id = &mut game.state.attacker.chr_id;
+        Ok(signed_event)
+    }
 
-                    game.state.chrs.remove_from_player(self.chr_id, player_id);
+    fn verify_chain_event(&mut self, signed_event: SignedEvent) -> Result<(), Cancelled> {
+        let SignedEvent { value, signature } = signed_event;
 
-                    *attacker_chr_id = Some(self.chr_id);
-                } else if player_id == game.state.defender.player_id {
-                    let defender_chr_id = &mut game.state.defender.chr_id;
+        match value {
+            Event::StatChange {
+                chr_id,
+                stat_type,
+                stat_change,
+                ..
+            } => {
+                if self.is_const(chr_id, stat_type, signature) {
+                    return Err(Cancelled);
+                }
 
-                    game.state.chrs.remove_from_player(self.chr_id, player_id);
+                if signature != Signature::Character(chr_id)
+                    && self.is_private(chr_id, stat_type, signature)
+                {
+                    return Err(Cancelled);
+                }
+            }
 
-                    *defender_chr_id = Some(self.chr_id);
+            _ => {}
+        }
+
+        Ok(())
+    }
+
+    fn pre_chain_event(&mut self, signed_event: SignedEvent) -> EventResult {
+        let SignedEvent { value, signature } = signed_event;
+
+        match value {
+            Event::Place { chr_id } => {
+                let Some(owner_id) = self.state.try_find_owner_of_chr(chr_id) else {
+                    return Err(Cancelled);
+                };
+
+                let can_place = {
+                    let is_attacker = owner_id == self.state.attacker.player_id;
+                    let is_defender = owner_id == self.state.defender.player_id;
+
+                    let attacker_can_place = self.state.attacker.chr_id.is_none();
+                    let defender_can_place = self.state.defender.chr_id.is_none();
+
+                    (is_attacker && attacker_can_place) || (is_defender && defender_can_place)
+                };
+
+                if !can_place {
+                    return Err(Cancelled);
+                }
+            }
+
+            _ => {}
+        }
+
+        Ok(signed_event)
+    }
+
+    fn post_chain_event(&mut self, mut signed_event: SignedEvent) -> EventResult {
+        let SignedEvent { value, .. } = &mut signed_event;
+
+        match value {
+            &mut Event::Place { chr_id } => {
+                if let Some(player_id) = self.state.try_find_owner_of_chr(chr_id) {
+                    if player_id == self.state.attacker.player_id {
+                        let attacker_chr_id = &mut self.state.attacker.chr_id;
+
+                        self.state.chrs.remove_from_player(chr_id, player_id);
+
+                        *attacker_chr_id = Some(chr_id);
+                    } else if player_id == self.state.defender.player_id {
+                        let defender_chr_id = &mut self.state.defender.chr_id;
+
+                        self.state.chrs.remove_from_player(chr_id, player_id);
+
+                        *defender_chr_id = Some(chr_id);
+                    } else {
+                        unreachable!()
+                    }
+                }
+            }
+
+            &mut Event::StatChange {
+                chr_id,
+                stat_type,
+                stat_change,
+                ref mut old_value,
+            } => {
+                let stats = &mut self.state.chr_mut(chr_id).stats;
+                *old_value = Some(stats.stat(stat_type));
+
+                match stat_change {
+                    StatChange::Add(value) => {
+                        if value == 0 {
+                            return Err(Cancelled);
+                        }
+
+                        stats.add(stat_type, value);
+                    }
+
+                    StatChange::Set(mut value) => {
+                        if value < 0 {
+                            value = 0;
+                        }
+
+                        if stats.stat(stat_type) == value {
+                            return Err(Cancelled);
+                        }
+
+                        stats.set(stat_type, value);
+                    }
+
+                    _ => todo!(),
+                }
+            }
+
+            _ => {}
+        }
+
+        Ok(signed_event)
+    }
+
+    pub fn check(&self, mut signed_check: SignedCheck) -> CheckResult {
+        for card_id in self.state.event_handling_card_ids() {
+            match card_id {
+                CardID::Character(chr_id) => {
+                    let type_ = self.state.chr(chr_id).type_;
+                    signed_check = type_.handle_check(self, chr_id, signed_check)?;
+                }
+
+                CardID::Active(act_id) => {
+                    let type_ = self.state.act(act_id).type_;
+                    signed_check = type_.handle_check(self, act_id, signed_check)?;
                 }
             }
         }
+
+        Ok(signed_check)
     }
 
-    impl CanForce for Die {
-        type Output = ();
-
-        fn can(self, game: &mut Game) -> bool {
-            chain_can(game.state.chr(self.chr_id).type_.abilities().can_die, self, game)
-        }
-
-        fn force(mut self, game: &mut Game) -> Self::Output {
-            chain_force(game.state.chr(self.chr_id).type_.abilities().force_die, &mut self, game);
-
-            game.state.chrs.add_to_wastepile(self.chr_id);
-
-            EndTurn::new().force(game);
-        }
-    }
-
-    // TODO: это точно CanForce?
-    impl CanForce for EndTurn {
-        type Output = ();
-
-        fn can(self, _game: &mut Game) -> bool {
-            true
-        }
-
-        fn force(self, game: &mut Game) -> Self::Output {
-            game.force_remove_from_field(game.state.current_subturner);
-            game.force_remove_from_field(game.state.current_subturner.other());
-            game.state.change_turner();
-        }
-    }
-
-    impl CanForce for Replace {
-        type Output = ();
-
-        fn can(self, _game: &mut Game) -> bool {
-            true
-        }
-
-        fn force(self, _game: &mut Game) -> Self::Output {
-            todo!()
-        }
-    }
-
-    impl Map for HealOnFieldLeaveMap {
-        type Value = Stat0;
-
-        fn map(self, _game: &mut Game, value: Self::Value) -> Self::Value {
-            value
-        }
-    }
-
-    impl Map for StatMap {
-        type Value = Stat0;
-
-        fn map(self, _game: &mut Game, value: Self::Value) -> Self::Value {
-            value
-        }
-    }
-}
-
-impl Game<'_, '_> {
-    pub fn is_dead(&mut self, chr_id: CharacterID) -> bool {
-        self.state.chr(chr_id).stats.vit.0 == 0
-    }
-
-    pub fn random(&mut self, min: Stat0, max: Stat0) -> Stat0 {
-        self.input.random(min, max)
-    }
-
-    pub fn random_bool(&mut self, true_prob: f64) -> bool {
-        self.input.random_bool(true_prob)
-    }
-
-    pub fn force_remove_from_field(&mut self, subturner: Subturner) {
-        let subturner_on_field = self.state.subturner_on_field_mut(subturner);
-        let chr_id = subturner_on_field.chr_id.take().expect("expected chr to be on field");
-        let used_act_ids = take(&mut subturner_on_field.used_act_ids);
-
-        if self.is_dead(chr_id) {
-            Die::new(chr_id).force(self);
-            return;
-        }
-
-        self.heal_on_field_leave(chr_id);
-
-        let owner_id = self.state.find_owner_of_chr(chr_id);
-        self.state.chrs.add_to_player(chr_id, owner_id);
-
-        for act_id in used_act_ids {
-            self.state.acts.add_to_wastepile(act_id);
-        }
-    }
-
-    pub fn force_set_stat(&mut self, chr_id: CharacterID, stat_type: StatType, value: Stat0) {
-        *self.state.chr_mut(chr_id).stats.stat_mut(stat_type) = value;
-    }
-
-    pub fn force_set_phy_vit(&mut self, chr_id: CharacterID, value: Stat0) {
-        self.force_set_stat(chr_id, StatType::Physique, value);
-        self.force_set_stat(chr_id, StatType::Vitality, value);
-    }
-
-    pub fn is_const(&self, _chr_id: CharacterID, _stat_type: StatType) -> bool {
-        false
-    }
-
-    pub fn is_private(&self, _chr_id: CharacterID, _stat_type: StatType) -> bool {
-        false
-    }
-
-    pub fn will_change(&self, _chr_id: CharacterID, _stat_type: StatType) -> bool {
-        false
-    }
-}
-
-impl Game<'_, '_> {
     pub fn can_use_in_any_way(&mut self, act_id: ActiveID) -> bool {
         self.can_use_on_own_chr(act_id)
             || self.can_use_on_enemy_chr(act_id)
-            || UseOnField::new(act_id).can(self)
+            || self.can(
+                Event::Use {
+                    act_id,
+                    use_way: UseWay::OnField,
+                }
+                .sign(self.state.find_owner_of_act(act_id)),
+            )
     }
 
     pub fn can_use_on_own_chr(&mut self, act_id: ActiveID) -> bool {
@@ -388,7 +283,13 @@ impl Game<'_, '_> {
             return false;
         };
 
-        UseOnCharacter::new(act_id, chr_id).can(self)
+        self.can(
+            Event::Use {
+                act_id,
+                use_way: UseWay::OnCharacter(chr_id),
+            }
+            .sign(act_id),
+        )
     }
 
     pub fn can_use_on_enemy_chr(&mut self, act_id: ActiveID) -> bool {
@@ -396,30 +297,86 @@ impl Game<'_, '_> {
             return false;
         };
 
-        UseOnCharacter::new(act_id, chr_id).can(self)
+        self.can(
+            Event::Use {
+                act_id,
+                use_way: UseWay::OnCharacter(chr_id),
+            }
+            .sign(act_id),
+        )
     }
 
-    pub fn stat(&mut self, chr_id: CharacterID, stat_type: StatType) -> Stat0 {
-        let value = self.state.chr(chr_id).stats.stat(stat_type);
-        StatMap::new(chr_id, stat_type).map(self, value)
+    pub fn stat(
+        &self,
+        chr_id: CharacterID,
+        stat_type: StatType,
+        signature: impl Into<Signature>,
+    ) -> Stat0 {
+        let value: Stat0 = self.state.chr(chr_id).stats.stat(stat_type);
+
+        let Check::Stat { value, .. } = self
+            .check(
+                Check::Stat {
+                    chr_id,
+                    stat_type,
+                    value,
+                }
+                .sign(signature),
+            )
+            .expect("expected stat check not to be cancelled")
+            .value
+        else {
+            unreachable!()
+        };
+
+        value
+    }
+
+    pub fn random(&mut self, min: Stat0, max: Stat0, signature: impl Into<Signature>) -> Stat0 {
+        let Event::Random {
+            output: Some(output),
+            ..
+        } = self.force(Event::random(min, max).sign(signature)).value
+        else {
+            unreachable!()
+        };
+
+        output
     }
 
     pub fn end_subturn(&mut self) {
         self.state.current_subturner.switch()
     }
 
-    pub fn heal_on_field_leave(&mut self, _chr_id: CharacterID) {
-        todo!()
+    pub fn heal_on_field_leave(
+        &mut self,
+        chr_id: CharacterID,
+        signature: impl Into<Signature>,
+    ) -> Event {
+        let heal_value = self.stat(chr_id, StatType::Intellect, signature);
+
+        Event::HealOnFieldLeave { chr_id, heal_value }
     }
 
-    /* pub fn attack(
-        &mut self,
-        attacker_id: CharacterID,
-        target_id: CharacterID,
-    ) {
-        let dmg = self.chr(attacker_id).stats.dmg.0;
-        self.attack_map(attacker_id, target_id, dmg)
-    } */
+    pub fn is_private(
+        &self,
+        chr_id: CharacterID,
+        stat_type: StatType,
+        signature: impl Into<Signature>,
+    ) -> bool {
+        self.check(Check::AssumeNonPrivate { chr_id, stat_type }.sign(signature))
+            .is_err()
+    }
+
+    pub fn is_const(
+        &self,
+        chr_id: CharacterID,
+        stat_type: StatType,
+        signature: impl Into<Signature>,
+    ) -> bool {
+        self.check(Check::AssumeNonConst { chr_id, stat_type }.sign(signature))
+            .is_err()
+    }
 }
 
 impl Game<'_, '_> {
@@ -435,11 +392,13 @@ impl Game<'_, '_> {
     }
 
     pub fn choose_chr_in_hand_any(&mut self, args: ChooseCardArgs) -> Option<CharacterID> {
-        self.input.choose_chr_in_hand(self.state, ChooseCardArgsP::new(args, &|_, _| true))
+        self.input
+            .choose_chr_in_hand(self.state, ChooseCardArgsP::new(args, &|_, _| true))
     }
 
     pub fn choose_act_in_hand_any(&mut self, args: ChooseCardArgs) -> Option<ActiveID> {
-        self.input.choose_act_in_hand(self.state, ChooseCardArgsP::new(args, &|_, _| true))
+        self.input
+            .choose_act_in_hand(self.state, ChooseCardArgsP::new(args, &|_, _| true))
     }
 
     pub fn choose_chr_on_field(
@@ -454,10 +413,12 @@ impl Game<'_, '_> {
     }
 
     pub fn choose_chr_on_field_any(&mut self, args: ChooseCardArgs) -> Option<CharacterID> {
-        self.input.choose_chr_on_field(self.state, ChooseCardArgsP::new(args, &|_, _| true))
+        self.input
+            .choose_chr_on_field(self.state, ChooseCardArgsP::new(args, &|_, _| true))
     }
 
     pub fn choose_act_on_field_any(&mut self, args: ChooseCardArgs) -> Option<ActiveID> {
-        self.input.choose_act_on_field(self.state, ChooseCardArgsP::new(args, &|_, _| true))
+        self.input
+            .choose_act_on_field(self.state, ChooseCardArgsP::new(args, &|_, _| true))
     }
 }

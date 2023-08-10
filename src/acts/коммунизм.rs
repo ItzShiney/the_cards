@@ -1,4 +1,4 @@
-pub use crate::card_uses::*;
+pub use crate::act_uses::*;
 
 pub fn name() -> CustomString {
     cs!["КОММУНИЗМ"]
@@ -17,20 +17,12 @@ pub fn groups() -> Groups {
 pub fn description() -> CustomString {
     cs![
         Condition(cs!["использован в качестве своего хода"]),
-        Point(cs!["каждый игрок передаёт свою колоду следующему по направлению ходов"]),
+        Point(cs![
+            "каждый игрок передаёт свою колоду следующему по направлению ходов"
+        ]),
     ]
 }
 
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks {
-        can_use_on_field: Some(|_game, _args| {
-            todo!();
-        }),
-
-        force_use_on_field: Some(|_game, _args| {
-            todo!();
-        }),
-
-        ..Default::default()
-    }
+pub fn use_on_field(game: &mut Game, act_id: ActiveID) -> Result<(), Cancelled> {
+    todo!()
 }

@@ -1,4 +1,4 @@
-pub use crate::card_uses::*;
+pub use crate::chr_uses::*;
 
 pub fn name() -> CustomString {
     cs!["АЙОЙ"]
@@ -25,5 +25,7 @@ pub fn stats() -> Stats {
 }
 
 pub fn description() -> CustomString {
-    cs![Epitaph(cs!["\"супер-ультра-громадно-восхитительно-невероятно-непонятно\""])]
+    cs![Epitaph(cs![
+        "\"супер-ультра-громадно-восхитительно-невероятно-непонятно\""
+    ])]
 }

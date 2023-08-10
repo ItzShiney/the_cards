@@ -1,16 +1,28 @@
-use crate::custom_string::CustomString;
-use crate::default_formatted::DefaultFormatted;
-use crate::game_input::PromptArgs;
-use crossterm::event;
-use crossterm::event::Event;
-use crossterm::event::KeyCode;
-use crossterm::event::KeyEvent;
-use crossterm::event::KeyEventKind;
-use crossterm::style::Stylize;
-use std::fmt;
-use std::fmt::Display;
-use std::io::stdout;
-use std::io::Write;
+use {
+    crate::{
+        custom_string::CustomString,
+        default_formatted::DefaultFormatted,
+        game_input::PromptArgs,
+    },
+    crossterm::{
+        event,
+        event::{
+            Event,
+            KeyCode,
+            KeyEvent,
+            KeyEventKind,
+        },
+        style::Stylize,
+    },
+    std::{
+        fmt,
+        fmt::Display,
+        io::{
+            stdout,
+            Write,
+        },
+    },
+};
 
 impl Display for DefaultFormatted<KeyCode> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -32,7 +44,14 @@ pub fn read_keycode(pred: impl Fn(KeyCode) -> bool) -> KeyCode {
     stdout().flush().unwrap();
 
     loop {
-        let Ok(Event::Key(KeyEvent { code: keycode, kind: KeyEventKind::Press, .. })) = event::read() else { continue; };
+        let Ok(Event::Key(KeyEvent {
+            code: keycode,
+            kind: KeyEventKind::Press,
+            ..
+        })) = event::read()
+        else {
+            continue;
+        };
 
         if pred(keycode) {
             println!("{}", DefaultFormatted(keycode));
@@ -45,7 +64,9 @@ pub fn read_chr(pred: impl Fn(char) -> bool) -> char {
     let KeyCode::Char(chr) = read_keycode(|keycode| match keycode {
         KeyCode::Char(chr) => pred(chr),
         _ => false,
-    }) else { unreachable!() };
+    }) else {
+        unreachable!()
+    };
     chr
 }
 
@@ -71,8 +92,12 @@ pub fn prompt(
             output += format!("  │ {} {}\n", key, option).as_str();
             chrs.push(next_chr);
         } else {
-            output += format!("  │ {} {}\n", key.to_string().black(), option.to_string().black())
-                .as_str();
+            output += format!(
+                "  │ {} {}\n",
+                key.to_string().black(),
+                option.to_string().black()
+            )
+            .as_str();
         }
 
         next_chr = (next_chr..).nth(1).unwrap();
@@ -95,7 +120,9 @@ pub fn prompt(
         KeyCode::Esc => args.is_cancellable,
         KeyCode::Char(x) => chrs.contains(&x),
         _ => false,
-    }) else { return None };
+    }) else {
+        return None;
+    };
 
     Some(to_idx(picked_chr))
 }

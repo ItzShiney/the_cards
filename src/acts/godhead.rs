@@ -1,4 +1,4 @@
-use crate::card_uses::*;
+pub use crate::act_uses::*;
 
 pub fn name() -> CustomString {
     cs!["GODHEAD"]
@@ -22,14 +22,14 @@ pub fn description() -> CustomString {
     ]
 }
 
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks {
-        force_use_on_chr: Some(|game, args| {
-            _ = StatAdd::new(args.target_id, StatType::Damage, 2).try_(game);
+pub fn use_on_chr(
+    game: &mut Game,
+    act_id: ActiveID,
+    chr_id: CharacterID,
+) -> Result<CharacterID, Cancelled> {
+    Event::stat_change(chr_id, StatType::Damage, StatChange::Add(2))
+        .sign(act_id)
+        .try_(game)?;
 
-            (args, ())
-        }),
-
-        ..Default::default()
-    }
+    Ok(chr_id)
 }

@@ -1,4 +1,4 @@
-pub use crate::card_uses::*;
+pub use crate::chr_uses::*;
 
 pub fn name() -> CustomString {
     cs!["MAGDALENE"]
@@ -25,5 +25,8 @@ pub fn stats() -> Stats {
 }
 
 pub fn description() -> CustomString {
-    cs![Activatable, NamedPoint(cs!["НЯМ СЕРДЦЕ"], cs![Vitality, " += 2"]),]
+    cs![
+        Activatable,
+        NamedPoint(cs!["НЯМ СЕРДЦЕ"], cs![Vitality, " += 2"]),
+    ]
 }

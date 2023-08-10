@@ -1,4 +1,4 @@
-pub use crate::card_uses::*;
+pub use crate::act_uses::*;
 
 pub fn name() -> CustomString {
     cs!["УТЕШИТЕЛЬНЫЙ ПРИЗ"]
@@ -27,6 +27,10 @@ pub fn description() -> CustomString {
     ]
 }
 
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks { force_use_on_chr: Some(|_game, _args| todo!()), ..Default::default() }
+pub fn use_on_chr(
+    game: &mut Game,
+    act_id: ActiveID,
+    chr_id: CharacterID,
+) -> Result<CharacterID, Cancelled> {
+    todo!()
 }

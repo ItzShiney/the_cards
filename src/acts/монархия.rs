@@ -1,4 +1,4 @@
-pub use crate::card_uses::*;
+pub use crate::act_uses::*;
 
 pub fn name() -> CustomString {
     cs!["МОНАРХИЯ"]
@@ -20,18 +20,4 @@ pub fn description() -> CustomString {
         Point(cs!["отменяет его эффект"]),
         Point(cs!["эта карта уничтожается"]),
     ]
-}
-
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks {
-        can_use_on_field: Some(|_game, _args| {
-            todo!();
-        }),
-
-        force_use_on_field: Some(|_game, _args| {
-            todo!();
-        }),
-
-        ..Default::default()
-    }
 }

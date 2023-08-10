@@ -1,5 +1,7 @@
 mod input;
 mod utility;
 
-pub use input::*;
-pub use utility::*;
+pub use {
+    input::*,
+    utility::*,
+};

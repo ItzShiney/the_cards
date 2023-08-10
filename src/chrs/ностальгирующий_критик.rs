@@ -1,4 +1,4 @@
-pub use crate::card_uses::*;
+pub use crate::chr_uses::*;
 
 pub fn name() -> CustomString {
     cs!["НОСТАЛЬГИРУЮЩИЙ КРИТИК"]
@@ -26,31 +26,41 @@ pub fn stats() -> Stats {
 
 pub fn description() -> CustomString {
     cs![
-        // TODO
         Condition(cs!["пока ", Intellect, " противника ", LE, " 3"]),
-        Point(cs![Vitality, " этой карты на 1 меньше, ", Damage, " на 2 больше"]),
+        Point(cs![
+            Vitality,
+            " этой карты на 1 меньше, ",
+            Damage,
+            " на 2 больше"
+        ]),
     ]
 }
 
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks {
-        stat_map: Some(|game, args, mut value| {
-            let owner_id = game.state.find_owner_of_chr(args.chr_id);
-            if let Some(enemy_id) = game.state.try_enemy_chr_id(owner_id) {
-                let enemy_int = game.state.chr(enemy_id).stats.int.0;
+pub fn handle_check(
+    game: &Game,
+    chr_id: CharacterID,
+    mut signed_check: SignedCheck,
+) -> CheckResult {
+    match &mut signed_check.value {
+        &mut Check::Stat {
+            chr_id: _chr_id,
+            stat_type,
+            ref mut value,
+        } if _chr_id == chr_id => {
+            let enemy_id = game.state.enemy_id(chr_id);
+            let enemy_int = game.stat(enemy_id, stat_type, chr_id);
 
-                if enemy_int <= 3 {
-                    match args.stat_type {
-                        StatType::Vitality => value -= 1,
-                        StatType::Damage => value += 2,
-                        _ => {}
-                    }
+            if enemy_int <= 3 {
+                match stat_type {
+                    StatType::Vitality => *value -= 1,
+                    StatType::Damage => *value += 1,
+                    _ => {}
                 }
             }
+        }
 
-            (args, value)
-        }),
-
-        ..Default::default()
+        _ => {}
     }
+
+    Ok(signed_check)
 }

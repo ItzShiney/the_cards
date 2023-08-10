@@ -1,4 +1,4 @@
-pub use crate::card_uses::*;
+pub use crate::chr_uses::*;
 
 pub fn name() -> CustomString {
     cs!["ДУХ ТВОЕЙ КВАРТИРЫ"]
@@ -33,6 +33,26 @@ pub fn description() -> CustomString {
     ]
 }
 
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks { ..Default::default() }
+pub fn handle_check(
+    game: &Game,
+    chr_id: CharacterID,
+    mut signed_check: SignedCheck,
+) -> CheckResult {
+    match &mut signed_check.value {
+        &mut Check::Stat {
+            chr_id: _chr_id,
+            stat_type,
+            ref mut value,
+        } if _chr_id == chr_id && stat_type == StatType::Damage => {
+            let owner_id = game.state.find_owner_of_chr(chr_id);
+
+            if game.state.chrs.hand(owner_id).len() <= 2 {
+                *value += 2;
+            }
+        }
+
+        _ => {}
+    }
+
+    Ok(signed_check)
 }

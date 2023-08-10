@@ -1,4 +1,4 @@
-pub use crate::card_uses::*;
+pub use crate::act_uses::*;
 
 pub fn name() -> CustomString {
     cs!["CRACK THE SKY"]
@@ -21,14 +21,19 @@ pub fn description() -> CustomString {
     ]
 }
 
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks {
-        force_use_on_chr: Some(|game, args| {
-            let dmg = game.random(0, 5);
-            _ = GetHurt::new(args.target_id, dmg).try_(game);
-            (args, ())
-        }),
+pub fn use_on_chr(
+    game: &mut Game,
+    act_id: ActiveID,
+    chr_id: CharacterID,
+) -> Result<CharacterID, Cancelled> {
+    let Event::Random {
+        output: Some(dmg), ..
+    } = Event::random(0, 5).sign(act_id).try_(game)?.value
+    else {
+        unreachable!()
+    };
 
-        ..Default::default()
-    }
+    Event::get_hurt(chr_id, dmg).sign(act_id).try_(game)?;
+
+    Ok(chr_id)
 }

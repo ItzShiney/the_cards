@@ -1,4 +1,4 @@
-pub use crate::card_uses::*;
+pub use crate::act_uses::*;
 
 pub fn name() -> CustomString {
     cs!["СОЛНЦЕ"]
@@ -24,16 +24,26 @@ pub fn description() -> CustomString {
     ]
 }
 
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks {
-        can_use_on_chr: Some(|_game, _args| {
-            todo!();
-        }),
+pub fn use_on_chr(
+    game: &mut Game,
+    act_id: ActiveID,
+    chr_id: CharacterID,
+) -> Result<CharacterID, Cancelled> {
+    let vit = Event::stat_change(chr_id, StatType::Vitality, StatChange::Add(1))
+        .sign(act_id)
+        .try_(game);
 
-        force_use_on_chr: Some(|_game, _args| {
-            todo!();
-        }),
+    let photosynthesis = {
+        let groups = game.state.chr(chr_id).type_.groups();
+        if groups.contains(&Растение) {
+            Event::stat_change(chr_id, StatType::Damage, StatChange::Add(3))
+                .sign(act_id)
+                .try_(game)
+        } else {
+            Err(Cancelled)
+        }
+    };
 
-        ..Default::default()
-    }
+    vit.or(photosynthesis)?;
+    Ok(chr_id)
 }

@@ -1,4 +1,4 @@
-pub use crate::card_uses::*;
+pub use crate::act_uses::*;
 
 pub fn name() -> CustomString {
     cs!["ОХАГИ"]
@@ -16,23 +16,28 @@ pub fn groups() -> Groups {
 
 pub fn description() -> CustomString {
     cs![
-        Condition(cs!["использованы на персонажа с ", Intellect, " ", LE, " 3"]),
+        Condition(cs![
+            "использованы на персонажа с ",
+            Intellect,
+            " ",
+            LE,
+            " 3"
+        ]),
         Point(cs!["наносят 1 ", Damage]),
     ]
 }
 
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks {
-        can_use_on_chr: Some(|game, args| {
-            let chr_int = game.state.chr(args.target_id).stats.int.0;
-            (chr_int <= 3).then_some(args)
-        }),
-
-        force_use_on_chr: Some(|game, args| {
-            _ = GetHurt::new(args.target_id, 1).try_(game);
-            (args, ())
-        }),
-
-        ..Default::default()
+pub fn use_on_chr(
+    game: &mut Game,
+    act_id: ActiveID,
+    chr_id: CharacterID,
+) -> Result<CharacterID, Cancelled> {
+    let int = game.stat(chr_id, StatType::Intellect, act_id);
+    if !(int <= 3) {
+        return Err(Cancelled);
     }
+
+    Event::get_hurt(chr_id, 1).sign(act_id).try_(game)?;
+
+    Ok(chr_id)
 }

@@ -1,4 +1,4 @@
-pub use crate::card_uses::*;
+pub use crate::act_uses::*;
 
 pub fn name() -> CustomString {
     cs!["ДЕМОКРАТИЯ"]
@@ -17,20 +17,12 @@ pub fn groups() -> Groups {
 pub fn description() -> CustomString {
     cs![
         Condition(cs!["использована в качестве своего хода"]),
-        Point(cs!["[кол-во игроков] карт генерируются и случайно распределяются между игроками"]),
+        Point(cs![
+            "[кол-во игроков] карт генерируются и случайно распределяются между игроками"
+        ]),
     ]
 }
 
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks {
-        can_use_on_field: Some(|_game, _args| {
-            todo!();
-        }),
-
-        force_use_on_field: Some(|_game, _args| {
-            todo!();
-        }),
-
-        ..Default::default()
-    }
+pub fn use_on_field(game: &mut Game, act_id: ActiveID) -> Result<(), Cancelled> {
+    todo!()
 }

@@ -1,4 +1,4 @@
-pub use crate::card_uses::*;
+pub use crate::chr_uses::*;
 
 pub fn name() -> CustomString {
     cs!["ПЛАНЯ"]
@@ -42,10 +42,9 @@ pub fn description() -> CustomString {
         __,
         // TODO
         Condition(cs!["персонаж из биты вернулся к владельцу"]),
-        NamedPoint(cs!["\"ВЕРНИ САНКИ\""], cs![Physique, " всех персонажей в руке += 2"]),
+        NamedPoint(
+            cs!["\"ВЕРНИ САНКИ\""],
+            cs![Physique, " всех персонажей в руке += 2"]
+        ),
     ]
-}
-
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks { ..Default::default() }
 }

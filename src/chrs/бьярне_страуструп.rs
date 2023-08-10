@@ -1,4 +1,4 @@
-pub use crate::card_uses::*;
+pub use crate::chr_uses::*;
 
 pub fn name() -> CustomString {
     cs!["БЬЯРНЕ СТРАУСТРУП"]
@@ -24,6 +24,7 @@ pub fn stats() -> Stats {
 }
 
 pub fn description() -> CustomString {
+    // TODO
     cs![
         NamedPoint(cs!["ВЕЧНЫЙ ПРОГРАММИСТ"], cs![Const(cs![Intellect])]),
         __,
@@ -47,9 +48,4 @@ pub fn description() -> CustomString {
         Tab,
         Point(cs!["4..6 ", Implies, " не атакует"]),
     ]
-}
-
-// TODO
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks::default()
 }

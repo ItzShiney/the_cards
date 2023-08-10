@@ -1,4 +1,4 @@
-pub use crate::card_uses::*;
+pub use crate::chr_uses::*;
 
 pub fn name() -> CustomString {
     cs!["БЕАТРИЧЕ"]
@@ -25,13 +25,23 @@ pub fn stats() -> Stats {
 }
 
 pub fn description() -> CustomString {
-    cs![Condition(cs!["умерла"]), Point(cs!["с шансом 1/4 возвращается в руку"])]
+    cs![Point(cs!["с шансом 1/4 не умирает"])]
 }
 
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks {
-        can_die: Some(|game, args| game.random_bool(1. / 4.).else_some(args)),
+pub fn handle_event(
+    game: &mut Game,
+    chr_id: CharacterID,
+    signed_event: SignedEvent,
+) -> EventResult {
+    match signed_event.value {
+        Event::Die { chr_id: _chr_id } if _chr_id == chr_id => {
+            if game.input.random_bool(1. / 4.) {
+                return Err(Cancelled);
+            }
+        }
 
-        ..Default::default()
+        _ => {}
     }
+
+    Ok(signed_event)
 }

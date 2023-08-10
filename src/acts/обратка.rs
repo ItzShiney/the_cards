@@ -1,4 +1,4 @@
-pub use crate::card_uses::*;
+pub use crate::act_uses::*;
 
 pub fn name() -> CustomString {
     cs!["О,БРАТКА"]
@@ -16,25 +16,19 @@ pub fn groups() -> Groups {
 
 pub fn description() -> CustomString {
     cs![
-        Condition(cs!["использована на противника, единственного на поле"]),
-        Point(cs!["персонаж противника становится твоим и выставляется от тебя"]),
+        Condition(cs![
+            "использована на противника & твой персонаж не выставлен"
+        ]),
+        Point(cs![
+            "персонаж противника становится твоим и выставляется от тебя"
+        ]),
     ]
 }
 
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks {
-        can_use_on_chr: Some(|game, args| {
-            let is_used_on_enemy =
-                Some(args.target_id) == game.state.other_subturner_on_field().chr_id;
-            let is_enemy_single = game.state.current_subturner_on_field().chr_id.is_none();
-
-            (is_used_on_enemy && is_enemy_single).then_some(args)
-        }),
-
-        force_use_on_chr: Some(|_game, _args| {
-            todo!();
-        }),
-
-        ..Default::default()
-    }
+pub fn use_on_chr(
+    game: &mut Game,
+    act_id: ActiveID,
+    chr_id: CharacterID,
+) -> Result<CharacterID, Cancelled> {
+    todo!()
 }

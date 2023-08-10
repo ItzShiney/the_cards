@@ -1,4 +1,4 @@
-use crate::card_uses::*;
+pub use crate::act_uses::*;
 
 pub fn name() -> CustomString {
     cs!["ПУНКТ ПЯТЫЙ"]
@@ -20,17 +20,20 @@ pub fn description() -> CustomString {
         Condition(cs!["использован на персонажа"]),
         NamedPoint(
             cs!["\"ЗАМИНИРОВАТЬ КНОПКУ\""],
-            cs!["противник использовал активку ", Implies, " наносит 4 ", Damage]
+            cs![
+                "противник использовал активку ",
+                Implies,
+                " наносит 4 ",
+                Damage
+            ]
         ),
     ]
 }
 
-pub fn abilities() -> GameCallbacks {
-    GameCallbacks {
-        force_use_on_chr: Some(|_game, _args| {
-            todo!();
-        }),
-
-        ..Default::default()
-    }
+pub fn use_on_chr(
+    game: &mut Game,
+    act_id: ActiveID,
+    chr_id: CharacterID,
+) -> Result<CharacterID, Cancelled> {
+    todo!()
 }
