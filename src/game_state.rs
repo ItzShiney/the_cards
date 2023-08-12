@@ -1,7 +1,10 @@
 use {
     self::event::Event,
     crate::act_uses::StatType,
-    std::collections::HashSet,
+    std::{
+        collections::HashSet,
+        iter::once,
+    },
 };
 
 pub mod act_id;
@@ -221,6 +224,7 @@ impl Subturner {
     }
 }
 
+#[derive(Clone)]
 pub struct Nested<T> {
     pub children: Vec<Self>,
     pub value: T,
@@ -328,6 +332,7 @@ impl GameState {
 
             let act_id = self.add_act(act);
             self.acts.add_to_drawpile(act_id);
+            break;
         }
     }
 }
@@ -511,6 +516,26 @@ impl GameState {
         Anchor(self.events.len())
     }
 
+    pub fn events_flatten<'s>(&'s self) -> impl Iterator<Item = SignedEvent> + 's {
+        // динамика необходима, иначе бесконечный рекурсивный тип
+        fn helper<'events>(
+            events: &'events [Nested<SignedEvent>],
+        ) -> Box<dyn Iterator<Item = SignedEvent> + 'events> {
+            Box::new(
+                events
+                    .iter()
+                    .map(|event| {
+                        helper(&event.children)
+                            .into_iter()
+                            .chain(once(event.value.clone()))
+                    })
+                    .flatten(),
+            )
+        }
+
+        helper(&self.events)
+    }
+
     pub fn push_event(&mut self, signed_event: Nested<SignedEvent>) {
         self.events.push(signed_event);
     }
@@ -562,16 +587,16 @@ impl GameState {
             Event::GetHurt { .. } => {}
 
             Event::MorphCharacter {
-                chr_id,
-                new_info,
-                old_info,
-            } => todo!(),
+                chr_id, old_info, ..
+            } => {
+                *self.chr_mut(chr_id) = old_info.unwrap();
+            }
 
             Event::MorphActive {
-                act_id,
-                new_info,
-                old_info,
-            } => todo!(),
+                act_id, old_info, ..
+            } => {
+                *self.act_mut(act_id) = old_info.unwrap();
+            }
 
             Event::TakeCharacter { player_id, chr_id } => {
                 let chr_id = chr_id.unwrap();

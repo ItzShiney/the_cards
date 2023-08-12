@@ -35,9 +35,11 @@ use {
         thread_rng,
         Rng,
     },
+    std::mem::replace,
 };
 
 // TODO: move to another file
+#[derive(Debug, Clone, Copy)]
 pub enum CardID {
     Character(CharacterID),
     Active(ActiveID),
@@ -204,7 +206,7 @@ impl Game<'_, '_> {
 
                         *defender_chr_id = Some(chr_id);
                     } else {
-                        unreachable!()
+                        return Err(Cancelled);
                     }
                 }
             }
@@ -265,7 +267,46 @@ impl Game<'_, '_> {
                 *output = Some(res);
             }
 
-            _ => {}
+            &mut Event::Use { act_id, .. } => todo!(),
+
+            &mut Event::Attack { .. } => {}
+
+            &mut Event::GetHurt { .. } => todo!(),
+
+            &mut Event::MorphCharacter {
+                chr_id,
+                new_info,
+                ref mut old_info,
+            } => {
+                *old_info = Some(replace(self.state.chr_mut(chr_id), new_info));
+            }
+
+            &mut Event::MorphActive {
+                act_id,
+                new_info,
+                ref mut old_info,
+            } => {
+                *old_info = Some(replace(self.state.act_mut(act_id), new_info));
+            }
+
+            &mut Event::TakeCharacter { player_id, chr_id } => todo!(),
+
+            &mut Event::TakeActive { player_id, act_id } => todo!(),
+
+            &mut Event::PutCharacterInDrawpile { chr_id } => todo!(),
+
+            &mut Event::PutActiveInDrawpile { act_id } => todo!(),
+
+            &mut Event::Die { chr_id } => todo!(),
+
+            &mut Event::EndTurn => todo!(),
+
+            &mut Event::Replace {
+                replaced_chr_id,
+                replacing_chr_id,
+            } => todo!(),
+
+            &mut Event::HealOnFieldLeave { chr_id, heal_value } => todo!(),
         }
 
         Ok(signed_event)
