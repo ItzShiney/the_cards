@@ -36,7 +36,7 @@ pub fn handle_event(
     match signed_event.value {
         Event::Die { chr_id: _chr_id } if _chr_id == chr_id => {
             if game.input.random_bool(1. / 4.) {
-                return Err(Cancelled);
+                return Err(Cancelled("[БЕАТРИЧЕ]: random bool == true"));
             }
         }
 

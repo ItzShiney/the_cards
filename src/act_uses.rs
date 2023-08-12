@@ -16,10 +16,10 @@ pub fn use_on_chr(
     act_id: ActiveID,
     chr_id: CharacterID,
 ) -> Result<CharacterID, Cancelled> {
-    Err(Cancelled)
+    Err(Cancelled("default use_on_chr"))
 }
 
 #[allow(unused)]
 pub fn use_on_field(game: &mut Game, act_id: ActiveID) -> Result<(), Cancelled> {
-    Err(Cancelled)
+    Err(Cancelled("default use_on_field"))
 }

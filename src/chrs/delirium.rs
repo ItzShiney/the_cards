@@ -62,7 +62,7 @@ pub fn handle_event(
                 },
                 player_id: game.state.find_owner_of_chr(chr_id),
             }) else {
-                return Err(Cancelled);
+                return Err(Cancelled("[DELIRIUM]: no character to pick"));
             };
 
             let stats = &game.state.chr(copied_chr_id).stats;

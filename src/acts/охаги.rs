@@ -34,7 +34,7 @@ pub fn use_on_chr(
 ) -> Result<CharacterID, Cancelled> {
     let int = game.stat(chr_id, StatType::Intellect, act_id);
     if !(int <= 3) {
-        return Err(Cancelled);
+        return Err(Cancelled("failed: int <= 3"));
     }
 
     Event::GetHurt { chr_id, dmg: 1 }.sign(act_id).try_(game)?;

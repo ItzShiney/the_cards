@@ -40,7 +40,7 @@ pub fn use_on_chr(
                 .sign(act_id)
                 .try_(game)
         } else {
-            Err(Cancelled)
+            Err(Cancelled("[СОЛНЦЕ]: not a plant"))
         }
     };
 

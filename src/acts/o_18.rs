@@ -29,8 +29,9 @@ pub fn use_on_chr(
     act_id: ActiveID,
     chr_id: CharacterID,
 ) -> Result<CharacterID, Cancelled> {
+    println!("{:?}", game.state.chr(chr_id).type_);
     if game.state.chr(chr_id).type_ == Isaac {
-        return Err(Cancelled);
+        return Err(Cancelled("[0:18]: chr was already [ISAAC]"));
     }
 
     Event::morph_chr(chr_id, CharacterInfo::new(Isaac))

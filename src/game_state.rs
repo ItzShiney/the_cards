@@ -327,6 +327,7 @@ impl GameState {
                 .filter(|&chr_type| !chr_type.groups().contains(&Group::Нераздаваемая))
                 .choose(&mut thread_rng())
                 .unwrap();
+            let act_type = ActiveType::O18;
 
             let act = ActiveInfo::new(act_type);
 
@@ -499,7 +500,7 @@ impl GameState {
 
         let defender_hand_acts = self
             .acts
-            .hand(self.attacker.player_id)
+            .hand(self.defender.player_id)
             .iter()
             .copied()
             .map(CardID::Active);

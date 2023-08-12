@@ -51,7 +51,7 @@ pub struct Game<'state, 'input> {
 }
 
 #[derive(Debug)]
-pub struct Cancelled;
+pub struct Cancelled(pub &'static str);
 
 pub type EventResult = Result<SignedEvent, Cancelled>;
 pub type CheckResult = Result<SignedCheck, Cancelled>;
@@ -73,9 +73,19 @@ impl SignedEvent {
 impl Game<'_, '_> {
     pub fn can(&mut self, signed_event: SignedEvent) -> bool {
         let anchor = self.state.anchor();
-        let res = self.try_(signed_event).is_ok();
-        self.state.revert_to(anchor);
-        res
+        let res = self.try_(signed_event);
+
+        match res {
+            Ok(_) => {
+                self.state.revert_to(anchor);
+                true
+            }
+
+            Err(err) => {
+                println!("{}", err.0);
+                false
+            }
+        }
     }
 
     pub fn force(&mut self, signed_event: SignedEvent) -> SignedEvent {
@@ -141,13 +151,13 @@ impl Game<'_, '_> {
                 chr_id, stat_type, ..
             } => {
                 if self.is_const(chr_id, stat_type, signature) {
-                    return Err(Cancelled);
+                    return Err(Cancelled("changing const stat"));
                 }
 
                 if signature != Signature::Character(chr_id)
                     && self.is_private(chr_id, stat_type, signature)
                 {
-                    return Err(Cancelled);
+                    return Err(Cancelled("changing else's private stat"));
                 }
             }
 
@@ -163,7 +173,7 @@ impl Game<'_, '_> {
         match value {
             Event::Place { chr_id } => {
                 let Some(owner_id) = self.state.try_find_owner_of_chr(chr_id) else {
-                    return Err(Cancelled);
+                    return Err(Cancelled("place chr without an owner"));
                 };
 
                 let can_place = {
@@ -177,7 +187,7 @@ impl Game<'_, '_> {
                 };
 
                 if !can_place {
-                    return Err(Cancelled);
+                    return Err(Cancelled("placing not allowed"));
                 }
             }
 
@@ -206,7 +216,7 @@ impl Game<'_, '_> {
 
                         *defender_chr_id = Some(chr_id);
                     } else {
-                        return Err(Cancelled);
+                        return Err(Cancelled("place in else's turn"));
                     }
                 }
             }
@@ -228,7 +238,7 @@ impl Game<'_, '_> {
                 match stat_change {
                     StatChange::Add(value) => {
                         if value == 0 {
-                            return Err(Cancelled);
+                            return Err(Cancelled("stat += 0"));
                         }
 
                         stats.add(stat_type, value);
@@ -240,7 +250,7 @@ impl Game<'_, '_> {
                         }
 
                         if stats.stat(stat_type) == value {
-                            return Err(Cancelled);
+                            return Err(Cancelled("stat = stat"));
                         }
 
                         stats.set(stat_type, value);

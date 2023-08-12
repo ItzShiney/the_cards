@@ -47,7 +47,7 @@ pub fn handle_event(
         } if attacker_id == chr_id => {
             let enemy_int = game.stat(target_id, StatType::Intellect, chr_id);
             if enemy_int >= 3 {
-                return Err(Cancelled);
+                return Err(Cancelled("[БАНКА С ВАРЕНЬЕМ]: int >= 3"));
             }
         }
 
