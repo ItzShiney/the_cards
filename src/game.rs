@@ -5,6 +5,7 @@ use {
                 PlayerID,
                 PlayerOwned,
             },
+            CharacterInfo,
             Nested,
             StatChange,
             UseWay,
@@ -39,7 +40,10 @@ use {
         thread_rng,
         Rng,
     },
-    std::mem::replace,
+    std::mem::{
+        replace,
+        swap,
+    },
 };
 
 // TODO: move to another file
@@ -133,9 +137,7 @@ impl Game<'_, '_> {
     }
 
     fn chain_event(&mut self, mut signed_event: SignedEvent) -> EventResult {
-        self.verify_chain_event(signed_event)?;
         signed_event = self.pre_chain_event(signed_event)?;
-        self.verify_chain_event(signed_event)?;
 
         for card_id in self.state.event_handling_card_ids().collect_vec() {
             match card_id {
@@ -149,17 +151,14 @@ impl Game<'_, '_> {
                     signed_event = type_.handle_event(self, act_id, signed_event)?;
                 }
             }
-
-            self.verify_chain_event(signed_event)?;
         }
 
         signed_event = self.post_chain_event(signed_event)?;
-        self.verify_chain_event(signed_event)?;
-
         Ok(signed_event)
     }
 
-    fn verify_chain_event(&mut self, signed_event: SignedEvent) -> Result<(), Cancelled> {
+    // TODO: сделать что-то с возможностью инвалидировать ивент в любом handle_event
+    fn pre_chain_event(&mut self, signed_event: SignedEvent) -> EventResult {
         let SignedEvent { value, signature } = signed_event;
 
         match value {
@@ -177,16 +176,6 @@ impl Game<'_, '_> {
                 }
             }
 
-            _ => {}
-        }
-
-        Ok(())
-    }
-
-    fn pre_chain_event(&mut self, signed_event: SignedEvent) -> EventResult {
-        let SignedEvent { value, .. } = signed_event;
-
-        match value {
             Event::Place { chr_id } => {
                 let Some(owner_id) = self.state.try_owner_id(chr_id) else {
                     return Err(Cancelled("placing chr without an owner"));
@@ -201,6 +190,20 @@ impl Game<'_, '_> {
                 }
             }
 
+            Event::EndSubturn => {
+                let Signature::Player(player_id) = signature else {
+                    return Err(Cancelled("cards temporarily can't end subturn"));
+                };
+
+                if self.state.turn_info.subturner_id() != player_id {
+                    return Err(Cancelled("else's subturn"));
+                }
+
+                if !self.has_chr_placed(player_id) {
+                    return Err(Cancelled("can't end subturn without a placed chr"));
+                }
+            }
+
             _ => {}
         }
 
@@ -208,7 +211,10 @@ impl Game<'_, '_> {
     }
 
     fn post_chain_event(&mut self, mut signed_event: SignedEvent) -> EventResult {
-        let SignedEvent { value, .. } = &mut signed_event;
+        let &mut SignedEvent {
+            ref mut value,
+            signature,
+        } = &mut signed_event;
 
         match value {
             &mut Event::Place { chr_id } => {
@@ -331,12 +337,49 @@ impl Game<'_, '_> {
 
             &mut Event::Die { chr_id } => todo!(),
 
+            &mut Event::EndSubturn => {
+                self.state.turn_info.subturner.switch();
+            }
+
             &mut Event::EndTurn => todo!(),
 
             &mut Event::Replace {
                 replaced_chr_id,
                 replacing_chr_id,
-            } => todo!(),
+            } => {
+                if replaced_chr_id == replacing_chr_id {
+                    return Err(Cancelled("replacing with the same chr"));
+                }
+
+                let Some((popped_idx, _)) = self
+                    .state
+                    .cards_on_field
+                    .iter()
+                    .copied()
+                    .find_position(|&card_id| card_id.value == CardID::Character(replaced_chr_id))
+                else {
+                    return Err(Cancelled("replaced chr not found on field"));
+                };
+
+                let popped = self.state.cards_on_field.remove(popped_idx);
+
+                let place_result = Event::Place {
+                    chr_id: replacing_chr_id,
+                }
+                .sign(signature)
+                .try_(self);
+
+                match place_result {
+                    err @ Err(_) => {
+                        self.state.cards_on_field.insert(popped_idx, popped);
+                        return err;
+                    }
+
+                    Ok(new_signed_event) => {
+                        signed_event = new_signed_event;
+                    }
+                }
+            }
 
             &mut Event::HealOnFieldLeave { chr_id, heal_value } => todo!(),
         }
@@ -458,18 +501,6 @@ impl Game<'_, '_> {
         };
 
         output
-    }
-
-    pub fn end_subturn(&mut self, player_id: PlayerID) {
-        if !self.can_end_subturn(player_id) {
-            return;
-        }
-
-        self.state.turn_info.subturner.switch();
-    }
-
-    pub fn can_end_subturn(&self, player_id: PlayerID) -> bool {
-        !(self.state.turn_info.subturner_id() == player_id && !self.has_chr_placed(player_id))
     }
 
     pub fn has_chr_placed(&self, player_id: PlayerID) -> bool {

@@ -87,6 +87,7 @@ pub enum Event {
     Die {
         chr_id: CharacterID,
     },
+    EndSubturn,
     EndTurn,
     Replace {
         replaced_chr_id: CharacterID,

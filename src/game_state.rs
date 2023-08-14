@@ -89,16 +89,22 @@ impl<ID: IDTrait, CardInfo> Default for GameOfCardType<ID, CardInfo> {
 }
 
 impl<ID: IDTrait + Debug, CardInfo> GameOfCardType<ID, CardInfo> {
+    pub fn try_get(&self, id: ID) -> Option<&CardInfo> {
+        self.cards.get(&id)
+    }
+
     pub fn get(&self, id: ID) -> &CardInfo {
-        self.cards.get(&id).unwrap()
+        self.try_get(id).unwrap()
     }
 
-    // FIXME: remove pub
+    pub fn try_get_mut(&mut self, id: ID) -> Option<&mut CardInfo> {
+        self.cards.get_mut(&id)
+    }
+
     pub fn get_mut(&mut self, id: ID) -> &mut CardInfo {
-        self.cards.get_mut(&id).unwrap()
+        self.try_get_mut(id).unwrap()
     }
 
-    // FIXME: remove pub
     pub fn add(&mut self, card: CardInfo) -> ID {
         let id = self.id_manager.next_id();
         self.cards.insert(id, card);
@@ -109,7 +115,6 @@ impl<ID: IDTrait + Debug, CardInfo> GameOfCardType<ID, CardInfo> {
         self.hands.get(&player_id).unwrap()
     }
 
-    // FIXME: remove pub
     pub fn hand_mut(&mut self, player_id: PlayerID) -> &mut HashSet<ID> {
         self.hands.get_mut(&player_id).unwrap()
     }
@@ -637,6 +642,10 @@ impl GameState {
             }
 
             Event::Die { chr_id } => todo!(),
+
+            Event::EndSubturn => {
+                self.turn_info.subturner.switch();
+            }
 
             Event::EndTurn => todo!(),
 

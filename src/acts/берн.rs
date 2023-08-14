@@ -29,19 +29,19 @@ pub fn use_on_chr(
 ) -> Result<CharacterID, Cancelled> {
     let target_owner_id = game.state.owner_id(chr_id);
 
-    let replacing_chr_id = game
-        .choose_chr_in_hand(ChooseCardArgsP {
-            prompt: PromptArgs {
-                str: cs![Active(Берн), ": на кого поменять?"],
-                is_cancellable: false,
-                autochoose_single_option: true,
-            },
-            player_id: target_owner_id,
-            p: &|game, prompt_chr_id| {
-                prompt_chr_id != chr_id && game.can(Event::Place { chr_id }.sign(act_id))
-            },
-        })
-        .unwrap();
+    let Some(replacing_chr_id) = game.choose_chr_in_hand(ChooseCardArgsP {
+        prompt: PromptArgs {
+            str: cs![Active(Берн), ": на кого поменять?"],
+            is_cancellable: false,
+            autochoose_single_option: true,
+        },
+        player_id: target_owner_id,
+        p: &|game, prompt_chr_id| {
+            prompt_chr_id != chr_id && game.can(Event::Place { chr_id }.sign(act_id))
+        },
+    }) else {
+        return Err(Cancelled("[БЕРН]: no chr to be a replacement"));
+    };
 
     Event::Replace {
         replaced_chr_id: chr_id,

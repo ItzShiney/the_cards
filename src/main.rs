@@ -158,7 +158,7 @@ fn ui(game: &mut Game) {
         input_state = match input_state {
             ChooseAction => {
                 let player_nickname = game.state.players_map[&player_id].nickname.clone();
-                let can_end_subturn = game.can_end_subturn(player_id);
+                let can_end_subturn = Event::EndSubturn.sign(player_id).can(game);
 
                 match prompt(
                     PromptArgs {
@@ -472,7 +472,7 @@ fn ui(game: &mut Game) {
             }
 
             EndSubturn => {
-                game.end_subturn(player_id);
+                Event::EndSubturn.sign(player_id).try_(game).unwrap();
 
                 println!("подход завершён");
 
