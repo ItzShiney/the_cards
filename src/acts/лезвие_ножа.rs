@@ -38,7 +38,7 @@ pub fn use_on_chr(
 
     // TODO: game.state.was_used(...)
     if false {
-        let owner_id = game.state.find_owner_of_act(act_id);
+        let owner_id = game.state.owner_id(act_id);
 
         let drawn_chr_id = game.state.chrs.add(CharacterInfo::new(Нож));
         game.state.chrs.add_to_player(drawn_chr_id, owner_id);

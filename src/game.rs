@@ -1,6 +1,10 @@
 use {
     crate::{
         act_uses::{
+            player_id::{
+                PlayerID,
+                PlayerOwned,
+            },
             Nested,
             StatChange,
             UseWay,
@@ -39,10 +43,22 @@ use {
 };
 
 // TODO: move to another file
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CardID {
     Character(CharacterID),
     Active(ActiveID),
+}
+
+impl From<CharacterID> for CardID {
+    fn from(value: CharacterID) -> Self {
+        Self::Character(value)
+    }
+}
+
+impl From<ActiveID> for CardID {
+    fn from(value: ActiveID) -> Self {
+        Self::Active(value)
+    }
 }
 
 pub struct Game<'state, 'input> {
@@ -81,8 +97,8 @@ impl Game<'_, '_> {
                 true
             }
 
-            Err(err) => {
-                println!("{}", err.0);
+            Err(_err) => {
+                // eprintln!("{}", _err.0);
                 false
             }
         }
@@ -172,22 +188,16 @@ impl Game<'_, '_> {
 
         match value {
             Event::Place { chr_id } => {
-                let Some(owner_id) = self.state.try_find_owner_of_chr(chr_id) else {
-                    return Err(Cancelled("place chr without an owner"));
+                let Some(owner_id) = self.state.try_owner_id(chr_id) else {
+                    return Err(Cancelled("placing chr without an owner"));
                 };
 
-                let can_place = {
-                    let is_attacker = owner_id == self.state.attacker.player_id;
-                    let is_defender = owner_id == self.state.defender.player_id;
+                if self.state.turn_info.subturner_id() != owner_id {
+                    return Err(Cancelled("else's subturn"));
+                }
 
-                    let attacker_can_place = self.state.attacker.chr_id.is_none();
-                    let defender_can_place = self.state.defender.chr_id.is_none();
-
-                    (is_attacker && attacker_can_place) || (is_defender && defender_can_place)
-                };
-
-                if !can_place {
-                    return Err(Cancelled("placing not allowed"));
+                if self.has_chr_placed(owner_id) {
+                    return Err(Cancelled("already got a chr on field"));
                 }
             }
 
@@ -202,23 +212,20 @@ impl Game<'_, '_> {
 
         match value {
             &mut Event::Place { chr_id } => {
-                if let Some(player_id) = self.state.try_find_owner_of_chr(chr_id) {
-                    if player_id == self.state.attacker.player_id {
-                        let attacker_chr_id = &mut self.state.attacker.chr_id;
+                let Some(owner_id) = self.state.try_owner_id(chr_id) else {
+                    return Err(Cancelled("placing a chr without an owner"));
+                };
 
-                        self.state.chrs.remove_from_player(chr_id, player_id);
-
-                        *attacker_chr_id = Some(chr_id);
-                    } else if player_id == self.state.defender.player_id {
-                        let defender_chr_id = &mut self.state.defender.chr_id;
-
-                        self.state.chrs.remove_from_player(chr_id, player_id);
-
-                        *defender_chr_id = Some(chr_id);
-                    } else {
-                        return Err(Cancelled("place in else's turn"));
-                    }
+                if self.state.turn_info.subturner_by_id(owner_id).is_none() {
+                    return Err(Cancelled("else's turn"));
                 }
+
+                self.state.chrs.remove_from_player(chr_id, owner_id);
+
+                self.state.cards_on_field.push(PlayerOwned {
+                    owner_id,
+                    value: chr_id.into(),
+                });
             }
 
             &mut Event::StatChange {
@@ -277,7 +284,22 @@ impl Game<'_, '_> {
                 *output = Some(res);
             }
 
-            &mut Event::Use { act_id, .. } => todo!(),
+            &mut Event::Use { act_id, .. } => {
+                let Some(owner_id) = self.state.try_owner_id(act_id) else {
+                    return Err(Cancelled("placing a chr without an owner"));
+                };
+
+                if self.state.turn_info.subturner_by_id(owner_id).is_none() {
+                    return Err(Cancelled("else's turn"));
+                }
+
+                self.state.acts.remove_from_player(act_id, owner_id);
+
+                self.state.cards_on_field.push(PlayerOwned {
+                    owner_id,
+                    value: act_id.into(),
+                });
+            }
 
             &mut Event::Attack { .. } => {}
 
@@ -341,19 +363,27 @@ impl Game<'_, '_> {
     }
 
     pub fn can_use_in_any_way(&mut self, act_id: ActiveID) -> bool {
-        self.can_use_on_own_chr(act_id)
-            || self.can_use_on_enemy_chr(act_id)
-            || self.can(
+        self.can_use_on_own_chr(act_id) || self.can_use_on_enemy_chr(act_id) || {
+            let Some(owner_id) = self.state.try_owner_id(act_id) else {
+                return false;
+            };
+
+            self.can(
                 Event::Use {
                     act_id,
                     use_way: UseWay::OnField,
                 }
-                .sign(self.state.find_owner_of_act(act_id)),
+                .sign(owner_id),
             )
+        }
     }
 
     pub fn can_use_on_own_chr(&mut self, act_id: ActiveID) -> bool {
-        let Some(chr_id) = self.state.current_subturner_on_field().chr_id else {
+        let Some(owner_id) = self.state.try_owner_id(act_id) else {
+            return false;
+        };
+
+        let Some(chr_id) = self.state.chrs_on_field(owner_id).next() else {
             return false;
         };
 
@@ -367,7 +397,19 @@ impl Game<'_, '_> {
     }
 
     pub fn can_use_on_enemy_chr(&mut self, act_id: ActiveID) -> bool {
-        let Some(chr_id) = self.state.other_subturner_on_field().chr_id else {
+        let Some(player_id) = self.state.try_owner_id(act_id) else {
+            return false;
+        };
+
+        let Some(subturner) = self.state.turn_info.subturner_by_id(player_id) else {
+            return false;
+        };
+
+        let Some(chr_id) = self
+            .state
+            .chrs_on_field(self.state.turn_info.id_by_subturner(subturner.other()))
+            .next()
+        else {
             return false;
         };
 
@@ -418,8 +460,20 @@ impl Game<'_, '_> {
         output
     }
 
-    pub fn end_subturn(&mut self) {
-        self.state.current_subturner.switch()
+    pub fn end_subturn(&mut self, player_id: PlayerID) {
+        if !self.can_end_subturn(player_id) {
+            return;
+        }
+
+        self.state.turn_info.subturner.switch();
+    }
+
+    pub fn can_end_subturn(&self, player_id: PlayerID) -> bool {
+        !(self.state.turn_info.subturner_id() == player_id && !self.has_chr_placed(player_id))
+    }
+
+    pub fn has_chr_placed(&self, player_id: PlayerID) -> bool {
+        self.state.chrs_on_field(player_id).next().is_some()
     }
 
     pub fn heal_on_field_leave(

@@ -1,6 +1,10 @@
-use crate::card_uses::Stat0;
-use crate::game_input::DefaultRandom;
-use crate::game_input::GameInput;
+use crate::{
+    card_uses::Stat0,
+    game_input::{
+        DefaultRandom,
+        GameInput,
+    },
+};
 
 #[macro_use]
 mod choose_card_in_hand;
@@ -21,27 +25,7 @@ impl GameInput for ConsoleInput {
     choose_card_in_hand!(Character, chr);
     choose_card_in_hand!(Active, act);
 
-    choose_card_on_field!(Character, chr, |state| {
-        let mut res = vec![];
+    choose_card_on_field!(Character, chr, |state| state.all_chrs_on_field().collect());
 
-        if let Some(chr_id) = state.attacker.chr_id {
-            res.push(chr_id);
-        }
-
-        if let Some(chr_id) = state.defender.chr_id {
-            res.push(chr_id);
-        }
-
-        res
-    });
-
-    choose_card_on_field!(Active, act, |state| {
-        state
-            .attacker
-            .used_act_ids
-            .iter()
-            .copied()
-            .chain(state.defender.used_act_ids.iter().copied())
-            .collect()
-    });
+    choose_card_on_field!(Active, act, |state| state.all_acts_on_field().collect());
 }

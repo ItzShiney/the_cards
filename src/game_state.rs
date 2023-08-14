@@ -1,5 +1,8 @@
 use {
-    self::event::Event,
+    self::{
+        event::Event,
+        player_id::PlayerOwned,
+    },
     crate::act_uses::StatType,
     std::{
         collections::HashSet,
@@ -151,7 +154,7 @@ impl<ID: IDTrait + Debug, CardInfo> GameOfCardType<ID, CardInfo> {
         self.hand_mut(player_id).retain(|&hand_id| hand_id != id);
     }
 
-    pub fn try_find_owner_in_decks(&self, id: ID) -> Option<PlayerID> {
+    pub fn try_owner_id(&self, id: ID) -> Option<PlayerID> {
         for (&player_id, hand) in self.hands.iter() {
             if hand.contains(&id) {
                 return Some(player_id);
@@ -160,13 +163,14 @@ impl<ID: IDTrait + Debug, CardInfo> GameOfCardType<ID, CardInfo> {
         None
     }
 
-    pub fn find_owner_in_decks(&self, id: ID) -> PlayerID {
-        self.try_find_owner_in_decks(id).unwrap()
+    pub fn owner_id(&self, id: ID) -> PlayerID {
+        self.try_owner_id(id)
+            .expect("expected the card to have an owner")
     }
 
     pub fn remove_from_some_player(&mut self, id: ID) -> PlayerID {
         let player_id = self
-            .try_find_owner_in_decks(id)
+            .try_owner_id(id)
             .unwrap_or_else(|| panic!("expected some player to own {:?}", id));
         self.remove_from_player(id, player_id);
         player_id
@@ -189,22 +193,6 @@ impl<ID: IDTrait + Debug, CardInfo> GameOfCardType<ID, CardInfo> {
     }
 }
 
-pub struct SubturnerOnField {
-    pub player_id: PlayerID,
-    pub chr_id: Option<CharacterID>,
-    pub used_act_ids: Vec<ActiveID>,
-}
-
-impl SubturnerOnField {
-    fn new(player_id: PlayerID) -> Self {
-        Self {
-            player_id,
-            chr_id: None,
-            used_act_ids: Vec::default(),
-        }
-    }
-}
-
 #[derive(Clone, Copy)]
 pub enum Subturner {
     Attacker,
@@ -212,15 +200,15 @@ pub enum Subturner {
 }
 
 impl Subturner {
-    pub fn switch(&mut self) {
-        *self = self.other()
-    }
-
     pub fn other(self) -> Self {
         match self {
             Self::Attacker => Self::Defender,
             Self::Defender => Self::Attacker,
         }
+    }
+
+    pub fn switch(&mut self) {
+        *self = self.other()
     }
 }
 
@@ -230,15 +218,56 @@ pub struct Nested<T> {
     pub value: T,
 }
 
+#[derive(Clone, Copy)]
+pub struct TurnInfo {
+    pub attacker_id: PlayerID,
+    pub defender_id: PlayerID,
+    pub subturner: Subturner,
+}
+
+impl TurnInfo {
+    pub fn new(attacker_id: PlayerID, defender_id: PlayerID) -> Self {
+        Self {
+            attacker_id,
+            defender_id,
+            subturner: Subturner::Attacker,
+        }
+    }
+
+    pub fn subturner_id(self) -> PlayerID {
+        self.id_by_subturner(self.subturner)
+    }
+
+    pub fn other_subturner_id(self) -> PlayerID {
+        self.id_by_subturner(self.subturner.other())
+    }
+
+    pub fn subturner_by_id(self, player_id: PlayerID) -> Option<Subturner> {
+        if player_id == self.attacker_id {
+            Some(Subturner::Attacker)
+        } else if player_id == self.defender_id {
+            Some(Subturner::Defender)
+        } else {
+            None
+        }
+    }
+
+    pub fn id_by_subturner(self, subturner: Subturner) -> PlayerID {
+        match subturner {
+            Subturner::Attacker => self.attacker_id,
+            Subturner::Defender => self.defender_id,
+        }
+    }
+}
+
 pub struct GameState {
     pub chrs: GameOfCardType<CharacterID, CharacterInfo>,
     pub acts: GameOfCardType<ActiveID, ActiveInfo>,
 
     pub players_map: BTreeMap<PlayerID, Player>,
 
-    pub attacker: SubturnerOnField,
-    pub defender: SubturnerOnField,
-    pub current_subturner: Subturner,
+    pub turn_info: TurnInfo,
+    pub cards_on_field: Vec<PlayerOwned<CardID>>,
 
     events: Vec<Nested<SignedEvent>>,
 }
@@ -262,6 +291,7 @@ impl GameState {
         let Some((attacker_id, defender_id)) = players_map.keys().copied().next_tuple() else {
             panic!("not enough players");
         };
+        let turn_info = TurnInfo::new(attacker_id, defender_id);
 
         let mut res = Self {
             chrs,
@@ -269,9 +299,8 @@ impl GameState {
 
             players_map,
 
-            attacker: SubturnerOnField::new(attacker_id),
-            defender: SubturnerOnField::new(defender_id),
-            current_subturner: Subturner::Attacker,
+            turn_info,
+            cards_on_field: Default::default(),
 
             events: Default::default(),
         };
@@ -327,13 +356,11 @@ impl GameState {
                 .filter(|&chr_type| !chr_type.groups().contains(&Group::Нераздаваемая))
                 .choose(&mut thread_rng())
                 .unwrap();
-            let act_type = ActiveType::O18;
 
             let act = ActiveInfo::new(act_type);
 
             let act_id = self.add_act(act);
             self.acts.add_to_drawpile(act_id);
-            break;
         }
     }
 }
@@ -373,97 +400,11 @@ impl GameState {
             .unwrap()
     }
 
-    pub fn change_turner(&mut self) {
-        let new_attacker_id = self.defender.player_id;
+    pub fn end_turn(&mut self) {
+        let new_attacker_id = self.turn_info.defender_id;
         let new_defender_id = self.pick_defender_id(new_attacker_id);
 
-        self.attacker = SubturnerOnField::new(new_attacker_id);
-        self.defender = SubturnerOnField::new(new_defender_id);
-    }
-
-    pub fn is_dead(&self, chr_id: CharacterID) -> bool {
-        self.chr(chr_id).stats.vit.0 == 0
-    }
-}
-
-impl GameState {
-    pub fn subturner_by_id(&self, player_id: PlayerID) -> Subturner {
-        self.try_subturner_by_id(player_id).unwrap()
-    }
-
-    pub fn try_subturner_by_id(&self, player_id: PlayerID) -> Option<Subturner> {
-        if player_id == self.current_subturner_on_field().player_id {
-            Some(self.current_subturner)
-        } else if player_id == self.other_subturner_on_field().player_id {
-            Some(self.current_subturner.other())
-        } else {
-            None
-        }
-    }
-
-    pub fn try_subturner_on_field_by_id(&self, player_id: PlayerID) -> Option<&SubturnerOnField> {
-        Some(self.subturner_on_field(self.try_subturner_by_id(player_id)?))
-    }
-
-    pub fn try_other_subturner_on_field_by_id(
-        &self,
-        player_id: PlayerID,
-    ) -> Option<&SubturnerOnField> {
-        Some(self.subturner_on_field(self.try_subturner_by_id(player_id)?.other()))
-    }
-
-    pub fn subturner_on_field(&self, subturner: Subturner) -> &SubturnerOnField {
-        match subturner {
-            Subturner::Attacker => &self.attacker,
-            Subturner::Defender => &self.defender,
-        }
-    }
-
-    pub fn subturner_on_field_mut(&mut self, subturner: Subturner) -> &mut SubturnerOnField {
-        match subturner {
-            Subturner::Attacker => &mut self.attacker,
-            Subturner::Defender => &mut self.defender,
-        }
-    }
-
-    pub fn current_subturner_on_field(&self) -> &SubturnerOnField {
-        self.subturner_on_field(self.current_subturner)
-    }
-
-    pub fn current_subturner_on_field_mut(&mut self) -> &mut SubturnerOnField {
-        self.subturner_on_field_mut(self.current_subturner)
-    }
-
-    pub fn other_subturner_on_field(&self) -> &SubturnerOnField {
-        self.subturner_on_field(self.current_subturner.other())
-    }
-
-    pub fn other_subturner_mut(&mut self) -> &mut SubturnerOnField {
-        self.subturner_on_field_mut(self.current_subturner.other())
-    }
-
-    pub fn try_own_chr_id(&self, player_id: PlayerID) -> Option<CharacterID> {
-        self.try_subturner_on_field_by_id(player_id)?.chr_id
-    }
-
-    pub fn own_chr_id(&self, player_id: PlayerID) -> CharacterID {
-        self.try_own_chr_id(player_id).unwrap()
-    }
-
-    pub fn try_enemy_chr_id(&self, player_id: PlayerID) -> Option<CharacterID> {
-        self.try_other_subturner_on_field_by_id(player_id)?.chr_id
-    }
-
-    pub fn enemy_chr_id(&self, player_id: PlayerID) -> CharacterID {
-        self.try_enemy_chr_id(player_id).unwrap()
-    }
-
-    pub fn try_enemy_id(&self, chr_id: CharacterID) -> Option<CharacterID> {
-        self.try_enemy_chr_id(self.try_find_owner_of_chr(chr_id)?)
-    }
-
-    pub fn enemy_id(&self, chr_id: CharacterID) -> CharacterID {
-        self.try_enemy_id(chr_id).unwrap()
+        self.turn_info = TurnInfo::new(new_attacker_id, new_defender_id);
     }
 }
 
@@ -471,48 +412,109 @@ impl GameState {
 pub struct Anchor(usize);
 
 impl GameState {
-    pub fn event_handling_card_ids<'s>(&'s self) -> impl Iterator<Item = CardID> + 's {
-        let attacker = self.attacker.chr_id.into_iter().map(CardID::Character);
-        let defender = self.defender.chr_id.into_iter().map(CardID::Character);
+    pub fn all_chrs_on_field<'s>(&'s self) -> impl Iterator<Item = CharacterID> + 's {
+        self.cards_on_field
+            .iter()
+            .copied()
+            .filter_map(|owned_card_id| match owned_card_id.value {
+                CardID::Character(chr_id) => Some(chr_id),
+                _ => None,
+            })
+    }
 
-        // TODO: used actives
+    pub fn all_acts_on_field<'s>(&'s self) -> impl Iterator<Item = ActiveID> + 's {
+        self.cards_on_field
+            .iter()
+            .copied()
+            .filter_map(|owned_card_id| match owned_card_id.value {
+                CardID::Active(act_id) => Some(act_id),
+                _ => None,
+            })
+    }
+
+    pub fn chrs_on_field<'s>(
+        &'s self,
+        player_id: PlayerID,
+    ) -> impl Iterator<Item = CharacterID> + 's {
+        self.all_chrs_on_field()
+            .filter(move |&chr_id| self.owner_id(chr_id) == player_id)
+    }
+
+    pub fn owner_id(&self, card_id: impl Into<CardID>) -> PlayerID {
+        self.try_owner_id(card_id)
+            .expect("expected the card to have an owner")
+    }
+
+    pub fn try_owner_id(&self, card_id: impl Into<CardID>) -> Option<PlayerID> {
+        let card_id = card_id.into();
+
+        for owned_card in self.cards_on_field.iter().copied() {
+            if owned_card.value == card_id {
+                return Some(owned_card.owner_id);
+            }
+        }
+
+        match card_id {
+            CardID::Character(chr_id) => {
+                if let res @ Some(_) = self.chrs.try_owner_id(chr_id) {
+                    return res;
+                }
+            }
+
+            CardID::Active(act_id) => {
+                if let res @ Some(_) = self.acts.try_owner_id(act_id) {
+                    return res;
+                }
+            }
+        }
+
+        todo!()
+    }
+
+    pub fn event_handling_card_ids<'s>(&'s self) -> impl Iterator<Item = CardID> + 's {
+        let cards_on_field = self
+            .cards_on_field
+            .iter()
+            .copied()
+            .map(|owned_card_id| owned_card_id.value);
 
         let attacker_hand_chrs = self
             .chrs
-            .hand(self.attacker.player_id)
+            .hand(self.turn_info.attacker_id)
             .iter()
             .copied()
             .map(CardID::Character);
 
         let attacker_hand_acts = self
             .acts
-            .hand(self.attacker.player_id)
+            .hand(self.turn_info.attacker_id)
             .iter()
             .copied()
             .map(CardID::Active);
 
         let defender_hand_chrs = self
             .chrs
-            .hand(self.defender.player_id)
+            .hand(self.turn_info.defender_id)
             .iter()
             .copied()
             .map(CardID::Character);
 
         let defender_hand_acts = self
             .acts
-            .hand(self.defender.player_id)
+            .hand(self.turn_info.defender_id)
             .iter()
             .copied()
             .map(CardID::Active);
 
-        attacker
-            .chain(defender)
+        cards_on_field
             .chain(attacker_hand_chrs)
             .chain(attacker_hand_acts)
             .chain(defender_hand_chrs)
             .chain(defender_hand_acts)
     }
+}
 
+impl GameState {
     pub fn anchor(&self) -> Anchor {
         Anchor(self.events.len())
     }
@@ -549,7 +551,9 @@ impl GameState {
     pub fn extract_events_from(&mut self, anchor: Anchor) -> Vec<Nested<SignedEvent>> {
         self.events.split_off(anchor.0)
     }
+}
 
+impl GameState {
     fn undo(
         &mut self,
         Nested {
@@ -559,10 +563,14 @@ impl GameState {
     ) {
         match value {
             Event::Use { act_id, .. } => {
-                let owner_id = self.find_owner_of_act(act_id);
+                let PlayerOwned {
+                    owner_id,
+                    value: _act_id,
+                } = self.cards_on_field.pop().unwrap();
 
-                self.acts.remove_from_wastepile(act_id);
-                self.acts.add_to_player(act_id, owner_id)
+                assert_eq!(_act_id, CardID::Active(act_id));
+
+                self.acts.add_to_player(act_id, owner_id);
             }
 
             Event::StatChange {
@@ -618,10 +626,13 @@ impl GameState {
             Event::PutActiveInDrawpile { act_id } => todo!(),
 
             Event::Place { chr_id } => {
-                let owner_id = self.find_owner_on_field_of_chr(chr_id);
-                let subturner = self.subturner_by_id(owner_id);
+                let PlayerOwned {
+                    owner_id,
+                    value: _chr_id,
+                } = self.cards_on_field.pop().unwrap();
 
-                self.subturner_on_field_mut(subturner).chr_id = None;
+                assert_eq!(_chr_id, CardID::Character(chr_id));
+
                 self.chrs.add_to_player(chr_id, owner_id);
             }
 
@@ -647,71 +658,5 @@ impl GameState {
         for signed_event in signed_events.into_iter().rev() {
             self.undo(signed_event);
         }
-    }
-}
-
-impl GameState {
-    pub fn try_find_owner_on_field_of_chr(&self, chr_id: CharacterID) -> Option<PlayerID> {
-        if self.attacker.chr_id == Some(chr_id) {
-            return Some(self.attacker.player_id);
-        }
-
-        if self.defender.chr_id == Some(chr_id) {
-            return Some(self.defender.player_id);
-        }
-
-        None
-    }
-
-    pub fn find_owner_on_field_of_chr(&self, chr_id: CharacterID) -> PlayerID {
-        self.try_find_owner_on_field_of_chr(chr_id).unwrap()
-    }
-
-    pub fn try_find_owner_of_chr(&self, chr_id: CharacterID) -> Option<PlayerID> {
-        if let Some(owner_id) = self.try_find_owner_on_field_of_chr(chr_id) {
-            return Some(owner_id);
-        }
-
-        self.chrs.try_find_owner_in_decks(chr_id)
-    }
-
-    pub fn find_owner_of_chr(&self, chr_id: CharacterID) -> PlayerID {
-        self.try_find_owner_of_chr(chr_id).unwrap()
-    }
-}
-
-impl GameState {
-    pub fn try_find_owner_on_field_of_act(&self, act_id: ActiveID) -> Option<PlayerID> {
-        if self.attacker.used_act_ids.contains(&act_id) {
-            return Some(self.attacker.player_id);
-        }
-
-        if self.defender.used_act_ids.contains(&act_id) {
-            return Some(self.defender.player_id);
-        }
-
-        None
-    }
-
-    pub fn find_owner_on_field_of_act(&self, act_id: ActiveID) -> PlayerID {
-        self.try_find_owner_on_field_of_act(act_id).unwrap()
-    }
-
-    pub fn try_find_owner_of_act(&self, act_id: ActiveID) -> Option<PlayerID> {
-        if let Some(owner_id) = self.try_find_owner_on_field_of_act(act_id) {
-            return Some(owner_id);
-        }
-
-        self.acts.try_find_owner_in_decks(act_id)
-    }
-
-    pub fn find_owner_of_act(&self, act_id: ActiveID) -> PlayerID {
-        self.try_find_owner_of_act(act_id).unwrap()
-    }
-}
-
-impl GameState {
-    fn remove_from_field(&mut self, subturner: Subturner) {
-        todo!()
     }
 }

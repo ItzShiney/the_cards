@@ -43,7 +43,7 @@ pub fn use_on_chr(
 
     // TODO: game.state.was_used(...)
     if false {
-        let owner_id = game.state.find_owner_of_act(act_id);
+        let owner_id = game.state.owner_id(act_id);
 
         let drawn_act_id = game.state.acts.add(ActiveInfo::new(Godhead));
         game.state.acts.add_to_player(drawn_act_id, owner_id);

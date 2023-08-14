@@ -10,3 +10,9 @@ impl IDTrait for PlayerID {
         self.0 += 1
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PlayerOwned<T> {
+    pub owner_id: PlayerID,
+    pub value: T,
+}

@@ -27,7 +27,7 @@ pub fn use_on_chr(
     act_id: ActiveID,
     chr_id: CharacterID,
 ) -> Result<CharacterID, Cancelled> {
-    let target_owner_id = game.state.find_owner_of_chr(chr_id);
+    let target_owner_id = game.state.owner_id(chr_id);
 
     let replacing_chr_id = game
         .choose_chr_in_hand(ChooseCardArgsP {

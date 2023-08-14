@@ -24,7 +24,7 @@ pub fn description() -> CustomString {
 }
 
 pub fn use_on_field(game: &mut Game, act_id: ActiveID) -> Result<(), Cancelled> {
-    let owner_id = game.state.find_owner_of_act(act_id);
+    let owner_id = game.state.owner_id(act_id);
     let imitated_act_id = game
         .choose_act_in_hand(ChooseCardArgsP {
             prompt: PromptArgs {

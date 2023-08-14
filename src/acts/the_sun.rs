@@ -32,7 +32,7 @@ pub fn use_on_chr(
         .sign(act_id)
         .try_(game);
 
-    let owner_id = game.state.find_owner_of_act(act_id);
+    let owner_id = game.state.owner_id(act_id);
     let take_chr = Event::take_chr(owner_id).sign(act_id).try_(game);
     let take_act = Event::take_act(owner_id).sign(act_id).try_(game);
 

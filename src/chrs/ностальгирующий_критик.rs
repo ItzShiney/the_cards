@@ -47,7 +47,23 @@ pub fn handle_check(
             stat_type,
             ref mut value,
         } if _chr_id == chr_id => {
-            let enemy_id = game.state.enemy_id(chr_id);
+            let enemy_id = game
+                .state
+                .chrs_on_field(
+                    game.state.turn_info.id_by_subturner(
+                        game.state
+                            .turn_info
+                            .subturner_by_id(
+                                game.state
+                                    .try_owner_id(chr_id)
+                                    .ok_or(Cancelled("no owner"))?,
+                            )
+                            .ok_or(Cancelled("else's turn"))?
+                            .other(),
+                    ),
+                )
+                .next()
+                .ok_or(Cancelled("no placed chr"))?;
             let enemy_int = game.stat(enemy_id, stat_type, chr_id);
 
             if enemy_int <= 3 {

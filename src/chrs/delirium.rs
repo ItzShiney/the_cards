@@ -60,7 +60,7 @@ pub fn handle_event(
                     is_cancellable: true,
                     autochoose_single_option: false,
                 },
-                player_id: game.state.find_owner_of_chr(chr_id),
+                player_id: game.state.owner_id(chr_id),
             }) else {
                 return Err(Cancelled("[DELIRIUM]: no character to pick"));
             };

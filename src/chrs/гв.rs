@@ -52,7 +52,7 @@ pub fn handle_event(
 ) -> EventResult {
     match signed_event.value {
         Event::Place { chr_id: _chr_id } if _chr_id == chr_id => {
-            let owner_id = game.state.find_owner_of_chr(chr_id);
+            let owner_id = game.state.owner_id(chr_id);
 
             let value = {
                 let chrs_sum = game

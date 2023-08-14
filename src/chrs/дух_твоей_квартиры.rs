@@ -44,7 +44,7 @@ pub fn handle_check(
             stat_type,
             ref mut value,
         } if _chr_id == chr_id && stat_type == StatType::Damage => {
-            let owner_id = game.state.find_owner_of_chr(chr_id);
+            let owner_id = game.state.owner_id(chr_id);
 
             if game.state.chrs.hand(owner_id).len() <= 2 {
                 *value += 2;

@@ -40,8 +40,7 @@ pub fn handle_event(
         Event::Place { chr_id: _chr_id } if _chr_id == chr_id => {
             let chr_id = chr_id;
 
-            if let Some(gained_act_id) = game.state.acts.pick(game.state.find_owner_of_chr(chr_id))
-            {
+            if let Some(gained_act_id) = game.state.acts.pick(game.state.owner_id(chr_id)) {
                 let could_use = Event::Use {
                     act_id: gained_act_id,
                     use_way: UseWay::OnCharacter(chr_id),

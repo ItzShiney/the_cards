@@ -150,14 +150,15 @@ fn ui(game: &mut Game) {
 
     let mut input_state = InputState::default();
     loop {
-        let player_id = game.state.current_subturner_on_field().player_id;
+        let subturner = game.state.turn_info.subturner;
+        let other_subturner = subturner.other();
+        let player_id = game.state.turn_info.id_by_subturner(subturner);
+        let enemy_player_id = game.state.turn_info.id_by_subturner(other_subturner);
 
         input_state = match input_state {
             ChooseAction => {
                 let player_nickname = game.state.players_map[&player_id].nickname.clone();
-                let can_end_subturn = !(game.state.current_subturner_on_field().player_id
-                    == player_id
-                    && game.state.current_subturner_on_field().chr_id.is_none());
+                let can_end_subturn = game.can_end_subturn(player_id);
 
                 match prompt(
                     PromptArgs {
@@ -180,8 +181,12 @@ fn ui(game: &mut Game) {
             }
 
             CheckField => {
-                let is_own_chr_placed = game.state.try_own_chr_id(player_id).is_some();
-                let is_enemy_chr_placed = game.state.try_enemy_chr_id(player_id).is_some();
+                let is_own_chr_placed = game.state.chrs_on_field(player_id).next().is_some();
+                let is_enemy_chr_placed = game
+                    .state
+                    .chrs_on_field(game.state.turn_info.id_by_subturner(other_subturner))
+                    .next()
+                    .is_some();
 
                 match prompt(
                     PromptArgs {
@@ -203,7 +208,7 @@ fn ui(game: &mut Game) {
             }
 
             CheckOwnCharacter => {
-                let chr_id = game.state.own_chr_id(player_id);
+                let chr_id = game.state.chrs_on_field(player_id).next().unwrap();
                 println!(
                     "{}",
                     GameFormatted {
@@ -216,7 +221,7 @@ fn ui(game: &mut Game) {
             }
 
             CheckEnemyCharacter => {
-                let chr_id = game.state.enemy_chr_id(player_id);
+                let chr_id = game.state.chrs_on_field(enemy_player_id).next().unwrap();
                 println!(
                     "{}",
                     GameFormatted {
@@ -428,7 +433,7 @@ fn ui(game: &mut Game) {
             }
 
             UseActiveOnOwnCharacter { act_id } => {
-                let target_id = game.state.own_chr_id(player_id);
+                let target_id = game.state.chrs_on_field(player_id).next().unwrap();
 
                 Event::Use {
                     act_id,
@@ -448,7 +453,7 @@ fn ui(game: &mut Game) {
             }
 
             UseActiveOnEnemyCharacter { act_id } => {
-                let target_id = game.state.enemy_chr_id(player_id);
+                let target_id = game.state.chrs_on_field(enemy_player_id).next().unwrap();
                 Event::Use {
                     act_id,
                     use_way: UseWay::OnCharacter(target_id),
@@ -467,7 +472,7 @@ fn ui(game: &mut Game) {
             }
 
             EndSubturn => {
-                game.end_subturn();
+                game.end_subturn(player_id);
 
                 println!("подход завершён");
 
